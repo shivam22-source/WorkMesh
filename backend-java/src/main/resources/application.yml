@@ -1,0 +1,31 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: backend-java
+  mvc:
+    problemdetails:
+      enabled: false
+
+rag:
+  base-url: ${RAG_BASE_URL:http://localhost:8000}
+  connect-timeout: ${RAG_CONNECT_TIMEOUT:2s}
+  read-timeout: ${RAG_READ_TIMEOUT:10s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+logging:
+  level:
+    com.company.knowledge: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%X{traceId:-no-trace}] %logger{36} - %msg%n"
