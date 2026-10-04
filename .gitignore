@@ -1,0 +1,34 @@
+# ---- Secrets / local config ----
+.env
+.env.*
+!.env.example
+
+# ---- Java / Maven ----
+target/
+*.class
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+hs_err_pid*.log
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+
+# ---- Logs / OS / IDE ----
+*.log
+logs/
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+!.vscode/extensions.json

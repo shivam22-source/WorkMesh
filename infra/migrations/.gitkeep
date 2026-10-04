@@ -1,0 +1,4 @@
+Reserved for Phase 1: versioned schema migrations (users, groups, sources,
+documents, chunks, ACL references, sync state, audit base table).
+
+Phase 0 only enables the pgvector extension, in ../docker/init/001-enable-pgvector.sql.

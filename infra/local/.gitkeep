@@ -1,0 +1,4 @@
+Reserved for local infrastructure helpers that are not needed by Docker Compose
+itself, such as a native PostgreSQL fallback script.
+
+See ../docker/init/ for scripts the Postgres container runs on first boot.

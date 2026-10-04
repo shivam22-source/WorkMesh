@@ -1,0 +1,5 @@
+Reserved for Phase 5: clearly marked email fixture data and the demo email
+adapter's sample mailbox.
+
+Rule: fixtures must be obviously synthetic and labelled as such. Never commit
+real mail content.

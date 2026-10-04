@@ -1,0 +1,7 @@
+Reserved for Phase 3: clearly marked Slack fixture data (channels, messages,
+threads).
+
+Threads must be preserved intact, so fixtures group messages by thread
+timestamp rather than storing a flat message list.
+
+Rule: fixtures must be obviously synthetic and labelled as such.
