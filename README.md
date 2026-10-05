@@ -24,6 +24,37 @@ retrieval code, no LLM call and no authentication.
 Two deployable services, one datastore. Full rationale in
 [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md).
 
+> **This is the target architecture, not what runs today.**
+> Right now only the two service boxes and PostgreSQL exist. `JWT`, `GitHub API`
+> and `LLM API` are **not built** — they arrive in Phases 2–4. See
+> [Status](#status-phase-0) for what actually exists.
+
+```mermaid
+flowchart TD
+    U[User / simple UI] --> J[Spring Boot API<br/>JWT, permissions, audit]
+    J --> P[FastAPI RAG service<br/>chunk, embed, hybrid search]
+    G[GitHub API<br/>commits, PRs] --> P
+    P --> L[LLM API<br/>writes answer]
+    P --> D[(PostgreSQL + pgvector<br/>users, metadata, vectors)]
+    J --> D
+```
+
+Read it like this:
+
+- **U → J** — the employee asks a question. Spring Boot authenticates them and
+  decides what they are allowed to see.
+- **J → P** — Java passes the *employee's identity and permissions* to the RAG
+  service. Java owns permissions; Python does not decide them.
+- **G → P** — offline, a connector pulls commits and pull requests from GitHub.
+- **P → D** — the RAG service writes chunks, metadata and vectors to Postgres.
+  pgvector stores the vectors; PostgreSQL full-text search does keyword search.
+- **J → D** — Java reads users, groups and ACL references directly. This is why
+  permissions can be enforced *before* anything reaches the LLM.
+- **P → L** — only permission-filtered evidence is sent to the LLM, so it can
+  never quote a document the employee is not allowed to read.
+
+### The components
+
 - **`backend-java`** — authentication and user context, permission decisions,
   REST APIs, orchestration, audit/admin endpoints. Calls Python.
 - **`rag-python`** — connectors, normalisation, chunking, embeddings, retrieval,
