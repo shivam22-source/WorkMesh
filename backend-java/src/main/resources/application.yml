@@ -7,6 +7,16 @@ spring:
   mvc:
     problemdetails:
       enabled: false
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/knowledge}
+    username: ${DB_USERNAME:knowledge}
+    password: ${DB_PASSWORD:local_dev_only_change_me}
+    hikari:
+      connection-timeout: 3000
+      maximum-pool-size: 5
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 rag:
   base-url: ${RAG_BASE_URL:http://localhost:8000}
