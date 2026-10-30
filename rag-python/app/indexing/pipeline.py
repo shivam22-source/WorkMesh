@@ -2,17 +2,18 @@
 
 from datetime import datetime, timezone
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from app.chunking.models import CanonicalChunk
 from app.chunking.source_aware_chunker import SourceAwareChunker
 from app.connectors.common.base import SourceConnector
-from app.connectors.common.models import AclReference, RawSourceItem
+from app.connectors.common.models import AclReference, RawSourceItem, SourceType
 from app.embeddings.base import EmbeddingProvider
 from app.indexing.models import SyncResult, SyncStateRecord
 from app.indexing.repository import KnowledgeRepository
 from app.normalization.github_normalizer import GitHubNormalizer
 from app.normalization.models import CanonicalDocument
+from app.normalization.slack_normalizer import SlackNormalizer
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +27,18 @@ class IngestionPipeline:
         repository: KnowledgeRepository,
         embedding_provider: EmbeddingProvider,
         chunker: Optional[SourceAwareChunker] = None,
-        normalizer: Optional[GitHubNormalizer] = None,
+        normalizer: Optional[Union[GitHubNormalizer, SlackNormalizer]] = None,
     ):
         self.connector = connector
         self.repository = repository
         self.embedding_provider = embedding_provider
         self.chunker = chunker or SourceAwareChunker()
-        self.normalizer = normalizer or GitHubNormalizer()
+        if normalizer is not None:
+            self.normalizer = normalizer
+        elif self.connector.source_type == SourceType.SLACK:
+            self.normalizer = SlackNormalizer()
+        else:
+            self.normalizer = GitHubNormalizer()
 
     def run(self) -> SyncResult:
         started_at = datetime.now(timezone.utc)

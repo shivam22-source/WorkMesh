@@ -4,9 +4,8 @@ import re
 from typing import List, Set
 
 from app.connectors.common.models import AclReference, RawSourceItem
+from app.normalization.common import extract_ticket_ids
 from app.normalization.models import CanonicalDocument
-
-TICKET_PATTERN = re.compile(r"\b([A-Z]{2,10}-\d+)\b")
 
 
 class GitHubNormalizer:
@@ -21,10 +20,7 @@ class GitHubNormalizer:
         return self._normalize_pull_request(raw_item, acl_references)
 
     def _extract_tickets(self, text: str) -> List[str]:
-        if not text:
-            return []
-        matches: Set[str] = set(TICKET_PATTERN.findall(text))
-        return sorted(list(matches))
+        return extract_ticket_ids(text)
 
     def _normalize_pull_request(
         self, item: RawSourceItem, acls: List[AclReference]

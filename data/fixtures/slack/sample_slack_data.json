@@ -1,0 +1,58 @@
+{
+  "workspace": "company.slack.com",
+  "channels": [
+    {
+      "id": "C0123PAY",
+      "name": "payments-engineering",
+      "is_private": false,
+      "purpose": "Payment service design, incident discussion, and validation flows",
+      "threads": [
+        {
+          "thread_ts": "1697364000.000100",
+          "permalink": "https://company.slack.com/archives/C0123PAY/p1697364000000100",
+          "ticket_ids": ["DC-8692"],
+          "parent_message": {
+            "user": "alex-engineer",
+            "user_email": "employee_42@company.internal",
+            "ts": "1697364000.000100",
+            "text": "Investigating production error on checkout validation (ticket DC-8692). Empty card verification payloads currently trigger NullPointerException in PaymentValidationService and crash with HTTP 500. Proposing we reject missing card tokens with HTTP 400 Bad Request instead."
+          },
+          "replies": [
+            {
+              "user": "sam-reviewer",
+              "user_email": "admin@company.internal",
+              "ts": "1697365200.000200",
+              "text": "Agreed. The legacy validation flow silently allowed empty tokens, but returning 400 with a descriptive error prevents downstream processor retries. Please make sure we log the client validation error and return the unified error payload."
+            },
+            {
+              "user": "alex-engineer",
+              "user_email": "employee_42@company.internal",
+              "ts": "1697367000.000300",
+              "text": "Opened PR #123 with the defensive check and unit tests for DC-8692. Thanks Sam!"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C0987GEN",
+      "name": "general-dev",
+      "is_private": false,
+      "purpose": "General engineering announcements and platform updates",
+      "threads": [
+        {
+          "thread_ts": "1697370000.000400",
+          "permalink": "https://company.slack.com/archives/C0987GEN/p1697370000000400",
+          "ticket_ids": [],
+          "parent_message": {
+            "user": "alex-engineer",
+            "user_email": "employee_42@company.internal",
+            "ts": "1697370000.000400",
+            "text": "Reminder: all service-to-service internal endpoints are standardized under /internal/v1/ starting this sprint."
+          },
+          "replies": []
+        }
+      ]
+    }
+  ]
+}

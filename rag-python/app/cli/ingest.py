@@ -7,6 +7,7 @@ import sys
 from app.common.config import get_settings
 from app.connectors.github.api_adapter import GitHubApiAdapter
 from app.connectors.github.fixture_adapter import GitHubFixtureAdapter
+from app.connectors.slack.fixture_adapter import SlackFixtureAdapter
 from app.embeddings.factory import get_embedding_provider
 from app.indexing.pipeline import IngestionPipeline
 from app.indexing.repository import (
@@ -25,7 +26,7 @@ def main():
     parser = argparse.ArgumentParser(description="WorkMesh Knowledge Ingestion CLI")
     parser.add_argument(
         "--source",
-        choices=["github"],
+        choices=["github", "slack"],
         default="github",
         help="Source system to ingest (default: github)",
     )
@@ -61,8 +62,14 @@ def main():
     # 1. Resolve connector
     if args.fixture:
         logger.info("using_fixture_connector source=%s", args.source)
-        connector = GitHubFixtureAdapter()
+        if args.source == "slack":
+            connector = SlackFixtureAdapter()
+        else:
+            connector = GitHubFixtureAdapter()
     else:
+        if args.source == "slack":
+            logger.error("live_slack_api_not_supported_in_step_1 use --fixture for slack ingestion")
+            sys.exit(1)
         repo = args.repo or settings.github_repo
         if not repo:
             logger.error("missing_repo_for_live_ingestion specify --repo or GITHUB_REPO")
