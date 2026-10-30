@@ -78,32 +78,32 @@ Legend: `[x]` exists in Phase 1 · `[ ]` planned for a later phase
 ## Offline ingestion path
 
 ```text
-[ ] Slack / Email / GitHub
+[x] GitHub [x] (Slack / Email [ ])
       ▼
-[ ]   connector                   AD-07: same interface per source
+[x]   connector                   AD-07: same interface per source (GitHubFixtureAdapter, GitHubApiAdapter)
       ▼
-[ ]   incremental change detection (cursor)
+[x]   incremental change detection (cursor checkpoint in sync_state)
       ▼
-[ ]   canonical document
+[x]   canonical document          (GitHubNormalizer -> CanonicalDocument)
       ▼
-[ ]   source-aware chunking
+[x]   source-aware chunking       (SourceAwareChunker -> CanonicalChunk with stable IDs & SHA-256)
       ▼
-[ ]   ACL metadata extraction
+[x]   ACL metadata extraction     (inherited per chunk and resource)
       ▼
-[ ]   embedding
+[x]   embedding                   (EmbeddingProvider -> MockEmbeddingProvider, unit-normalized)
       ▼
-[x]   ───────────────▶ PostgreSQL + pgvector (schema initialized)
+[x]   ───────────────▶ PostgreSQL + pgvector (schema initialized & indexed)
       ▼
 [ ]   relationship extraction      AD-03: relational tables, no Neo4j
       ▼
-[ ]   sync checkpoint
+[x]   sync checkpoint             (SyncStateRecord: SUCCESS/FAILED with retryable cursor)
 ```
 
 ## Order of work
 
 ```text
 Phase 1  canonical schema, user context, API stubs  [COMPLETED]
-Phase 2  canonical ingestion + GitHub
+Phase 2  canonical ingestion + GitHub               [COMPLETED]
 Phase 3  hybrid retrieval + Slack
 Phase 4  permission enforcement + relationships + RAG
 Phase 5  email adapter + incremental sync + admin/audit

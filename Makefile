@@ -1,4 +1,4 @@
-.PHONY: help preflight up down logs ps test test-backend test-rag run-backend run-rag pg-ext-check
+.PHONY: help preflight up down logs ps test test-backend test-rag run-backend run-rag pg-ext-check ingest-fixtures
 
 help:
 	@echo "preflight       Show local toolchain versions"
@@ -12,6 +12,7 @@ help:
 	@echo "test-rag        Run rag-python tests"
 	@echo "run-backend     Run backend-java on :8080"
 	@echo "run-rag         Run rag-python on :8000"
+	@echo "ingest-fixtures Ingest GitHub synthetic fixtures into knowledge index"
 
 preflight:
 	@powershell -ExecutionPolicy Bypass -File scripts/preflight-check.ps1
@@ -44,3 +45,6 @@ run-backend:
 
 run-rag:
 	cd rag-python && .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+ingest-fixtures:
+	cd rag-python && .venv/Scripts/python.exe -m app.cli.ingest --source github --fixture --in-memory

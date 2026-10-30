@@ -4,17 +4,19 @@ Permission-aware enterprise knowledge search: two application services over one
 PostgreSQL + pgvector datastore.
 
 Built as a 6-phase learning + implementation journey. This repository is
-currently at **Phase 1** — foundational API, canonical data model, and user context.
+currently at **Phase 2** — ingestion pipeline and GitHub knowledge connector.
 
-## Status: Phase 1
+## Status: Phase 2
 
 | Area | State |
 |---|---|
 | `backend-java` (Spring Boot, Java 21) | REST base API (`/search`, `/ask`, `/sync/status`), deterministic auth stub (`employee_42`), audit logging, RAG client |
-| `rag-python` (FastAPI, Python 3.12+) | Health/readiness, contract stubs for health and search, structured JSON logging |
+| `rag-python` (FastAPI, Python 3.12+) | Health/readiness, contract stubs, connector interface, canonical normalization, chunking, embeddings, pgvector indexing, CLI |
 | PostgreSQL + pgvector | Canonical schema (`V001__canonical_schema.sql`): users, groups, source_records, documents, chunks, acl_references, sync_state, audit_events, entities, relationships |
-| Java → Python contract | Documented, tested on both sides (`/rag/health`, `/rag/search`) |
-| Connectors, actual retrieval, LLM | **Not built** — arrives in Phases 2–4 |
+| Connectors | GitHub (fixture adapter + API adapter), ticket reference extraction (`DC-8692`) |
+| Embeddings | Provider abstraction (`MockEmbeddingProvider` unit-normalized 1536-dim vectors, factory for future OpenAI integration) |
+| Incremental Sync | Checkpoint tracking, cursor advancement, retryable failure state |
+| Retrieval & LLM synthesis | **Not built** — arrives in Phases 3 & 4 |
 
 Nothing in this repository can return a fabricated answer yet: there is no
 retrieval code, no LLM call, and no prompt-based access control.
@@ -102,13 +104,25 @@ curl http://localhost:8080/api/v1/sync/status
 ## Tests
 
 ```bash
-make test           # both suites
+make test           # both suites (37 total tests)
 make test-backend   # 18 JUnit tests
-make test-rag       # 8 pytest tests
+make test-rag       # 19 pytest tests
 ```
 
-Neither suite requires PostgreSQL, Docker, or the other service. A contract test
-that needs both processes running is a contract test that gets skipped.
+Neither suite requires PostgreSQL, Docker, or the other service. All tests run
+offline and self-contained with mock/in-memory adapters.
+
+## Ingestion Pipeline
+
+To run the GitHub synthetic fixture ingestion into memory or PostgreSQL:
+
+```bash
+# Ingest synthetic fixtures into in-memory storage (no Docker needed)
+make ingest-fixtures
+
+# Or run the CLI directly with live PostgreSQL (when docker compose is up)
+cd rag-python && .venv/Scripts/python.exe -m app.cli.ingest --source github --fixture
+```
 
 ## Layout
 
@@ -155,7 +169,7 @@ scripts/               preflight check
 
 ```text
 Phase 1  canonical schema, user context, API stubs  [COMPLETED]
-Phase 2  canonical ingestion + GitHub
+Phase 2  canonical ingestion + GitHub               [COMPLETED]
 Phase 3  hybrid retrieval + Slack
 Phase 4  permission enforcement + relationships + RAG
 Phase 5  email adapter + incremental sync + admin/audit

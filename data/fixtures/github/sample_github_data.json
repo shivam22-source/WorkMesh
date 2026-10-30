@@ -1,0 +1,75 @@
+{
+  "repository": "company/payment-service",
+  "default_branch": "main",
+  "pull_requests": [
+    {
+      "id": "123",
+      "number": 123,
+      "title": "Fix null validation in payment card verification (DC-8692)",
+      "body": "Resolves ticket DC-8692: empty verification payloads were throwing NullPointerException during checkout.\n\nChanges:\n- Add null-safe validation logic in PaymentValidationService\n- Handle missing card token gracefully with HTTP 400 Bad Request\n- Add test cases covering empty and malformed card payloads",
+      "state": "closed",
+      "merged": true,
+      "merged_at": "2026-10-15T14:32:00Z",
+      "html_url": "https://github.com/company/payment-service/pull/123",
+      "author": {
+        "login": "alex-engineer",
+        "name": "Alex Engineer",
+        "email": "employee_42@company.internal"
+      },
+      "head_branch": "feature/dc-8692-null-validation",
+      "base_branch": "main",
+      "changed_files": [
+        "src/main/java/com/company/payment/PaymentValidationService.java",
+        "src/test/java/com/company/payment/PaymentValidationServiceTest.java"
+      ],
+      "ticket_ids": [
+        "DC-8692"
+      ],
+      "comments": [
+        {
+          "id": "comment_401",
+          "author": "sam-reviewer",
+          "body": "Tested with null card payload and verified HTTP 400 response. Approved."
+        }
+      ],
+      "created_at": "2026-10-15T10:15:00Z",
+      "updated_at": "2026-10-15T14:32:00Z"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "8af2d1e94b2a8d3e",
+      "message": "fix(validation): handle empty card verification payloads (DC-8692)\n\nAdd defensive null-check before invoking rule validation engine.",
+      "author": {
+        "login": "alex-engineer",
+        "name": "Alex Engineer",
+        "email": "employee_42@company.internal"
+      },
+      "html_url": "https://github.com/company/payment-service/commit/8af2d1e94b2a8d3e",
+      "changed_files": [
+        "src/main/java/com/company/payment/PaymentValidationService.java"
+      ],
+      "ticket_ids": [
+        "DC-8692"
+      ],
+      "created_at": "2026-10-15T11:20:00Z"
+    },
+    {
+      "sha": "b4c90e1f7a3d2c11",
+      "message": "test(validation): add boundary tests for null card tokens (DC-8692)\n\nVerify that null or empty token maps to ValidationException.",
+      "author": {
+        "login": "alex-engineer",
+        "name": "Alex Engineer",
+        "email": "employee_42@company.internal"
+      },
+      "html_url": "https://github.com/company/payment-service/commit/b4c90e1f7a3d2c11",
+      "changed_files": [
+        "src/test/java/com/company/payment/PaymentValidationServiceTest.java"
+      ],
+      "ticket_ids": [
+        "DC-8692"
+      ],
+      "created_at": "2026-10-15T13:45:00Z"
+    }
+  ]
+}
