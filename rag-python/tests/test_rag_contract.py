@@ -1,11 +1,8 @@
-"""Contract tests for POST /internal/v1/rag/health.
+"""Contract tests for internal RAG endpoints.
 
 These are the Python-side guard against drift. They assert the exact wire
-shape that backend-java's `RagHealthResponse` record expects, so a rename on one
-side fails a test on the other side instead of failing at runtime.
-
-The literal `EXPECTED_KEYS` assertion is intentional: it will fail if someone
-adds or removes a field without updating the Java record and this file together.
+shape that backend-java's records expect, so a rename on one side fails
+a test on the other side instead of failing at runtime.
 """
 
 from datetime import datetime, timezone
@@ -14,7 +11,8 @@ from fastapi.testclient import TestClient
 
 from app.main import create_app
 
-EXPECTED_RESPONSE_KEYS = {"status", "service", "contractVersion", "message"}
+EXPECTED_HEALTH_RESPONSE_KEYS = {"status", "service", "contractVersion", "message"}
+EXPECTED_SEARCH_RESPONSE_KEYS = {"status", "query", "totalResults", "results"}
 
 
 def _post_contract(client: TestClient) -> dict:
@@ -33,7 +31,7 @@ def test_contract_response_matches_java_record() -> None:
     with TestClient(create_app()) as client:
         body = _post_contract(client)
 
-    assert set(body.keys()) == EXPECTED_RESPONSE_KEYS
+    assert set(body.keys()) == EXPECTED_HEALTH_RESPONSE_KEYS
     assert body["status"] == "ok"
     assert body["service"] == "rag-python"
     assert body["contractVersion"] == "v1"
@@ -59,4 +57,51 @@ def test_unknown_field_is_rejected() -> None:
             },
         )
 
+    assert response.status_code == 422
+
+
+def test_search_contract_response_matches_java_record() -> None:
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/internal/v1/rag/search",
+            json={
+                "query": "why did we change validation",
+                "userId": "employee_42",
+                "groupIds": ["group_engineering", "group_backend"],
+                "limit": 10,
+                "sourceTypes": ["GITHUB", "SLACK"],
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body.keys()) == EXPECTED_SEARCH_RESPONSE_KEYS
+    assert body["status"] == "ok"
+    assert body["query"] == "why did we change validation"
+    assert body["totalResults"] == 0
+    assert body["results"] == []
+
+
+def test_search_missing_query_is_rejected() -> None:
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/internal/v1/rag/search",
+            json={
+                "userId": "employee_42",
+                "groupIds": ["group_engineering"],
+            },
+        )
+    assert response.status_code == 422
+
+
+def test_search_unknown_field_is_rejected() -> None:
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/internal/v1/rag/search",
+            json={
+                "query": "test query",
+                "userId": "employee_42",
+                "extraField": "forbidden",
+            },
+        )
     assert response.status_code == 422

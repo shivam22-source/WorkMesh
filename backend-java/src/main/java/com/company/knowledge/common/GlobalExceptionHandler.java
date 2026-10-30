@@ -1,5 +1,7 @@
 package com.company.knowledge.common;
 
+import com.company.knowledge.orchestrator.ragclient.RagClientException;
+import com.company.knowledge.orchestrator.ragclient.RagServiceUnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import org.slf4j.Logger;
@@ -33,6 +35,18 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + " " + error.getDefaultMessage())
                 .orElse("request validation failed");
         return build(HttpStatus.BAD_REQUEST, detail, request);
+    }
+
+    @ExceptionHandler(RagServiceUnavailableException.class)
+    public ResponseEntity<ApiError> handleRagUnavailable(RagServiceUnavailableException ex, HttpServletRequest request) {
+        log.warn("rag_service_unavailable path={}: {}", request.getRequestURI(), ex.getMessage());
+        return build(HttpStatus.SERVICE_UNAVAILABLE, "RAG service is currently unavailable", request);
+    }
+
+    @ExceptionHandler(RagClientException.class)
+    public ResponseEntity<ApiError> handleRagClientError(RagClientException ex, HttpServletRequest request) {
+        log.error("rag_client_contract_error path={}: {}", request.getRequestURI(), ex.getMessage());
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "internal service communication error", request);
     }
 
     @ExceptionHandler(Exception.class)

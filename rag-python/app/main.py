@@ -4,6 +4,7 @@ The factory exists so tests can build an isolated app instance instead of
 importing a module-level singleton.
 """
 
+from datetime import datetime, timezone
 import logging
 import sys
 
@@ -36,8 +37,8 @@ def create_app() -> FastAPI:
         title="rag-python",
         version="0.0.1",
         description=(
-            "RAG and ingestion service. Phase 0 exposes health endpoints and a "
-            "service-contract stub only; no retrieval or LLM calls exist yet."
+            "RAG and ingestion service. Phase 1 exposes health endpoints, "
+            "and service-contract stubs for health and search."
         ),
     )
     application.include_router(health.router)
@@ -56,10 +57,12 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "error": "Internal Server Error",
                 "message": "unexpected server error",
                 "path": request.url.path,
+                "traceId": None,
             },
         )
 
