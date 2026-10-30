@@ -143,6 +143,7 @@ scripts/               preflight check
 
 | Document | Purpose |
 |---|---|
+| [`DESIGN.md`](DESIGN.md) | Why the system is shaped this way — scope, flows, permission model, data model |
 | [`docs/architecture/overview.md`](docs/architecture/overview.md) | Both system flows, marked with what exists today |
 | [`docs/api/java-python-contract.md`](docs/api/java-python-contract.md) | Contract endpoints, payloads, error shape, failure handling |
 | [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md) | Why two services, why Postgres, what is deferred |
