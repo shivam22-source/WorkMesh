@@ -93,6 +93,45 @@ class SearchServiceImplTest {
     }
 
     @Test
+    @DisplayName("search maps mixed GITHUB and SLACK results properly from RAG service")
+    void searchMapsMixedSourcesFromRag() {
+        SearchRequest request = new SearchRequest("DC-8692", 10, null);
+
+        RagSearchResultItem githubItem = new RagSearchResultItem(
+                "chunk:github:1",
+                "doc:github:1",
+                "GITHUB",
+                "Fix validation flow",
+                "PR #123 fix DC-8692",
+                "https://github.com/company/repo/pull/123",
+                "Alex",
+                0.032
+        );
+        RagSearchResultItem slackItem = new RagSearchResultItem(
+                "chunk:slack:1",
+                "doc:slack:1",
+                "SLACK",
+                "Payment validation thread",
+                "Discussion on DC-8692",
+                "https://company.slack.com/archives/C1/p1",
+                "Sam",
+                0.016
+        );
+
+        when(ragServiceClient.search(any(RagSearchRequest.class)))
+                .thenReturn(new RagSearchResponse("ok", "DC-8692", 2, List.of(githubItem, slackItem)));
+
+        SearchResponse response = searchService.search(request, testUser);
+
+        assertThat(response.totalResults()).isEqualTo(2);
+        assertThat(response.results()).hasSize(2);
+        assertThat(response.results().get(0).sourceType()).isEqualTo("GITHUB");
+        assertThat(response.results().get(0).chunkId()).isEqualTo("chunk:github:1");
+        assertThat(response.results().get(1).sourceType()).isEqualTo("SLACK");
+        assertThat(response.results().get(1).chunkId()).isEqualTo("chunk:slack:1");
+    }
+
+    @Test
     @DisplayName("ask records audit event and returns structured stub")
     void askRecordsAuditAndReturnsStub() {
         AskRequest request = new AskRequest("why did validation change", List.of("GITHUB"));

@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from app.api import health, internal_rag
 from app.common.config import get_settings
+from app.indexing.repository import DatabaseUnavailableError
 
 
 def configure_logging(level: str) -> None:
@@ -43,6 +44,24 @@ def create_app() -> FastAPI:
     )
     application.include_router(health.router)
     application.include_router(internal_rag.router)
+
+    @application.exception_handler(DatabaseUnavailableError)
+    async def database_unavailable(request: Request, exc: DatabaseUnavailableError) -> JSONResponse:
+        """Return 503 when PostgreSQL / pgvector service is unreachable."""
+        logging.getLogger(__name__).error(
+            "database_unavailable path=%s err=%s", request.url.path, str(exc)
+        )
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "status": status.HTTP_503_SERVICE_UNAVAILABLE,
+                "error": "Service Unavailable",
+                "message": "database service is unavailable",
+                "path": request.url.path,
+                "traceId": None,
+            },
+        )
 
     @application.exception_handler(Exception)
     async def unhandled_exception(request: Request, exc: Exception) -> JSONResponse:

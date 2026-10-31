@@ -16,6 +16,10 @@ from app.normalization.models import CanonicalDocument
 logger = logging.getLogger(__name__)
 
 
+class DatabaseUnavailableError(Exception):
+    """Raised when PostgreSQL / pgvector service is unreachable or connection fails."""
+
+
 class KnowledgeRepository(ABC):
     """Abstract persistence layer for knowledge records and vector chunks."""
 
@@ -247,9 +251,13 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         import psycopg
         from pgvector.psycopg import register_vector
 
-        conn = psycopg.connect(self.connection_url)
-        register_vector(conn)
-        return conn
+        try:
+            conn = psycopg.connect(self.connection_url)
+            register_vector(conn)
+            return conn
+        except (psycopg.OperationalError, psycopg.DatabaseError, ConnectionError, OSError) as e:
+            logger.error("postgres_connection_failed url=%s err=%s", self.connection_url, e)
+            raise DatabaseUnavailableError(f"Database connection failed: {e}") from e
 
     def get_sync_state(self, source_type: str) -> Optional[SyncStateRecord]:
         query = """
@@ -488,9 +496,11 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                                 score=round(float(score), 4) if score is not None else 0.0,
                             )
                         )
+        except DatabaseUnavailableError:
+            raise
         except Exception as e:
             logger.error("postgres_search_lexical_failed query=%s err=%s", cleaned_query, e)
-            return []
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
 
         return results
 
@@ -560,8 +570,10 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                                 score=round(float(score), 4) if score is not None else 0.0,
                             )
                         )
+        except DatabaseUnavailableError:
+            raise
         except Exception as e:
             logger.error("postgres_search_vector_failed err=%s", e)
-            return []
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
 
         return results

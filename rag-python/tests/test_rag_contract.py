@@ -9,7 +9,10 @@ from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 
+from app.api.internal_rag import get_hybrid_retriever
+from app.indexing.repository import InMemoryKnowledgeRepository
 from app.main import create_app
+from app.retrieval.hybrid import HybridRetriever
 
 EXPECTED_HEALTH_RESPONSE_KEYS = {"status", "service", "contractVersion", "message"}
 EXPECTED_SEARCH_RESPONSE_KEYS = {"status", "query", "totalResults", "results"}
@@ -61,7 +64,9 @@ def test_unknown_field_is_rejected() -> None:
 
 
 def test_search_contract_response_matches_java_record() -> None:
-    with TestClient(create_app()) as client:
+    app = create_app()
+    app.dependency_overrides[get_hybrid_retriever] = lambda: HybridRetriever(InMemoryKnowledgeRepository())
+    with TestClient(app) as client:
         response = client.post(
             "/internal/v1/rag/search",
             json={
