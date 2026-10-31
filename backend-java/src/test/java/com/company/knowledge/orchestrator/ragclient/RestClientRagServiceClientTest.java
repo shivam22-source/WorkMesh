@@ -7,12 +7,17 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withException;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.company.knowledge.orchestrator.ragclient.dto.RagAskRequest;
+import com.company.knowledge.orchestrator.ragclient.dto.RagAskResponse;
 import com.company.knowledge.orchestrator.ragclient.dto.RagHealthResponse;
 import com.company.knowledge.orchestrator.ragclient.dto.RagSearchRequest;
 import com.company.knowledge.orchestrator.ragclient.dto.RagSearchResponse;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
@@ -169,6 +175,183 @@ class RestClientRagServiceClientTest {
         );
 
         assertThatThrownBy(() -> client.search(request))
+                .isInstanceOf(RagServiceUnavailableException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("ask() posts to documented contract path with identity context and maps response")
+    void askCallsContractEndpointAndMapsResponse() {
+        server.expect(requestTo(BASE_URL + "/internal/v1/rag/ask"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.question").value("why did validation change"))
+                .andExpect(jsonPath("$.userId").value("employee_42"))
+                .andExpect(jsonPath("$.groupIds[0]").value("group_engineering"))
+                .andExpect(jsonPath("$.sourceTypes[0]").value("GITHUB"))
+                .andRespond(withSuccess(
+                        """
+                        {
+                          "question": "why did validation change",
+                          "answer": "According to the available evidence: validation updated [1]",
+                          "citations": [
+                            {
+                              "sourceType": "GITHUB",
+                              "title": "Fix validation flow",
+                              "url": "https://github.com/company/repo/pull/123",
+                              "snippet": "Updated validation logic in PR #123"
+                            }
+                          ],
+                          "confidence": "MEDIUM",
+                          "status": "ANSWERED"
+                        }
+                        """,
+                        MediaType.APPLICATION_JSON));
+
+        RagAskRequest request = new RagAskRequest(
+                "why did validation change",
+                "employee_42",
+                Set.of("group_engineering"),
+                List.of("GITHUB")
+        );
+
+        RagAskResponse response = client.ask(request);
+
+        assertThat(response.question()).isEqualTo("why did validation change");
+        assertThat(response.answer()).contains("validation updated [1]");
+        assertThat(response.confidence()).isEqualTo("MEDIUM");
+        assertThat(response.status()).isEqualTo("ANSWERED");
+        assertThat(response.citations()).hasSize(1);
+        assertThat(response.citations().get(0).sourceType()).isEqualTo("GITHUB");
+        assertThat(response.citations().get(0).title()).isEqualTo("Fix validation flow");
+        assertThat(response.citations().get(0).url()).isEqualTo("https://github.com/company/repo/pull/123");
+        assertThat(response.citations().get(0).snippet()).isEqualTo("Updated validation logic in PR #123");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("a 302 redirect from rag-python on ask is explicitly rejected as RagServiceUnavailableException")
+    void askRejects302Redirect() {
+        server.expect(requestTo(BASE_URL + "/internal/v1/rag/ask"))
+                .andRespond(withStatus(HttpStatus.FOUND));
+
+        RagAskRequest request = new RagAskRequest(
+                "question",
+                "employee_42",
+                Set.of(),
+                null
+        );
+
+        assertThatThrownBy(() -> client.ask(request))
+                .isInstanceOf(RagServiceUnavailableException.class)
+                .hasMessageContaining("redirect");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("a 204 No Content from rag-python on ask is explicitly rejected as RagServiceUnavailableException")
+    void askRejects204NoContent() {
+        server.expect(requestTo(BASE_URL + "/internal/v1/rag/ask"))
+                .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+        RagAskRequest request = new RagAskRequest(
+                "question",
+                "employee_42",
+                Set.of(),
+                null
+        );
+
+        assertThatThrownBy(() -> client.ask(request))
+                .isInstanceOf(RagServiceUnavailableException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("an unexpected 201 Created from rag-python on ask is rejected as RagServiceUnavailableException")
+    void askRejectsUnexpected2xxStatus() {
+        server.expect(requestTo(BASE_URL + "/internal/v1/rag/ask"))
+                .andRespond(withStatus(HttpStatus.CREATED));
+
+        RagAskRequest request = new RagAskRequest(
+                "question",
+                "employee_42",
+                Set.of(),
+                null
+        );
+
+        assertThatThrownBy(() -> client.ask(request))
+                .isInstanceOf(RagServiceUnavailableException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("a 4xx from rag-python on ask becomes RagClientException (client bug in Java)")
+    void askMaps4xxToRagClientException() {
+        server.expect(requestTo(BASE_URL + "/internal/v1/rag/ask"))
+                .andRespond(withBadRequest());
+
+        RagAskRequest request = new RagAskRequest(
+                "bad request",
+                "employee_42",
+                Set.of(),
+                null
+        );
+
+        assertThatThrownBy(() -> client.ask(request))
+                .isInstanceOf(RagClientException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("a 5xx from rag-python on ask becomes RagServiceUnavailableException")
+    void askMaps5xxToRagServiceUnavailableException() {
+        server.expect(requestTo(BASE_URL + "/internal/v1/rag/ask"))
+                .andRespond(withServerError());
+
+        RagAskRequest request = new RagAskRequest(
+                "question",
+                "employee_42",
+                Set.of(),
+                null
+        );
+
+        assertThatThrownBy(() -> client.ask(request))
+                .isInstanceOf(RagServiceUnavailableException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("a socket read timeout from rag-python on ask becomes RagServiceUnavailableException")
+    void askMapsReadTimeoutToRagServiceUnavailableException() {
+        server.expect(requestTo(BASE_URL + "/internal/v1/rag/ask"))
+                .andRespond(withException(new SocketTimeoutException("Read timed out")));
+
+        RagAskRequest request = new RagAskRequest(
+                "question",
+                "employee_42",
+                Set.of(),
+                null
+        );
+
+        assertThatThrownBy(() -> client.ask(request))
+                .isInstanceOf(RagServiceUnavailableException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("a malformed HTML response from rag-python on ask becomes RagServiceUnavailableException")
+    void askMapsMalformedResponseToRagServiceUnavailableException() {
+        server.expect(requestTo(BASE_URL + "/internal/v1/rag/ask"))
+                .andRespond(withSuccess("<html><body>502 Bad Gateway</body></html>", MediaType.TEXT_HTML));
+
+        RagAskRequest request = new RagAskRequest(
+                "question",
+                "employee_42",
+                Set.of(),
+                null
+        );
+
+        assertThatThrownBy(() -> client.ask(request))
                 .isInstanceOf(RagServiceUnavailableException.class);
         server.verify();
     }

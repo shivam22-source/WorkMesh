@@ -5,13 +5,15 @@ import json
 import logging
 import math
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.chunking.models import CanonicalChunk
 from app.connectors.common.models import AclReference, RawSourceItem
 from app.contracts.rag_search import RagSearchResultItem
+from app.graph.models import Entity, EntityType, Relationship, RelationshipType
 from app.indexing.models import SyncStateRecord
 from app.normalization.models import CanonicalDocument
+from app.security.acl import build_acl_where_clause, has_read_permission
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +44,43 @@ class KnowledgeRepository(ABC):
     def save_acls(self, acls: List[AclReference]) -> None: ...
 
     @abstractmethod
+    def save_entities(self, entities: List[Entity]) -> None: ...
+
+    @abstractmethod
+    def save_relationships(self, relationships: List[Relationship]) -> None: ...
+
+    @abstractmethod
+    def get_entity(
+        self,
+        entity_id: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> Optional[Entity]:
+        """Retrieve an entity by ID if authorized. Returns None if denied or not found."""
+        ...
+
+    @abstractmethod
+    def get_relationships_for_entity(
+        self,
+        entity_id: str,
+        relationship_type: Optional[str] = None,
+        direction: str = "OUTGOING",
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> List[Tuple[Relationship, Entity]]:
+        """Retrieve single-hop relationships and neighbor entities for an authorized entity."""
+        ...
+
+    @abstractmethod
     def search_lexical(
         self,
         query: str,
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
-        """Perform lexical (full-text) search over indexed chunks."""
+        """Perform lexical (full-text) search over indexed chunks enforcing ACL filtering."""
         ...
 
     @abstractmethod
@@ -57,8 +89,10 @@ class KnowledgeRepository(ABC):
         query_embedding: List[float],
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
-        """Perform vector similarity search over indexed chunks."""
+        """Perform vector similarity search over indexed chunks enforcing ACL filtering."""
         ...
 
 
@@ -71,6 +105,8 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         self.documents: Dict[str, CanonicalDocument] = {}
         self.chunks: Dict[str, CanonicalChunk] = {}
         self.acls: List[AclReference] = []
+        self.entities: Dict[str, Entity] = {}
+        self.relationships: Dict[Tuple[str, str, str], Relationship] = {}
 
     def get_sync_state(self, source_type: str) -> Optional[SyncStateRecord]:
         return self.sync_states.get(source_type)
@@ -93,11 +129,174 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
     def save_acls(self, acls: List[AclReference]) -> None:
         self.acls.extend(acls)
 
+    def save_entities(self, entities: List[Entity]) -> None:
+        if not entities:
+            return
+
+        batch_anchors: Dict[str, Optional[str]] = {}
+
+        # 1. Pre-validation pass: full validation before any state modification
+        for entity in entities:
+            # Invariant 1: TICKET and EMPLOYEE must always have source_record_id = None
+            if entity.entity_type in {EntityType.TICKET.value, EntityType.EMPLOYEE.value}:
+                entity.source_record_id = None
+            elif entity.source_record_id is None:
+                raise ValueError(
+                    f"Anchored entity '{entity.id}' of type '{entity.entity_type}' requires a non-null source_record_id"
+                )
+
+            # Invariant 2: Detect conflicting non-null source_record_id within batch
+            if entity.id in batch_anchors:
+                if batch_anchors[entity.id] != entity.source_record_id:
+                    raise ValueError(
+                        f"Provenance conflict within batch for entity '{entity.id}': "
+                        f"'{batch_anchors[entity.id]}' vs '{entity.source_record_id}'"
+                    )
+            else:
+                batch_anchors[entity.id] = entity.source_record_id
+
+            # Invariant 3: Detect conflicting non-null source_record_id against existing persisted state
+            existing = self.entities.get(entity.id)
+            if existing is not None:
+                if existing.source_record_id != entity.source_record_id:
+                    raise ValueError(
+                        f"Provenance conflict for entity '{entity.id}': "
+                        f"existing source_record_id='{existing.source_record_id}', "
+                        f"incoming source_record_id='{entity.source_record_id}'"
+                    )
+
+        # 2. State mutation pass: only reached if the entire batch passed validation
+        for entity in entities:
+            existing = self.entities.get(entity.id)
+            if existing:
+                existing.name = entity.name
+                existing.metadata = {**existing.metadata, **entity.metadata}
+            else:
+                self.entities[entity.id] = entity
+
+    def save_relationships(self, relationships: List[Relationship]) -> None:
+        for rel in relationships:
+            key = (rel.source_entity_id, rel.target_entity_id, rel.relationship_type)
+            if key in self.relationships:
+                existing = self.relationships[key]
+                existing.metadata = {**existing.metadata, **rel.metadata}
+            else:
+                self.relationships[key] = rel
+
+    def get_entity(
+        self,
+        entity_id: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> Optional[Entity]:
+        entity = self.entities.get(entity_id)
+        if not entity:
+            return None
+
+        # 1. Anchored entity (PULL_REQUEST, COMMIT, SLACK_THREAD)
+        if entity.source_record_id is not None:
+            acls = [
+                acl for acl in self.acls
+                if acl.resource_type == "SOURCE_RECORD" and acl.resource_id == entity.source_record_id
+            ]
+            if not has_read_permission(acls, user_id=user_id, group_ids=group_ids):
+                return None
+            return entity
+
+        # 2. Unanchored entity (TICKET, EMPLOYEE)
+        # Provenance visibility rule: visible iff at least one incident relationship
+        # connects to an authorized anchored entity.
+        for rel in self.relationships.values():
+            other_id = None
+            if rel.source_entity_id == entity.id:
+                other_id = rel.target_entity_id
+            elif rel.target_entity_id == entity.id:
+                other_id = rel.source_entity_id
+
+            if other_id:
+                other = self.entities.get(other_id)
+                if other and other.source_record_id is not None:
+                    other_acls = [
+                        acl for acl in self.acls
+                        if acl.resource_type == "SOURCE_RECORD" and acl.resource_id == other.source_record_id
+                    ]
+                    if has_read_permission(other_acls, user_id=user_id, group_ids=group_ids):
+                        return entity
+
+        # Deny by default: no authorized provenance exists
+        return None
+
+    def get_relationships_for_entity(
+        self,
+        entity_id: str,
+        relationship_type: Optional[str] = None,
+        direction: str = "OUTGOING",
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> List[Tuple[Relationship, Entity]]:
+        norm_dir = direction.upper().strip()
+        if norm_dir not in {"OUTGOING", "INCOMING", "BOTH"}:
+            raise ValueError(f"Invalid traversal direction '{direction}': must be OUTGOING, INCOMING, or BOTH")
+
+        # Starting entity must be authorized
+        start_entity = self.get_entity(entity_id, user_id=user_id, group_ids=group_ids)
+        if not start_entity:
+            return []
+
+        results: List[Tuple[Relationship, Entity]] = []
+
+        for rel in self.relationships.values():
+            if relationship_type and rel.relationship_type != relationship_type:
+                continue
+
+            neighbor_id = None
+            if norm_dir == "OUTGOING":
+                if rel.source_entity_id == entity_id:
+                    neighbor_id = rel.target_entity_id
+            elif norm_dir == "INCOMING":
+                if rel.target_entity_id == entity_id:
+                    neighbor_id = rel.source_entity_id
+            elif norm_dir == "BOTH":
+                if rel.source_entity_id == entity_id:
+                    neighbor_id = rel.target_entity_id
+                elif rel.target_entity_id == entity_id:
+                    neighbor_id = rel.source_entity_id
+
+            if not neighbor_id:
+                continue
+
+            # Neighbor entity must be authorized
+            neighbor_entity = self.get_entity(neighbor_id, user_id=user_id, group_ids=group_ids)
+            if not neighbor_entity:
+                continue
+
+            results.append((rel, neighbor_entity))
+
+        results.sort(key=lambda x: (x[0].relationship_type, x[1].id))
+        return results
+
+    def _get_applicable_acls(self, chunk: CanonicalChunk, doc: CanonicalDocument) -> List[AclReference]:
+        acls: List[AclReference] = []
+        for acl in self.acls:
+            if acl.resource_type == "SOURCE_RECORD" and acl.resource_id == doc.source_record_id:
+                acls.append(acl)
+            elif acl.resource_type == "DOCUMENT" and acl.resource_id == doc.id:
+                acls.append(acl)
+            elif acl.resource_type == "CHUNK" and acl.resource_id == chunk.id:
+                acls.append(acl)
+        if chunk.acl_references:
+            acls.extend(chunk.acl_references)
+        if doc.acl_references:
+            acls.extend(doc.acl_references)
+        return acls
+
     def search_lexical(
         self,
         query: str,
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
         if not query or not query.strip():
             return []
@@ -112,6 +311,11 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         for chunk in self.chunks.values():
             doc = self.documents.get(chunk.document_id)
             if not doc:
+                continue
+
+            # ACL permission filtering (AD-04) - applied before scoring and candidate limits
+            chunk_acls = self._get_applicable_acls(chunk, doc)
+            if not has_read_permission(chunk_acls, user_id=user_id, group_ids=group_ids):
                 continue
 
             # Filter by source_types if specified
@@ -183,6 +387,8 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         query_embedding: List[float],
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
         expected_dim = 1536
         if len(query_embedding) != expected_dim:
@@ -211,6 +417,11 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
 
             doc = self.documents.get(chunk.document_id)
             if not doc:
+                continue
+
+            # ACL permission filtering (AD-04) - applied before scoring and candidate limits
+            chunk_acls = self._get_applicable_acls(chunk, doc)
+            if not has_read_permission(chunk_acls, user_id=user_id, group_ids=group_ids):
                 continue
 
             if normalized_types and doc.source_type.upper() not in normalized_types:
@@ -442,18 +653,300 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                     )
             conn.commit()
 
+    def save_entities(self, entities: List[Entity]) -> None:
+        if not entities:
+            return
+
+        batch_anchors: Dict[str, Optional[str]] = {}
+
+        # 1. Intra-batch pre-validation pass
+        for entity in entities:
+            if entity.entity_type in {EntityType.TICKET.value, EntityType.EMPLOYEE.value}:
+                entity.source_record_id = None
+            elif entity.source_record_id is None:
+                raise ValueError(
+                    f"Anchored entity '{entity.id}' of type '{entity.entity_type}' requires a non-null source_record_id"
+                )
+
+            if entity.id in batch_anchors:
+                if batch_anchors[entity.id] != entity.source_record_id:
+                    raise ValueError(
+                        f"Provenance conflict within batch for entity '{entity.id}': "
+                        f"'{batch_anchors[entity.id]}' vs '{entity.source_record_id}'"
+                    )
+            else:
+                batch_anchors[entity.id] = entity.source_record_id
+
+        upsert_query = """
+            INSERT INTO entities (id, entity_type, name, source_record_id, metadata, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO UPDATE SET
+                name = EXCLUDED.name,
+                metadata = EXCLUDED.metadata
+            WHERE entities.source_record_id IS NOT DISTINCT FROM EXCLUDED.source_record_id
+            RETURNING id;
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.transaction():
+                    with conn.cursor() as cur:
+                        # 2. Pre-check existing persisted records in this transaction
+                        entity_ids = list(batch_anchors.keys())
+                        cur.execute(
+                            "SELECT id, source_record_id FROM entities WHERE id = ANY(%s);",
+                            (entity_ids,),
+                        )
+                        existing_rows = cur.fetchall()
+                        existing_map = {row[0]: row[1] for row in existing_rows}
+                        for entity in entities:
+                            if entity.id in existing_map:
+                                existing_src = existing_map[entity.id]
+                                if existing_src != entity.source_record_id:
+                                    raise ValueError(
+                                        f"Provenance conflict for entity '{entity.id}': "
+                                        f"existing source_record_id='{existing_src}', "
+                                        f"incoming source_record_id='{entity.source_record_id}'"
+                                    )
+
+                        # 3. Conflict-aware SQL execution
+                        for entity in entities:
+                            cur.execute(
+                                upsert_query,
+                                (
+                                    entity.id,
+                                    entity.entity_type,
+                                    entity.name,
+                                    entity.source_record_id,
+                                    json.dumps(entity.metadata),
+                                    entity.created_at,
+                                ),
+                            )
+                            row = cur.fetchone()
+                            if not row:
+                                # WHERE condition failed on conflict due to concurrent/unseen provenance divergence
+                                cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (entity.id,))
+                                res = cur.fetchone()
+                                actual_src = res[0] if res else "unknown"
+                                raise ValueError(
+                                    f"Provenance conflict for entity '{entity.id}': "
+                                    f"existing source_record_id='{actual_src}', "
+                                    f"incoming source_record_id='{entity.source_record_id}'"
+                                )
+        except DatabaseUnavailableError:
+            raise
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error("postgres_save_entities_failed err=%s", e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def save_relationships(self, relationships: List[Relationship]) -> None:
+        if not relationships:
+            return
+        query = """
+            INSERT INTO relationships (source_entity_id, target_entity_id, relationship_type, metadata, created_at)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (source_entity_id, target_entity_id, relationship_type) DO UPDATE SET
+                metadata = EXCLUDED.metadata;
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    for rel in relationships:
+                        cur.execute(
+                            query,
+                            (
+                                rel.source_entity_id,
+                                rel.target_entity_id,
+                                rel.relationship_type,
+                                json.dumps(rel.metadata),
+                                rel.created_at,
+                            ),
+                        )
+                conn.commit()
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_save_relationships_failed err=%s", e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def get_entity(
+        self,
+        entity_id: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> Optional[Entity]:
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT id, entity_type, name, source_record_id, metadata, created_at FROM entities WHERE id = %s;",
+                        (entity_id,),
+                    )
+                    row = cur.fetchone()
+                    if not row:
+                        return None
+
+                    eid, etype, name, s_rec_id, meta, created_at = row
+                    meta_dict = meta if isinstance(meta, dict) else json.loads(meta or "{}")
+                    entity = Entity(
+                        id=eid,
+                        entity_type=etype,
+                        name=name,
+                        source_record_id=s_rec_id,
+                        metadata=meta_dict,
+                        created_at=created_at,
+                    )
+
+                    clean_user = str(user_id).strip() if user_id is not None and str(user_id).strip() else None
+                    clean_groups = [str(g).strip() for g in group_ids if str(g).strip()] if group_ids else []
+
+                    principal_conditions = ["a.principal_type = 'PUBLIC'"]
+                    acl_params: List[Any] = []
+                    if clean_user:
+                        principal_conditions.append("(a.principal_type = 'USER' AND a.principal_id = %s)")
+                        acl_params.append(clean_user)
+                    if clean_groups:
+                        principal_conditions.append("(a.principal_type = 'GROUP' AND a.principal_id = ANY(%s))")
+                        acl_params.append(clean_groups)
+                    principals_sql = " OR ".join(principal_conditions)
+
+                    # 1. Anchored entity: verify its source_record_id ACL
+                    if entity.source_record_id is not None:
+                        check_query = f"""
+                            SELECT 1 FROM acl_references a
+                            WHERE UPPER(a.permission) = 'READ'
+                              AND a.resource_type = 'SOURCE_RECORD'
+                              AND a.resource_id = %s
+                              AND ({principals_sql})
+                            LIMIT 1;
+                        """
+                        cur.execute(check_query, tuple([entity.source_record_id] + acl_params))
+                        if cur.fetchone():
+                            return entity
+                        return None
+
+                    # 2. Unanchored entity (TICKET, EMPLOYEE): verify incident relationship to authorized source record
+                    incident_query = f"""
+                        SELECT 1
+                        FROM relationships r
+                        JOIN entities other ON (
+                            (r.source_entity_id = %s AND r.target_entity_id = other.id)
+                            OR (r.target_entity_id = %s AND r.source_entity_id = other.id)
+                        )
+                        JOIN acl_references a ON (
+                            a.resource_type = 'SOURCE_RECORD'
+                            AND a.resource_id = other.source_record_id
+                            AND UPPER(a.permission) = 'READ'
+                        )
+                        WHERE other.source_record_id IS NOT NULL
+                          AND ({principals_sql})
+                        LIMIT 1;
+                    """
+                    cur.execute(incident_query, tuple([entity_id, entity_id] + acl_params))
+                    if cur.fetchone():
+                        return entity
+                    return None
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_get_entity_failed entity_id=%s err=%s", entity_id, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def get_relationships_for_entity(
+        self,
+        entity_id: str,
+        relationship_type: Optional[str] = None,
+        direction: str = "OUTGOING",
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> List[Tuple[Relationship, Entity]]:
+        norm_dir = direction.upper().strip()
+        if norm_dir not in {"OUTGOING", "INCOMING", "BOTH"}:
+            raise ValueError(f"Invalid traversal direction '{direction}': must be OUTGOING, INCOMING, or BOTH")
+
+        start_entity = self.get_entity(entity_id, user_id=user_id, group_ids=group_ids)
+        if not start_entity:
+            return []
+
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    where_parts = []
+                    params: List[Any] = []
+
+                    if norm_dir == "OUTGOING":
+                        where_parts.append("r.source_entity_id = %s")
+                        params.append(entity_id)
+                    elif norm_dir == "INCOMING":
+                        where_parts.append("r.target_entity_id = %s")
+                        params.append(entity_id)
+                    elif norm_dir == "BOTH":
+                        where_parts.append("(r.source_entity_id = %s OR r.target_entity_id = %s)")
+                        params.extend([entity_id, entity_id])
+
+                    if relationship_type:
+                        where_parts.append("r.relationship_type = %s")
+                        params.append(relationship_type)
+
+                    query = f"""
+                        SELECT r.source_entity_id, r.target_entity_id, r.relationship_type, r.metadata, r.created_at
+                        FROM relationships r
+                        WHERE {" AND ".join(where_parts)}
+                        ORDER BY r.relationship_type, r.id;
+                    """
+                    cur.execute(query, tuple(params))
+                    rows = cur.fetchall()
+
+            results: List[Tuple[Relationship, Entity]] = []
+            for row in rows:
+                s_id, t_id, r_type, meta, created_at = row
+                meta_dict = meta if isinstance(meta, dict) else json.loads(meta or "{}")
+                rel = Relationship(
+                    source_entity_id=s_id,
+                    target_entity_id=t_id,
+                    relationship_type=r_type,
+                    metadata=meta_dict,
+                    created_at=created_at,
+                )
+                neighbor_id = t_id if s_id == entity_id else s_id
+                neighbor_entity = self.get_entity(neighbor_id, user_id=user_id, group_ids=group_ids)
+                if neighbor_entity:
+                    results.append((rel, neighbor_entity))
+
+            results.sort(key=lambda x: (x[0].relationship_type, x[1].id))
+            return results
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_get_relationships_for_entity_failed entity_id=%s err=%s", entity_id, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
     def search_lexical(
         self,
         query: str,
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
         if not query or not query.strip():
             return []
 
         cleaned_query = query.strip()
-        where_clauses = ["c.tsv @@ plainto_tsquery('english', %s)"]
-        params = [cleaned_query, cleaned_query]
+        acl_clause, acl_params = build_acl_where_clause(
+            user_id=user_id,
+            group_ids=group_ids,
+            doc_alias="d",
+            chunk_alias="c",
+            acl_alias="a",
+        )
+        where_clauses = [
+            "c.tsv @@ plainto_tsquery('english', %s)",
+            acl_clause,
+        ]
+        params: List[Any] = [cleaned_query, cleaned_query]
+        params.extend(acl_params)
         if source_types:
             where_clauses.append("d.source_type = ANY(%s)")
             params.append(source_types)
@@ -509,6 +1002,8 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         query_embedding: List[float],
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
         expected_dim = 1536
         if len(query_embedding) != expected_dim:
@@ -520,11 +1015,20 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         if q_norm == 0.0 or math.isclose(q_norm, 0.0, abs_tol=1e-12):
             return []
 
+        acl_clause, acl_params = build_acl_where_clause(
+            user_id=user_id,
+            group_ids=group_ids,
+            doc_alias="d",
+            chunk_alias="c",
+            acl_alias="a",
+        )
         where_clauses = [
             "c.embedding IS NOT NULL",
             "(- (c.embedding <#> c.embedding)) > 0",  # Exclude zero chunk vectors
+            acl_clause,
         ]
         params: List[Any] = [query_embedding]
+        params.extend(acl_params)
 
         if source_types:
             where_clauses.append("d.source_type = ANY(%s)")

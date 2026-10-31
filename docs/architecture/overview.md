@@ -50,25 +50,25 @@ Legend: `[x]` exists in Phase 1 · `[ ]` planned for a later phase
       ▼
 [x]   Query Orchestrator                        (SearchService base orchestrator)
       ▼
-[x]   ─── HTTP /internal/v1 ───▶ Python RAG service (POST /internal/v1/rag/search)
+[x]   ─── HTTP /internal/v1 ───▶ Python RAG service (POST /internal/v1/rag/search, POST /internal/v1/rag/ask)
       ▼
-[ ]   Query classification / expansion
+[x]   Query classification / expansion
       ▼
-[ ]   Parallel lexical + vector retrieval
+[x]   Parallel lexical + vector retrieval
       ▼
-[ ]   ACL filtering                ← permission invariant, AD-04
+[x]   ACL filtering                ← permission invariant, AD-04
       ▼
-[ ]   Relationship enrichment
+[x]   Relationship enrichment
       ▼
-[ ]   Merge / deduplicate
+[x]   Merge / deduplicate
       ▼
-[ ]   Rerank
+[x]   Rerank
       ▼
-[ ]   Evidence builder
+[x]   Evidence builder
       ▼
-[ ]   LLM                          ← receives filtered evidence only
+[x]   LLM                          ← receives filtered evidence only
       ▼
-[ ]   Cited answer
+[x]   Cited answer
       ▼
 [x]   Java API
       ▼
@@ -94,7 +94,7 @@ Legend: `[x]` exists in Phase 1 · `[ ]` planned for a later phase
       ▼
 [x]   ───────────────▶ PostgreSQL + pgvector (schema initialized & indexed)
       ▼
-[ ]   relationship extraction      AD-03: relational tables, no Neo4j
+[x]   relationship extraction      AD-03: relational tables, no Neo4j
       ▼
 [x]   sync checkpoint             (SyncStateRecord: SUCCESS/FAILED with retryable cursor)
 ```
@@ -104,8 +104,8 @@ Legend: `[x]` exists in Phase 1 · `[ ]` planned for a later phase
 ```text
 Phase 1  canonical schema, user context, API stubs  [COMPLETED]
 Phase 2  canonical ingestion + GitHub               [COMPLETED]
-Phase 3  hybrid retrieval + Slack
-Phase 4  permission enforcement + relationships + RAG
+Phase 3  hybrid retrieval + Slack                   [COMPLETED]
+Phase 4  permission enforcement + relationships + RAG [COMPLETED]
 Phase 5  email adapter + incremental sync + admin/audit
 Phase 6  evaluation + observability + demo
 ```

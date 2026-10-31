@@ -277,7 +277,11 @@ def test_hybrid_retriever_with_populated_repository():
         embedding_provider=embeddings,
     ).run()
 
-    retriever = HybridRetriever(repository=repo)
+    retriever = HybridRetriever(
+        repository=repo,
+        default_user_id="employee_42",
+        default_group_ids=["group_engineering", "group_backend"],
+    )
 
     # 1. Identifier query (DC-8692)
     results_id = retriever.search("DC-8692", limit=5)

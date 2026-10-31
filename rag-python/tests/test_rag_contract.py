@@ -16,6 +16,8 @@ from app.retrieval.hybrid import HybridRetriever
 
 EXPECTED_HEALTH_RESPONSE_KEYS = {"status", "service", "contractVersion", "message"}
 EXPECTED_SEARCH_RESPONSE_KEYS = {"status", "query", "totalResults", "results"}
+EXPECTED_ASK_RESPONSE_KEYS = {"question", "answer", "citations", "confidence", "status"}
+EXPECTED_CITATION_ITEM_KEYS = {"sourceType", "title", "url", "snippet"}
 
 
 def _post_contract(client: TestClient) -> dict:
@@ -110,3 +112,57 @@ def test_search_unknown_field_is_rejected() -> None:
             },
         )
     assert response.status_code == 422
+
+
+def test_ask_contract_response_matches_java_record() -> None:
+    from app.api.internal_rag import get_grounded_rag_service
+    from app.rag.service import GroundedRagService
+
+    app = create_app()
+    app.dependency_overrides[get_grounded_rag_service] = lambda: GroundedRagService(
+        retriever=HybridRetriever(InMemoryKnowledgeRepository())
+    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/internal/v1/rag/ask",
+            json={
+                "question": "why did we change validation",
+                "userId": "employee_42",
+                "groupIds": ["group_engineering", "group_backend"],
+                "sourceTypes": ["GITHUB", "SLACK"],
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body.keys()) == EXPECTED_ASK_RESPONSE_KEYS
+    assert body["question"] == "why did we change validation"
+    assert body["status"] in {"ANSWERED", "INSUFFICIENT_EVIDENCE"}
+    assert body["confidence"] in {"LOW", "MEDIUM"}
+    assert isinstance(body["citations"], list)
+
+
+def test_ask_missing_question_is_rejected() -> None:
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/internal/v1/rag/ask",
+            json={
+                "userId": "employee_42",
+                "groupIds": ["group_engineering"],
+            },
+        )
+    assert response.status_code == 422
+
+
+def test_ask_unknown_field_is_rejected() -> None:
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/internal/v1/rag/ask",
+            json={
+                "question": "test question",
+                "userId": "employee_42",
+                "unexpectedField": "rejected",
+            },
+        )
+    assert response.status_code == 422
+

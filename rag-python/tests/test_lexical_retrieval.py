@@ -43,7 +43,11 @@ def populated_repository() -> InMemoryKnowledgeRepository:
 
 @pytest.fixture
 def retriever(populated_repository: InMemoryKnowledgeRepository) -> LexicalRetriever:
-    return LexicalRetriever(populated_repository)
+    return LexicalRetriever(
+        populated_repository,
+        default_user_id="employee_42",
+        default_group_ids=["group_engineering", "group_backend"],
+    )
 
 
 # ---------------------------------------------------------------------------

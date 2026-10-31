@@ -1,5 +1,7 @@
 package com.company.knowledge.orchestrator.ragclient;
 
+import com.company.knowledge.orchestrator.ragclient.dto.RagAskRequest;
+import com.company.knowledge.orchestrator.ragclient.dto.RagAskResponse;
 import com.company.knowledge.orchestrator.ragclient.dto.RagHealthResponse;
 import com.company.knowledge.orchestrator.ragclient.dto.RagSearchRequest;
 import com.company.knowledge.orchestrator.ragclient.dto.RagSearchResponse;
@@ -31,4 +33,14 @@ public interface RagServiceClient {
      * @throws RagClientException if the RAG service rejects the request with a 4xx error
      */
     RagSearchResponse search(RagSearchRequest request);
+
+    /**
+     * Calls POST /internal/v1/rag/ask on the RAG service.
+     *
+     * @param request question request with identity context
+     * @return grounded RAG response containing synthesized answer and citations
+     * @throws RagServiceUnavailableException if the RAG service cannot be reached or returns 5xx
+     * @throws RagClientException if the RAG service rejects the request with a 4xx error
+     */
+    RagAskResponse ask(RagAskRequest request);
 }

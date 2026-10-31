@@ -2,6 +2,7 @@ package com.company.knowledge.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Set;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -12,8 +13,13 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * <p>Always provides employee_42 (Alex Engineer, Engineering & Backend groups)
  * unless an optional X-User-Id header is passed to simulate another identity
  * (e.g. employee_admin or a custom test user).
+ *
+ * <p>Restricted to development and testing profiles. In production, this bean
+ * is omitted and startup fails closed unless a real production authentication
+ * provider is configured.
  */
 @Component
+@Profile("!prod & (default | dev | test)")
 public class DeterministicUserProvider implements CurrentUserProvider {
 
     public static final String DEFAULT_USER_ID = "employee_42";

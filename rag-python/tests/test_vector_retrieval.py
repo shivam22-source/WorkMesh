@@ -54,6 +54,8 @@ def retriever(
     return VectorRetriever(
         repository=populated_repository,
         embedding_provider=embedding_provider,
+        default_user_id="employee_42",
+        default_group_ids=["group_engineering", "group_backend"],
     )
 
 

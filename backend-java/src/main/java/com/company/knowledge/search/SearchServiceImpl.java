@@ -2,7 +2,11 @@ package com.company.knowledge.search;
 
 import com.company.knowledge.audit.AuditService;
 import com.company.knowledge.auth.UserContext;
+import com.company.knowledge.orchestrator.ragclient.RagClientException;
 import com.company.knowledge.orchestrator.ragclient.RagServiceClient;
+import com.company.knowledge.orchestrator.ragclient.dto.RagAskRequest;
+import com.company.knowledge.orchestrator.ragclient.dto.RagAskResponse;
+import com.company.knowledge.orchestrator.ragclient.dto.RagCitationItem;
 import com.company.knowledge.orchestrator.ragclient.dto.RagSearchRequest;
 import com.company.knowledge.orchestrator.ragclient.dto.RagSearchResponse;
 import com.company.knowledge.search.dto.AskRequest;
@@ -89,11 +93,59 @@ public class SearchServiceImpl implements SearchService {
                 Map.of("question", request.question())
         );
 
-        // Phase 1 stub: LLM evidence synthesis and citation extraction is Phase 4
-        String answer = "Phase 1 stub: Query received for question '" + request.question()
-                + "'. Actual retrieval, permission filtering, and LLM answer synthesis will be active in Phase 4.";
+        RagAskRequest ragRequest = new RagAskRequest(
+                request.question(),
+                user.userId(),
+                user.groupIds(),
+                request.sourceTypes()
+        );
 
-        List<CitationItem> citations = Collections.emptyList();
-        return new AskResponse(request.question(), answer, citations, "LOW", "STUB");
+        RagAskResponse ragResponse = ragServiceClient.ask(ragRequest);
+
+        validateRagResponse(ragResponse);
+
+        List<CitationItem> citations = ragResponse.citations().stream()
+                .map(c -> new CitationItem(
+                        c.sourceType(),
+                        c.title(),
+                        c.url(),
+                        c.snippet()))
+                .toList();
+
+        return new AskResponse(
+                ragResponse.question(),
+                ragResponse.answer(),
+                citations,
+                ragResponse.confidence(),
+                ragResponse.status()
+        );
+    }
+
+    private void validateRagResponse(RagAskResponse response) {
+        if (response == null) {
+            throw new RagClientException("rag service returned null response");
+        }
+        if (isBlank(response.question())
+                || isBlank(response.answer())
+                || isBlank(response.confidence())
+                || isBlank(response.status())) {
+            throw new RagClientException("rag service returned incomplete or invalid top-level response payload");
+        }
+        if (response.citations() == null) {
+            throw new RagClientException("rag service returned null citations list");
+        }
+        for (RagCitationItem c : response.citations()) {
+            if (c == null
+                    || isBlank(c.sourceType())
+                    || isBlank(c.title())
+                    || isBlank(c.url())
+                    || isBlank(c.snippet())) {
+                throw new RagClientException("rag service returned null or malformed citation entry");
+            }
+        }
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 }

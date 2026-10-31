@@ -9,6 +9,7 @@ from app.chunking.source_aware_chunker import SourceAwareChunker
 from app.connectors.common.base import SourceConnector
 from app.connectors.common.models import AclReference, RawSourceItem, SourceType
 from app.embeddings.base import EmbeddingProvider
+from app.graph.extractor import extract_entities_and_relationships
 from app.indexing.models import SyncResult, SyncStateRecord
 from app.indexing.repository import KnowledgeRepository
 from app.normalization.github_normalizer import GitHubNormalizer
@@ -106,11 +107,14 @@ class IngestionPipeline:
                 for chunk, emb in zip(all_chunks, embeddings):
                     chunk.embedding = emb
 
-            # 6. Persist to repository
+            # 6. Extract and persist knowledge graph entities & relationships (AD-03)
+            entities, relationships = extract_entities_and_relationships(raw_items, docs)
             self.repository.save_source_records(raw_items)
             self.repository.save_documents(docs)
             self.repository.save_chunks(all_chunks)
             self.repository.save_acls(all_acls)
+            self.repository.save_entities(entities)
+            self.repository.save_relationships(relationships)
 
             # 7. Checkpoint cursor update
             completed_at = datetime.now(timezone.utc)

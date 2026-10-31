@@ -62,13 +62,26 @@ class HybridRetriever:
         vector_retriever: Optional[VectorRetriever] = None,
         query_classifier: Optional[QueryClassifier] = None,
         k: int = DEFAULT_RRF_K,
+        default_user_id: Optional[str] = None,
+        default_group_ids: Optional[List[str]] = None,
     ):
+        self.default_user_id = default_user_id
+        self.default_group_ids = default_group_ids
+
         if lexical_retriever is not None and vector_retriever is not None:
             self.lexical_retriever = lexical_retriever
             self.vector_retriever = vector_retriever
         elif repository is not None:
-            self.lexical_retriever = LexicalRetriever(repository)
-            self.vector_retriever = VectorRetriever(repository)
+            self.lexical_retriever = LexicalRetriever(
+                repository,
+                default_user_id=default_user_id,
+                default_group_ids=default_group_ids,
+            )
+            self.vector_retriever = VectorRetriever(
+                repository,
+                default_user_id=default_user_id,
+                default_group_ids=default_group_ids,
+            )
         else:
             raise ValueError("Either repository or both (lexical_retriever, vector_retriever) must be provided.")
 
@@ -80,13 +93,17 @@ class HybridRetriever:
         query: str,
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
-        """Execute hybrid search with reciprocal rank fusion.
+        """Execute hybrid search with reciprocal rank fusion and ACL enforcement.
 
         Args:
             query: User search query string.
             limit: Maximum number of fused results to return.
             source_types: Optional list of source systems to filter by (e.g. ['SLACK', 'GITHUB']).
+            user_id: Optional authenticated employee ID for ACL evaluation.
+            group_ids: Optional list of groups the employee belongs to for ACL evaluation.
 
         Returns:
             Deduplicated list of RagSearchResultItem records ranked by RRF score descending.
@@ -95,29 +112,38 @@ class HybridRetriever:
         if not query or not query.strip():
             return []
 
+        effective_user_id = user_id if user_id is not None else self.default_user_id
+        effective_group_ids = group_ids if group_ids is not None else self.default_group_ids
+
         cleaned_query = query.strip()
         classification = self.query_classifier.classify(cleaned_query)
         logger.debug(
-            "hybrid_search_started query='%s' type=%s limit=%d source_types=%s",
+            "hybrid_search_started query='%s' type=%s limit=%d source_types=%s user_id=%s groups=%s",
             cleaned_query,
             classification.query_type.value,
             limit,
             source_types,
+            effective_user_id,
+            effective_group_ids,
         )
 
         # Candidate pool size: retrieve a wider pool from each source to allow RRF overlap
         candidate_pool_limit = max(limit * 2, 20)
 
-        # Execute both retrievers with pushdown metadata filtering
+        # Execute both retrievers with pushdown metadata & ACL filtering
         lexical_candidates = self.lexical_retriever.search(
             query=cleaned_query,
             limit=candidate_pool_limit,
             source_types=source_types,
+            user_id=effective_user_id,
+            group_ids=effective_group_ids,
         )
         vector_candidates = self.vector_retriever.search(
             query=cleaned_query,
             limit=candidate_pool_limit,
             source_types=source_types,
+            user_id=effective_user_id,
+            group_ids=effective_group_ids,
         )
 
         # Fuse and deduplicate results

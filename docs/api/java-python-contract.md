@@ -28,7 +28,8 @@ until every caller has moved. Adding an optional field is not a breaking change.
 | GET | `/health` | Liveness. Process is up. | none |
 | GET | `/ready` | Readiness. Process can do real work. | none |
 | POST | `/internal/v1/rag/health` | Contract round-trip check. | none |
-| POST | `/internal/v1/rag/search` | Search stub carrying identity context. | none |
+| POST | `/internal/v1/rag/search` | Search carrying identity context. | none |
+| POST | `/internal/v1/rag/ask` | Grounded RAG with citations and identity context. | none |
 
 ## POST /internal/v1/rag/health
 
@@ -102,6 +103,49 @@ Each result item in `results` (when populated in Phase 3) has the shape:
   "score": 0.92
 }
 ```
+
+## POST /internal/v1/rag/ask (Phase 4)
+
+Carries authenticated employee identity and resolved team group IDs to synthesize an extractive answer from permission-filtered evidence only.
+
+Request:
+
+```json
+{
+  "question": "why did DC-8692 change the validation flow?",
+  "userId": "employee_42",
+  "groupIds": ["group_engineering", "group_backend"],
+  "sourceTypes": ["GITHUB", "SLACK"]
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `question` | string | yes | User question string. |
+| `userId` | string | yes | Authenticated employee identity. |
+| `groupIds` | array of strings | yes | Resolved team group IDs for ACL evaluation. |
+| `sourceTypes` | array of strings | no | Optional filter by source system. |
+
+Response `200`:
+
+```json
+{
+  "question": "why did DC-8692 change the validation flow?",
+  "answer": "According to the available evidence: Ticket DC-8692 resolved validation issues [1].",
+  "citations": [
+    {
+      "sourceType": "GITHUB",
+      "title": "Fix validation flow",
+      "url": "https://github.com/company/repo/pull/123",
+      "snippet": "Ticket DC-8692 resolved validation issues with defensive checks."
+    }
+  ],
+  "confidence": "MEDIUM",
+  "status": "ANSWERED"
+}
+```
+
+If zero authorized candidates exist or evidence is insufficient, `status` is `"INSUFFICIENT_EVIDENCE"`, `confidence` is `"LOW"`, and `citations` is `[]`.
 
 ## Error shape
 

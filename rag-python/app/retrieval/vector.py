@@ -23,15 +23,21 @@ class VectorRetriever:
         self,
         repository: KnowledgeRepository,
         embedding_provider: Optional[EmbeddingProvider] = None,
+        default_user_id: Optional[str] = None,
+        default_group_ids: Optional[List[str]] = None,
     ):
         self.repository = repository
         self.embedding_provider = embedding_provider or get_embedding_provider()
+        self.default_user_id = default_user_id
+        self.default_group_ids = default_group_ids
 
     def search(
         self,
         query: str,
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
         """Execute vector similarity search for a text query.
 
@@ -46,6 +52,8 @@ class VectorRetriever:
             query_embedding=query_embedding,
             limit=limit,
             source_types=source_types,
+            user_id=user_id,
+            group_ids=group_ids,
         )
 
     def search_by_vector(
@@ -53,8 +61,10 @@ class VectorRetriever:
         query_embedding: List[float],
         limit: int = 10,
         source_types: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
-        """Execute vector similarity search using a pre-computed embedding vector."""
+        """Execute vector similarity search using a pre-computed embedding vector enforcing ACLs."""
         expected_dim = self.embedding_provider.dimension
         if len(query_embedding) != expected_dim:
             raise ValueError(
@@ -65,9 +75,20 @@ class VectorRetriever:
         if q_norm == 0.0 or math.isclose(q_norm, 0.0, abs_tol=1e-12):
             return []
 
-        logger.debug("vector_search_executing limit=%d source_types=%s", limit, source_types)
+        effective_user_id = user_id if user_id is not None else self.default_user_id
+        effective_group_ids = group_ids if group_ids is not None else self.default_group_ids
+
+        logger.debug(
+            "vector_search_executing limit=%d source_types=%s user_id=%s groups=%s",
+            limit,
+            source_types,
+            effective_user_id,
+            effective_group_ids,
+        )
         return self.repository.search_vector(
             query_embedding=query_embedding,
             limit=limit,
             source_types=source_types,
+            user_id=effective_user_id,
+            group_ids=effective_group_ids,
         )

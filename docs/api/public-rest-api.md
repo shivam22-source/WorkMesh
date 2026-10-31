@@ -64,15 +64,36 @@ Asks a question and receives an explanation synthesized from permission-filtered
 | `question` | string | yes | Cannot be blank. |
 | `sourceTypes` | array of strings | no | Optional filter. |
 
-### Response `200 OK`
+### Response `200 OK` (Grounded Answer)
 
 ```json
 {
   "question": "why did we change the validation flow?",
-  "answer": "Phase 1 stub: Query received for question 'why did we change the validation flow?'. Actual retrieval, permission filtering, and LLM answer synthesis will be active in Phase 4.",
+  "answer": "We changed the validation flow to enforce strict profile fail-closed checks on startup and validate all citation attributes.",
+  "citations": [
+    {
+      "sourceType": "GITHUB",
+      "title": "PR #104: Enforce strict auth profile checks",
+      "url": "https://github.com/company/repo/pull/104",
+      "snippet": "Enforces strict fail-closed auth provider registration when prod profile is active."
+    }
+  ],
+  "confidence": "MEDIUM",
+  "status": "ANSWERED"
+}
+```
+
+### Response `200 OK` (Insufficient Evidence)
+
+When no permitted evidence or high-relevance chunks are retrieved, the grounded RAG subsystem declines to speculate and returns:
+
+```json
+{
+  "question": "what is the secret roadmap for 2030?",
+  "answer": "I do not have sufficient information in the permitted documents to answer this question.",
   "citations": [],
   "confidence": "LOW",
-  "status": "STUB"
+  "status": "INSUFFICIENT_EVIDENCE"
 }
 ```
 

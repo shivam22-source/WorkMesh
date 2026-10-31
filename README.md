@@ -4,22 +4,21 @@ Permission-aware enterprise knowledge search: two application services over one
 PostgreSQL + pgvector datastore.
 
 Built as a 6-phase learning + implementation journey. This repository is
-currently at **Phase 2** — ingestion pipeline and GitHub knowledge connector.
+currently at **Phase 4** — permission enforcement, knowledge graph relationships, grounded RAG, and Java backend integration.
 
-## Status: Phase 2
+## Status: Phase 4
 
 | Area | State |
 |---|---|
-| `backend-java` (Spring Boot, Java 21) | REST base API (`/search`, `/ask`, `/sync/status`), deterministic auth stub (`employee_42`), audit logging, RAG client |
-| `rag-python` (FastAPI, Python 3.12+) | Health/readiness, contract stubs, connector interface, canonical normalization, chunking, embeddings, pgvector indexing, CLI |
+| `backend-java` (Spring Boot, Java 21) | REST public API (`/search`, `/ask`, `/sync/status`), deterministic auth stub (`employee_42`, `@Profile("!prod & (default | dev | test)")`), upfront audit logging, RAG service client (`/health`, `/search`, `/ask`), strict response/citation validation, fail-closed production profile safeguard |
+| `rag-python` (FastAPI, Python 3.12+) | Health/readiness, contract endpoints (`/health`, `/search`, `/ask`), connector interface, canonical normalization, chunking, embeddings, pgvector indexing, CLI, pushdown ACL enforcement, entity/relationship extraction, candidate-grounded reranker, evidence builder, mock LLM, citation extractor |
 | PostgreSQL + pgvector | Canonical schema (`V001__canonical_schema.sql`): users, groups, source_records, documents, chunks, acl_references, sync_state, audit_events, entities, relationships |
-| Connectors | GitHub (fixture adapter + API adapter), ticket reference extraction (`DC-8692`) |
+| Connectors | GitHub (fixture adapter + API adapter), Slack (fixture adapter), ticket reference extraction (`DC-8692`) |
 | Embeddings | Provider abstraction (`MockEmbeddingProvider` unit-normalized 1536-dim vectors, factory for future OpenAI integration) |
-| Incremental Sync | Checkpoint tracking, cursor advancement, retryable failure state |
-| Retrieval & LLM synthesis | **Not built** — arrives in Phases 3 & 4 |
+| Retrieval & Reranking | Query classification, parallel lexical (tsvector) + vector (pgvector) retrieval with RRF fusion, pushdown ACL filtering, candidate-grounded graph boost, two-phase deterministic diversity discounting |
+| Grounded RAG & Citations | Numbered evidence builder (5 items, 400 chars, no raw graph metadata), offline deterministic extractive Mock LLM, bracketed citation extraction and URL mapping, Java-Python integration |
 
-Nothing in this repository can return a fabricated answer yet: there is no
-retrieval code, no LLM call, and no prompt-based access control.
+Answers are synthesized strictly from permission-filtered retrieved evidence with bracketed citations. Prompt-based access control is never trusted, and ungrounded speculation is prevented by declining to answer when evidence is insufficient.
 
 ## Architecture
 
@@ -104,9 +103,9 @@ curl http://localhost:8080/api/v1/sync/status
 ## Tests
 
 ```bash
-make test           # both suites (37 total tests)
-make test-backend   # 18 JUnit tests
-make test-rag       # 19 pytest tests
+make test           # both suites (249 total tests)
+make test-backend   # 51 JUnit tests
+make test-rag       # 198 pytest tests
 ```
 
 Neither suite requires PostgreSQL, Docker, or the other service. All tests run
@@ -170,8 +169,8 @@ scripts/               preflight check
 ```text
 Phase 1  canonical schema, user context, API stubs  [COMPLETED]
 Phase 2  canonical ingestion + GitHub               [COMPLETED]
-Phase 3  hybrid retrieval + Slack
-Phase 4  permission enforcement + relationships + RAG
+Phase 3  hybrid retrieval + Slack                   [COMPLETED]
+Phase 4  permission enforcement + relationships + RAG [COMPLETED]
 Phase 5  email adapter + incremental sync + admin/audit
 Phase 6  evaluation + observability + demo
 ```
