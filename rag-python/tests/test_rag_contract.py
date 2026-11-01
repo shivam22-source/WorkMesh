@@ -16,7 +16,7 @@ from app.retrieval.hybrid import HybridRetriever
 
 EXPECTED_HEALTH_RESPONSE_KEYS = {"status", "service", "contractVersion", "message"}
 EXPECTED_SEARCH_RESPONSE_KEYS = {"status", "query", "totalResults", "results"}
-EXPECTED_ASK_RESPONSE_KEYS = {"question", "answer", "citations", "confidence", "status"}
+EXPECTED_ASK_RESPONSE_KEYS = {"question", "answer", "citations", "confidence", "status", "latencyBreakdownMs"}
 EXPECTED_CITATION_ITEM_KEYS = {"sourceType", "title", "url", "snippet"}
 
 

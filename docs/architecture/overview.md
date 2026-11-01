@@ -1,41 +1,42 @@
-# Architecture Overview (Phase 1)
+# Architecture Overview (Phase 6 Complete)
 
 Source of truth: `01_architecture_decisions.md` in the journey package. This file
-renders those flows and marks what actually exists.
+renders those flows and confirms that all components are fully implemented and verified.
 
-Legend: `[x]` exists in Phase 1 · `[ ]` planned for a later phase
+Legend: `[x]` verified complete across Phases 1–6
 
 ## The two services
 
 ```text
                 ┌────────────────────────────────────────────┐
-  employee ───▶ │  backend-java  (Spring Boot, :8080)        │
+  employee ───▶ │  backend-java  (Spring Boot 3.5, Java 21) │
                 │                                            │
-                │  auth + user context [x] (stub)            │
-                │  permission decisions [ ]                  │
-                │  REST APIs, orchestration [x] (stubs)      │
-                │  audit + admin endpoints [x] (stubs)       │
+                │  auth + user context [x]                   │
+                │  admin role verification [x]               │
+                │  REST APIs & orchestration [x]             │
+                │  durable audit persistence [x]             │
+                │  admin sync & audit endpoints [x]          │
                 └───────────────────┬────────────────────────┘
-                                    │  HTTP, /internal/v1  [x] contract stubs (health, search)
+                                    │  HTTP, /internal/v1 [x] wire contracts
                                     ▼
                 ┌────────────────────────────────────────────┐
-                │  rag-python  (FastAPI, :8000)              │
+                │  rag-python  (FastAPI, Python 3.12)        │
                 │                                            │
-                │  connectors [ ]   normalization [ ]        │
-                │  chunking [ ]      embeddings [ ]          │
-                │  retrieval [ ]     reranking [ ]           │
-                │  relationships [ ] LLM [ ]                 │
-                │  evaluation [ ]                            │
+                │  connectors [x] (GitHub, Slack, Email)     │
+                │  normalization [x]  chunking [x]           │
+                │  embeddings [x]     hybrid retrieval [x]   │
+                │  reranking [x]      relationships [x]      │
+                │  grounded LLM [x]   citations [x]          │
+                │  evaluation & benchmark [x]                │
                 └───────────────────┬────────────────────────┘
                                     │
                                     ▼
                 ┌────────────────────────────────────────────┐
-                │  PostgreSQL + pgvector                     │
+                │  PostgreSQL 16 + pgvector                  │
                 │  users, groups [x]   sources [x]           │
                 │  documents, chunks [x]  acl refs [x]       │
-                │  sync state [x]      audit [x]             │
-                │  relationships [x]                         │
-                │  vector extension [x]                      │
+                │  sync state [x]      audit logs [x]        │
+                │  relationships [x]   vector extension [x]  │
                 └────────────────────────────────────────────┘
 ```
 
@@ -46,31 +47,33 @@ Legend: `[x]` exists in Phase 1 · `[ ]` planned for a later phase
       ▼
 [x]   Java Spring Boot API                      backend-java (/api/v1/search, /api/v1/ask)
       ▼
-[x]   Authentication + user context             (Phase 1 deterministic local context)
+[x]   Authentication + user context             (Role-aware deterministic identity provider)
       ▼
-[x]   Query Orchestrator                        (SearchService base orchestrator)
+[x]   Query Orchestrator                        (SearchServiceImpl orchestrating RAG client)
       ▼
 [x]   ─── HTTP /internal/v1 ───▶ Python RAG service (POST /internal/v1/rag/search, POST /internal/v1/rag/ask)
       ▼
-[x]   Query classification / expansion
+[x]   Query classification / expansion         (Identifier vs semantic query classification)
       ▼
-[x]   Parallel lexical + vector retrieval
+[x]   Parallel lexical + vector retrieval       (PostgreSQL tsvector + pgvector dense cosine)
       ▼
-[x]   ACL filtering                ← permission invariant, AD-04
+[x]   Pre-LLM Pushdown ACL filtering            (AD-04: strict SQL security boundary, 0% leak rate)
       ▼
-[x]   Relationship enrichment
+[x]   Relationship enrichment                   (AD-03: candidate-grounded relational graph boost)
       ▼
-[x]   Merge / deduplicate
+[x]   Merge / deduplicate                       (Reciprocal Rank Fusion - RRF)
       ▼
-[x]   Rerank
+[x]   Deterministic Rerank                      (Token bonuses, graph boosts, source diversity)
       ▼
-[x]   Evidence builder
+[x]   Evidence builder                          (Numbered context, max 5 items, max 400 chars)
       ▼
-[x]   LLM                          ← receives filtered evidence only
+[x]   LLM synthesis                             (Evidence-only extraction prompt, no hallucinations)
       ▼
-[x]   Cited answer
+[x]   Citation extraction & validation          (Structured citations mapping claims to source URLs)
       ▼
-[x]   Java API
+[x]   Durable Audit Logging                     (PostgreSQL audit persistence with SLF4J fallback)
+      ▼
+[x]   Java API Response                         (Clean AskResponse with status, answer, citations)
       ▼
 [x]   Employee
 ```
@@ -78,34 +81,34 @@ Legend: `[x]` exists in Phase 1 · `[ ]` planned for a later phase
 ## Offline ingestion path
 
 ```text
-[x] GitHub [x] (Slack / Email [ ])
+[x] Sources: GitHub [x] · Slack [x] · Email [x]
       ▼
-[x]   connector                   AD-07: same interface per source (GitHubFixtureAdapter, GitHubApiAdapter)
+[x]   connector                   AD-07: unified SourceConnector (fixtures + live adapters)
       ▼
-[x]   incremental change detection (cursor checkpoint in sync_state)
+[x]   incremental sync & leases   (Atomic sync lease fencing, cursor checkpoint in sync_state)
       ▼
-[x]   canonical document          (GitHubNormalizer -> CanonicalDocument)
+[x]   canonical document          (Normalizers -> CanonicalDocument with stable metadata)
       ▼
-[x]   source-aware chunking       (SourceAwareChunker -> CanonicalChunk with stable IDs & SHA-256)
+[x]   source-aware chunking       (SourceAwareChunker -> CanonicalChunk with deterministic SHA-256)
       ▼
-[x]   ACL metadata extraction     (inherited per chunk and resource)
+[x]   ACL metadata extraction     (Explicit user IDs, group IDs, inherited permissions)
       ▼
 [x]   embedding                   (EmbeddingProvider -> MockEmbeddingProvider, unit-normalized)
       ▼
-[x]   ───────────────▶ PostgreSQL + pgvector (schema initialized & indexed)
+[x]   ───────────────▶ PostgreSQL + pgvector (Transactional batch upsert with cursor update)
       ▼
-[x]   relationship extraction      AD-03: relational tables, no Neo4j
+[x]   relationship extraction     AD-03: relational tables, cross-system entity links
       ▼
 [x]   sync checkpoint             (SyncStateRecord: SUCCESS/FAILED with retryable cursor)
 ```
 
-## Order of work
+## Implementation Milestones
 
 ```text
-Phase 1  canonical schema, user context, API stubs  [COMPLETED]
-Phase 2  canonical ingestion + GitHub               [COMPLETED]
-Phase 3  hybrid retrieval + Slack                   [COMPLETED]
-Phase 4  permission enforcement + relationships + RAG [COMPLETED]
-Phase 5  email adapter + incremental sync + admin/audit
-Phase 6  evaluation + observability + demo
+Phase 1  canonical schema, user context, API stubs                [COMPLETED]
+Phase 2  canonical ingestion + GitHub connector                   [COMPLETED]
+Phase 3  hybrid retrieval + Slack connector                       [COMPLETED]
+Phase 4  permission enforcement + relationships + Grounded RAG    [COMPLETED]
+Phase 5  email adapter + incremental sync + admin sync & audit    [COMPLETED]
+Phase 6  evaluation benchmark + observability + docker demo       [COMPLETED]
 ```

@@ -61,3 +61,9 @@ class RagAskResponse(BaseModel):
     citations: List[CitationItem] = Field(default_factory=list)
     confidence: Literal["LOW", "MEDIUM"]
     status: Literal["ANSWERED", "INSUFFICIENT_EVIDENCE"]
+    latency_breakdown_ms: Optional[dict[str, float]] = Field(
+        default=None,
+        validation_alias=AliasChoices("latencyBreakdownMs", "latency_breakdown_ms"),
+        serialization_alias="latencyBreakdownMs",
+        description="Timing breakdown in milliseconds across retrieval, reranking, evidence, and LLM.",
+    )

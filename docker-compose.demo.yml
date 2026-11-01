@@ -1,0 +1,71 @@
+name: workmesh-demo
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ekr-postgres-demo
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-knowledge}
+      POSTGRES_USER: ${POSTGRES_USER:-knowledge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_only_change_me}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata_demo:/var/lib/postgresql/data
+      - ./infra/docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-knowledge} -d ${POSTGRES_DB:-knowledge}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - mesh-network
+
+  rag-python:
+    build:
+      context: .
+      dockerfile: rag-python/Dockerfile
+    container_name: ekr-rag-python-demo
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-knowledge}:${POSTGRES_PASSWORD:-local_dev_only_change_me}@postgres:5432/${POSTGRES_DB:-knowledge}
+      POSTGRES_USER: ${POSTGRES_USER:-knowledge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_only_change_me}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-knowledge}
+      ENVIRONMENT: production
+    volumes:
+      - ./data:/app/data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mesh-network
+
+  backend-java:
+    build:
+      context: ./backend-java
+      dockerfile: Dockerfile
+    container_name: ekr-backend-java-demo
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      RAG_BASE_URL: http://rag-python:8000
+      RAG_CONNECT_TIMEOUT: 5s
+      RAG_READ_TIMEOUT: 15s
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rag-python
+    networks:
+      - mesh-network
+
+networks:
+  mesh-network:
+    driver: bridge
+
+volumes:
+  pgdata_demo:

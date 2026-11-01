@@ -1,0 +1,148 @@
+[
+  {
+    "id": "eval-001",
+    "query": "DC-8692",
+    "query_type": "identifier",
+    "description": "Exact ticket identifier linking Slack discussion, GitHub PR, and Email thread",
+    "expected_authoritative_sources": [
+      "https://github.com/company/payment-service/pull/123",
+      "https://company.slack.com/archives/C0123PAY/p1697364000000100"
+    ],
+    "expected_keywords": ["DC-8692", "validation", "payment"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-002",
+    "query": "commit 8af2d1e94b2a8d3e",
+    "query_type": "identifier",
+    "description": "Exact git commit identifier for null check in payment card verification",
+    "expected_authoritative_sources": [
+      "https://github.com/company/payment-service/commit/8af2d1e94b2a8d3e"
+    ],
+    "expected_keywords": ["8af2d1e94b2a8d3e", "verification", "NullPointer"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-003",
+    "query": "PaymentValidationService",
+    "query_type": "identifier",
+    "description": "Code class identifier for payment validation logic",
+    "expected_authoritative_sources": [
+      "https://github.com/company/payment-service/pull/123",
+      "https://github.com/company/payment-service/commit/8af2d1e94b2a8d3e"
+    ],
+    "expected_keywords": ["PaymentValidationService", "validation"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-004",
+    "query": "why did we change the validation flow?",
+    "query_type": "semantic",
+    "description": "Semantic query explaining why empty card verification payloads were changed from HTTP 500 to 400",
+    "expected_authoritative_sources": [
+      "https://company.slack.com/archives/C0123PAY/p1697364000000100",
+      "https://github.com/company/payment-service/pull/123"
+    ],
+    "expected_keywords": ["validation", "token", "400", "NullPointerException"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-005",
+    "query": "checkout validation error NullPointerException",
+    "query_type": "semantic",
+    "description": "Incident diagnosis query about checkout failure and stack trace root cause",
+    "expected_authoritative_sources": [
+      "https://company.slack.com/archives/C0123PAY/p1697364000000100",
+      "https://github.com/company/payment-service/pull/123"
+    ],
+    "expected_keywords": ["checkout", "NullPointerException", "PaymentValidationService"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-006",
+    "query": "show discussion and implementation DC-8692",
+    "query_type": "cross_source",
+    "description": "Cross-source synthesis across Slack design discussion and GitHub pull request",
+    "expected_authoritative_sources": [
+      "https://company.slack.com/archives/C0123PAY/p1697364000000100",
+      "https://github.com/company/payment-service/pull/123"
+    ],
+    "expected_keywords": ["DC-8692", "Slack", "PR"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-007",
+    "query": "Validation Flow Refactor for DC-8692",
+    "query_type": "cross_source",
+    "description": "Cross-source query connecting Email thread subject with Slack and GitHub references",
+    "expected_authoritative_sources": [
+      "https://mail.company.internal/mail/alex.engineer/sent/msg-101",
+      "https://company.slack.com/archives/C0123PAY/p1697364000000100"
+    ],
+    "expected_keywords": ["validation", "DC-8692", "spec"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-008",
+    "query": "Confidential Project Phoenix Briefing",
+    "query_type": "permission_isolation",
+    "description": "Restricted email inquiry verifying Alex has access and unauthorized user has zero leaks",
+    "expected_authoritative_sources": [
+      "https://mail.company.internal/mail/alex.engineer/sent/msg-201"
+    ],
+    "expected_keywords": ["Phoenix", "design", "leads"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": [],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-009",
+    "query": "Q3 Departmental Financial Summary",
+    "query_type": "permission_isolation",
+    "description": "Financial reports email verifying group ACL enforcement for finance",
+    "expected_authoritative_sources": [
+      "https://mail.company.internal/mail/alex.engineer/finance_reports/msg-301"
+    ],
+    "expected_keywords": ["Q3", "expenditure", "numbers"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_finance", "group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  },
+  {
+    "id": "eval-010",
+    "query": "External Vendor SLA Update",
+    "query_type": "semantic",
+    "description": "External vendor maintenance notification in Alex's inbox",
+    "expected_authoritative_sources": [
+      "https://mail.company.internal/mail/alex.engineer/inbox/msg-401"
+    ],
+    "expected_keywords": ["vendor", "maintenance", "weekend"],
+    "authorized_user_id": "employee_42",
+    "authorized_group_ids": ["group_engineering"],
+    "unauthorized_user_id": "unauthorized_user_99",
+    "unauthorized_group_ids": []
+  }
+]

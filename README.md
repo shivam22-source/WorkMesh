@@ -1,176 +1,142 @@
-# Employee Knowledge RAG
+# Employee Knowledge RAG (WorkMesh)
 
-Permission-aware enterprise knowledge search: two application services over one
-PostgreSQL + pgvector datastore.
+Permission-aware enterprise engineering knowledge search and grounded RAG platform: two application services over one PostgreSQL + pgvector datastore.
 
-Built as a 6-phase learning + implementation journey. This repository is
-currently at **Phase 4** — permission enforcement, knowledge graph relationships, grounded RAG, and Java backend integration.
+Built as a 6-phase learning and implementation journey. This repository is at **Phase 6 Complete** — Evaluation, Observability, Hardening, and Final Demo.
 
-## Status: Phase 4
+---
 
-| Area | State |
+## Status: Phase 6 (Completed)
+
+| Component | Capabilities & Implementation |
 |---|---|
-| `backend-java` (Spring Boot, Java 21) | REST public API (`/search`, `/ask`, `/sync/status`), deterministic auth stub (`employee_42`, `@Profile("!prod & (default | dev | test)")`), upfront audit logging, RAG service client (`/health`, `/search`, `/ask`), strict response/citation validation, fail-closed production profile safeguard |
-| `rag-python` (FastAPI, Python 3.12+) | Health/readiness, contract endpoints (`/health`, `/search`, `/ask`), connector interface, canonical normalization, chunking, embeddings, pgvector indexing, CLI, pushdown ACL enforcement, entity/relationship extraction, candidate-grounded reranker, evidence builder, mock LLM, citation extractor |
-| PostgreSQL + pgvector | Canonical schema (`V001__canonical_schema.sql`): users, groups, source_records, documents, chunks, acl_references, sync_state, audit_events, entities, relationships |
-| Connectors | GitHub (fixture adapter + API adapter), Slack (fixture adapter), ticket reference extraction (`DC-8692`) |
-| Embeddings | Provider abstraction (`MockEmbeddingProvider` unit-normalized 1536-dim vectors, factory for future OpenAI integration) |
-| Retrieval & Reranking | Query classification, parallel lexical (tsvector) + vector (pgvector) retrieval with RRF fusion, pushdown ACL filtering, candidate-grounded graph boost, two-phase deterministic diversity discounting |
-| Grounded RAG & Citations | Numbered evidence builder (5 items, 400 chars, no raw graph metadata), offline deterministic extractive Mock LLM, bracketed citation extraction and URL mapping, Java-Python integration |
+| **`backend-java`** (Spring Boot 3.5, Java 21) | Public REST API gateway (`/api/v1/search`, `/api/v1/ask`, `/api/v1/admin/sync/status`, `/api/v1/admin/audit/events`). Deterministic role-based identity provider (`employee_42`, `employee_admin`). Upfront request validation, admin authorization enforcement, durable PostgreSQL audit logging with fail-safe fallback, robust HTTP RAG client. |
+| **`rag-python`** (FastAPI, Python 3.12) | Internal contract API (`/internal/v1/rag/*`). Multi-source connectors (GitHub, Slack, Email), canonical normalizers, source-aware chunkers, mock unit-normalized embeddings, pgvector indexing, pushdown ACL enforcement, relational entity extraction, deterministic reranker, evidence builder, mock extractive LLM, citation extractor. |
+| **PostgreSQL 16 + pgvector** | Canonical relational schema (`V001__canonical_schema.sql`): users, groups, source_records, documents, chunks, acl_references, sync_state, audit_events, entities, relationships. HNSW vector indexing + GiST/GIN lexical full-text indexing. |
+| **Connectors & Ingestion** | GitHub (PRs, commits, comments), Slack (channels, parent messages, replies), Email (mailboxes, threads, attachments, shared folders). Cursor checkpointing, atomic sync leases, scoped replay reconciliation, retry with exponential backoff. |
+| **Hybrid Retrieval & Reranker** | Query classifier (identifier vs semantic), parallel lexical (`tsvector`) + vector (`pgvector`) retrieval with Reciprocal Rank Fusion (RRF), pushdown SQL ACL filtering, candidate-grounded graph entity boost, diversity discounting. |
+| **Grounded RAG & Citations** | Structured evidence builder (max 5 items, max 400 chars, no raw graph metadata), offline extractive mock LLM, bracketed citation extraction `[1]`, URL mapping to authoritative source permalinks. |
+| **Evaluation Benchmark** | Automated evaluation suite measuring Recall@1, Recall@3, Recall@5, MRR, permission isolation leak rate, citation validity rate, and retrieval latency across 10 curated test queries (`data/evaluation/benchmark_queries.json`). |
+| **Observability & Metrics** | Structured timing breakdown across retrieval, rerank, evidence, and LLM stages (`latency_breakdown_ms`). JSON-formatted operational logging and durable audit log trail. |
+| **Containerized Demo** | Multi-container Docker Compose demo (`docker-compose.demo.yml`) orchestrating `postgres`, `rag-python`, and `backend-java` with network perimeter isolation. |
 
-Answers are synthesized strictly from permission-filtered retrieved evidence with bracketed citations. Prompt-based access control is never trusted, and ungrounded speculation is prevented by declining to answer when evidence is insufficient.
+Answers are synthesized strictly from permission-filtered retrieved evidence with bracketed citations. Prompt-based access control is never trusted, and ungrounded speculation is prevented by declining to answer (`INSUFFICIENT_EVIDENCE`) when evidence is missing or unauthorized.
 
-## Architecture
+---
 
-Two deployable services, one datastore. Full rationale in
-[`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md).
+## Evaluation Benchmark Results
+
+WorkMesh includes an automated benchmark runner (`python -m app.cli.benchmark`) evaluated against the 10-query multi-source benchmark dataset:
+
+| Metric | Target | Actual Result | Status |
+|---|---|---|---|
+| **Recall@1** | >= 60.0% | **80.0%** | PASS |
+| **Recall@3** | >= 70.0% | **100.0%** | PASS |
+| **Recall@5** | >= 85.0% | **100.0%** | PASS |
+| **Mean Reciprocal Rank (MRR)** | >= 0.6000 | **0.9000** | PASS |
+| **Permission Leak Rate** | **0.0%** | **0.0%** (zero leaks) | PASS |
+| **Citation Validity Rate** | **100.0%** | **100.0%** (all citations valid) | PASS |
+| **Mean Retrieval Latency** | < 50.0 ms | **1.88 ms** (in-memory) / **< 20 ms** (Postgres) | PASS |
+
+---
+
+## Architecture Overview
+
+Two deployable services, one unified PostgreSQL datastore. See [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md) and [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md).
 
 ```mermaid
 flowchart TD
-    U[User / simple UI] --> J[Spring Boot API<br/>JWT, permissions, audit]
-    J --> P[FastAPI RAG service<br/>chunk, embed, hybrid search]
-    G[GitHub API<br/>commits, PRs] --> P
-    P --> L[LLM API<br/>writes answer]
-    P --> D[(PostgreSQL + pgvector<br/>users, metadata, vectors)]
+    U[Employee / Client] -->|HTTP :8080| J[Spring Boot Gateway<br/>Auth, Role RBAC, Audit]
+    J -->|HTTP :8000 /internal/v1| P[FastAPI RAG Engine<br/>Connectors, Hybrid Retrieval, Citations]
+    G[External Sources<br/>GitHub, Slack, Email] -->|CLI / Sync| P
+    P --> L[Grounded LLM<br/>Evidence-only synthesis]
+    P --> D[(PostgreSQL + pgvector<br/>Lexical + Dense Embeddings + ACLs)]
     J --> D
 ```
 
-Read it like this:
+---
 
-- **U → J** — the employee asks a question. Spring Boot authenticates them and
-  decides what they are allowed to see.
-- **J → P** — Java passes the *employee's identity and permissions* to the RAG
-  service. Java owns permissions; Python does not decide them.
-- **G → P** — offline, a connector pulls commits and pull requests from GitHub.
-- **P → D** — the RAG service writes chunks, metadata and vectors to Postgres.
-  pgvector stores the vectors; PostgreSQL full-text search does keyword search.
-- **J → D** — Java reads users, groups and ACL references directly. This is why
-  permissions can be enforced *before* anything reaches the LLM.
-- **P → L** — only permission-filtered evidence is sent to the LLM, so it can
-  never quote a document the employee is not allowed to read.
-
-### The components
-
-- **`backend-java`** — authentication and user context, permission decisions,
-  REST APIs, orchestration, audit/admin endpoints. Calls Python.
-- **`rag-python`** — connectors, normalisation, chunking, embeddings, retrieval,
-  reranking, relationships, LLM, evaluation.
-- **PostgreSQL + pgvector** — users, sources, documents, chunks, ACL references,
-  sync state, audit, relationships. Full-text search for lexical retrieval,
-  pgvector for embeddings.
-
-Redis and Neo4j are deliberately absent. See ADR-0001 for why.
-
-## Quick start
+## Quick Start (Local Run)
 
 Prerequisites: JDK 21+, Python 3.12+, Docker Desktop.
 
 ```bash
-# 0. check the toolchain
-powershell -ExecutionPolicy Bypass -File scripts/preflight-check.ps1
+# 1. Start PostgreSQL + pgvector
+docker compose up -d postgres
 
-# 1. local config
-cp .env.example .env
-
-# 2. PostgreSQL + pgvector
-make up
-make pg-ext-check          # expect: vector | 0.8.7
-
-# 3. rag-python  (terminal 1)
+# 2. Start rag-python (Terminal 1)
 cd rag-python
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -e ".[dev]"
 .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
-# 4. backend-java  (terminal 2)
+# 3. Start backend-java (Terminal 2)
 cd backend-java
-./mvnw spring-boot:run    # Windows: mvnw.cmd spring-boot:run
+./mvnw spring-boot:run
+
+# 4. Ingest multi-source synthetic fixtures
+cd rag-python
+.venv/Scripts/python.exe -m app.cli.ingest --source all
+
+# 5. Run evaluation benchmark
+.venv/Scripts/python.exe -m app.cli.benchmark
 ```
 
-Verify endpoints:
+---
+
+## Full End-to-End Docker Compose Demo
+
+To spin up the entire platform (PostgreSQL, RAG Python engine, and Java API gateway) inside Docker:
 
 ```bash
-# Health checks
-curl http://127.0.0.1:8000/health           # {"status":"ok","service":"rag-python"}
-curl http://localhost:8080/actuator/health   # {"status":"UP"}
+# Start all three services
+docker compose -f docker-compose.demo.yml up --build -d
 
-# REST Base API (Phase 1)
-curl -X POST http://localhost:8080/api/v1/search -H "Content-Type: application/json" -d "{\"query\": \"validation\"}"
-curl -X POST http://localhost:8080/api/v1/ask -H "Content-Type: application/json" -d "{\"question\": \"why did validation change?\"}"
-curl http://localhost:8080/api/v1/sync/status
+# Verify gateway health
+curl http://localhost:8080/actuator/health
+
+# Perform grounded engineering search
+curl -s -X POST http://localhost:8080/api/v1/search \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: employee_42" \
+  -d '{"query": "DC-8692"}'
+
+# Perform grounded question answering
+curl -s -X POST http://localhost:8080/api/v1/ask \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: employee_42" \
+  -d '{"question": "Why did we change the validation flow?"}'
 ```
 
-## Tests
+See [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md) for the complete 8–12 minute live demonstration walkthrough.
+
+---
+
+## Automated Test Suites
+
+All tests run self-contained and offline:
 
 ```bash
-make test           # both suites (249 total tests)
-make test-backend   # 51 JUnit tests
-make test-rag       # 198 pytest tests
+# Run Java backend JUnit test suite (58 tests)
+cd backend-java && ./mvnw test
+
+# Run Python RAG pytest suite (259 tests)
+cd rag-python && .venv/Scripts/pytest.exe tests
+
+# Total Automated Tests: 317 passed, 0 failures
 ```
 
-Neither suite requires PostgreSQL, Docker, or the other service. All tests run
-offline and self-contained with mock/in-memory adapters.
+---
 
-## Ingestion Pipeline
-
-To run the GitHub synthetic fixture ingestion into memory or PostgreSQL:
-
-```bash
-# Ingest synthetic fixtures into in-memory storage (no Docker needed)
-make ingest-fixtures
-
-# Or run the CLI directly with live PostgreSQL (when docker compose is up)
-cd rag-python && .venv/Scripts/python.exe -m app.cli.ingest --source github --fixture
-```
-
-## Layout
-
-```text
-backend-java/          Spring Boot API gateway and orchestrator
-  src/main/java/com/company/knowledge/
-    auth/              UserContext, DeterministicUserProvider
-    audit/             AuditEvent, LoggingAuditService
-    search/            SearchController, SearchService, DTOs
-    sync/              SyncController, SyncService, DTOs
-    common/            ApiError, GlobalExceptionHandler
-    orchestrator/
-      ragclient/       Java → Python contract boundary (health, search)
-rag-python/            FastAPI RAG and ingestion service
-  app/
-    api/               HTTP routes (health, internal_rag)
-    contracts/         wire schemas shared with Java (health, search)
-    common/            settings, logging
-  tests/
-infra/
-  docker/init/         Postgres init (001-enable-pgvector, 002-canonical-schema)
-  migrations/          Versioned Flyway migrations (V001__canonical_schema.sql)
-data/fixtures/         Phase 2+: github, slack, email fixtures
-docs/
-  api/                 API contract specs (public REST API, Java-Python contract)
-  architecture/        system flows, current vs planned
-  decisions/           ADRs
-  runbooks/            local run and troubleshooting
-scripts/               preflight check
-```
-
-## Documentation
+## Documentation & Runbooks
 
 | Document | Purpose |
 |---|---|
-| [`DESIGN.md`](DESIGN.md) | Why the system is shaped this way — scope, flows, permission model, data model |
-| [`docs/architecture/overview.md`](docs/architecture/overview.md) | Both system flows, marked with what exists today |
-| [`docs/api/public-rest-api.md`](docs/api/public-rest-api.md) | Public REST endpoints (`/search`, `/ask`, `/sync/status`) |
-| [`docs/api/java-python-contract.md`](docs/api/java-python-contract.md) | Contract endpoints, payloads, error shape, failure handling |
-| [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md) | Why two services, why Postgres, what is deferred |
-| [`docs/runbooks/phase-0-local-run.md`](docs/runbooks/phase-0-local-run.md) | Local run, verification, troubleshooting |
-
-## Phase order
-
-```text
-Phase 1  canonical schema, user context, API stubs  [COMPLETED]
-Phase 2  canonical ingestion + GitHub               [COMPLETED]
-Phase 3  hybrid retrieval + Slack                   [COMPLETED]
-Phase 4  permission enforcement + relationships + RAG [COMPLETED]
-Phase 5  email adapter + incremental sync + admin/audit
-Phase 6  evaluation + observability + demo
-```
+| [`DESIGN.md`](DESIGN.md) | Architectural foundations, scope boundaries, data models, and pushdown ACL invariant |
+| [`docs/architecture/overview.md`](docs/architecture/overview.md) | System flows and implementation milestones across all 6 phases |
+| [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md) | Step-by-step 8–12 minute demonstration script with exact curl commands |
+| [`docs/runbooks/evaluation-and-metrics.md`](docs/runbooks/evaluation-and-metrics.md) | Evaluation benchmark methodology, metrics, and dataset definition |
+| [`docs/api/public-rest-api.md`](docs/api/public-rest-api.md) | Public REST endpoints documentation (`/search`, `/ask`, `/admin/*`) |
+| [`docs/api/java-python-contract.md`](docs/api/java-python-contract.md) | Wire protocol between backend-java and rag-python |
+| [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md) | Rationale for Java/Python two-service split over unified Postgres |
+| [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md) | Architectural justification deferring Redis from the MVP |

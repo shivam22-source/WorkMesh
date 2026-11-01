@@ -1,6 +1,7 @@
 """Grounded RAG orchestration service coordinating retrieval, reranking, evidence, LLM synthesis, and citations."""
 
 import logging
+import time
 from typing import Optional
 
 from app.contracts.rag_ask import RagAskRequest, RagAskResponse
@@ -60,8 +61,16 @@ class GroundedRagService:
                 citations=[],
                 confidence="LOW",
                 status="INSUFFICIENT_EVIDENCE",
+                latency_breakdown_ms={
+                    "retrieval_ms": 0.0,
+                    "rerank_ms": 0.0,
+                    "evidence_ms": 0.0,
+                    "llm_ms": 0.0,
+                    "total_ms": 0.0,
+                },
             )
 
+        t_start = time.perf_counter()
         cleaned_question = request.question.strip()
         logger.info(
             "grounded_rag_ask_initiated user_id=%s group_ids=%s query='%s' source_types=%s",
@@ -72,6 +81,7 @@ class GroundedRagService:
         )
 
         # 1. Permission-filtered hybrid retrieval (Step 11 security boundary)
+        t_retrieval_start = time.perf_counter()
         candidates = self.retriever.search(
             query=cleaned_question,
             limit=10,
@@ -79,19 +89,35 @@ class GroundedRagService:
             user_id=request.user_id,
             group_ids=request.group_ids,
         )
+        retrieval_ms = round((time.perf_counter() - t_retrieval_start) * 1000, 2)
 
         # 2. Insufficient Evidence Rule: 0 authorized candidates -> INSUFFICIENT_EVIDENCE
         if not candidates:
-            logger.info("grounded_rag_zero_candidates user_id=%s query='%s'", request.user_id, cleaned_question)
+            total_ms = round((time.perf_counter() - t_start) * 1000, 2)
+            breakdown = {
+                "retrieval_ms": retrieval_ms,
+                "rerank_ms": 0.0,
+                "evidence_ms": 0.0,
+                "llm_ms": 0.0,
+                "total_ms": total_ms,
+            }
+            logger.info(
+                "grounded_rag_ask_completed user_id=%s status=INSUFFICIENT_EVIDENCE total_ms=%.2f breakdown=%s",
+                request.user_id,
+                total_ms,
+                breakdown,
+            )
             return RagAskResponse(
                 question=cleaned_question,
                 answer=GENERIC_INSUFFICIENT_EVIDENCE_ANSWER,
                 citations=[],
                 confidence="LOW",
                 status="INSUFFICIENT_EVIDENCE",
+                latency_breakdown_ms=breakdown,
             )
 
         # 3. Deterministic Reranker
+        t_rerank_start = time.perf_counter()
         reranked_candidates = self.reranker.rerank(
             query=cleaned_question,
             candidates=candidates,
@@ -99,41 +125,85 @@ class GroundedRagService:
             user_id=request.user_id,
             group_ids=request.group_ids,
         )
+        rerank_ms = round((time.perf_counter() - t_rerank_start) * 1000, 2)
 
         # 4. Evidence Builder
+        t_evidence_start = time.perf_counter()
         context = self.evidence_builder.build(reranked_candidates)
+        evidence_ms = round((time.perf_counter() - t_evidence_start) * 1000, 2)
         if not context.items:
+            total_ms = round((time.perf_counter() - t_start) * 1000, 2)
+            breakdown = {
+                "retrieval_ms": retrieval_ms,
+                "rerank_ms": rerank_ms,
+                "evidence_ms": evidence_ms,
+                "llm_ms": 0.0,
+                "total_ms": total_ms,
+            }
+            logger.info(
+                "grounded_rag_ask_completed user_id=%s status=INSUFFICIENT_EVIDENCE total_ms=%.2f breakdown=%s",
+                request.user_id,
+                total_ms,
+                breakdown,
+            )
             return RagAskResponse(
                 question=cleaned_question,
                 answer=GENERIC_INSUFFICIENT_EVIDENCE_ANSWER,
                 citations=[],
                 confidence="LOW",
                 status="INSUFFICIENT_EVIDENCE",
+                latency_breakdown_ms=breakdown,
             )
 
         # 5. LLM Synthesis
+        t_llm_start = time.perf_counter()
         user_prompt = f"Question: {cleaned_question}\n\nNumbered Evidence:\n{context.formatted_context}\n\nAnswer:"
         llm_response = self.llm_provider.generate(SYSTEM_PROMPT, user_prompt)
 
         # 6. Citation Extraction & Mapping
         citations = self.citation_extractor.extract_citations(llm_response.content, context)
+        llm_ms = round((time.perf_counter() - t_llm_start) * 1000, 2)
+
+        total_ms = round((time.perf_counter() - t_start) * 1000, 2)
+        breakdown = {
+            "retrieval_ms": retrieval_ms,
+            "rerank_ms": rerank_ms,
+            "evidence_ms": evidence_ms,
+            "llm_ms": llm_ms,
+            "total_ms": total_ms,
+        }
 
         # 7. Confidence & Status Handling
         # If no citations were generated or answer indicates insufficient evidence
         content_lower = llm_response.content.lower()
         if not citations or "insufficient" in content_lower or "not have sufficient" in content_lower:
+            logger.info(
+                "grounded_rag_ask_completed user_id=%s status=INSUFFICIENT_EVIDENCE total_ms=%.2f breakdown=%s",
+                request.user_id,
+                total_ms,
+                breakdown,
+            )
             return RagAskResponse(
                 question=cleaned_question,
                 answer=GENERIC_INSUFFICIENT_EVIDENCE_ANSWER,
                 citations=[],
                 confidence="LOW",
                 status="INSUFFICIENT_EVIDENCE",
+                latency_breakdown_ms=breakdown,
             )
 
+        logger.info(
+            "grounded_rag_ask_completed user_id=%s status=ANSWERED total_ms=%.2f citations=%d breakdown=%s",
+            request.user_id,
+            total_ms,
+            len(citations),
+            breakdown,
+        )
         return RagAskResponse(
             question=cleaned_question,
             answer=llm_response.content,
             citations=citations,
             confidence="MEDIUM",
             status="ANSWERED",
+            latency_breakdown_ms=breakdown,
         )
