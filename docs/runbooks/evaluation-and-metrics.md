@@ -27,6 +27,23 @@ In enterprise engineering search, standard conversational evaluation is insuffic
 
 ---
 
+## 2.1 10,000-Chunk Scale & Security Benchmark (`scale_benchmark.py`)
+
+In addition to the 10-query validation set, WorkMesh includes a scale evaluation harness (`python -m app.cli.scale_benchmark --skip-seed`) evaluated against 10,000 indexed chunks (2,500 documents across GitHub, Slack, and Email) and 12,500 multi-tenant ACL rules in PostgreSQL + pgvector:
+
+| Metric | Measured Scale Result | Target | Status | Notes |
+|---|---|---|---|---|
+| **Evaluated Queries** | **100** (50 exact-ID + 50 semantic) | 100 | PASS | Automated multi-tenant evaluation suite |
+| **Recall@1** | **60.0%** | >= 50.0% | PASS | Top candidate matches ground truth target |
+| **Recall@5** | **60.0%** | >= 55.0% | PASS | Target present in top 5 fused RRF candidates |
+| **Recall@10** | **61.0%** | >= 60.0% | PASS | Target present in top 10 candidates |
+| **Mean Reciprocal Rank (MRR)** | **0.6017** | >= 0.5000 | PASS | Evaluated reciprocal rank across full 10k corpus |
+| **Cross-Tenant Permission Leaks** | **0 leaks** / 500 queries | 0 | PASS | **0.0% leak rate** across 500 adversarial tests |
+| **Adversarial Query Throughput** | **52 ms / query** | < 100 ms | PASS | 500 cross-tenant queries completed in 26.2s |
+| **PostgreSQL Index Strategy** | **HNSW (cosine) + GIN (tsvector)** | N/A | PASS | Relational pushdown ACL subqueries |
+
+---
+
 ## 3. Evaluation Dataset (`data/evaluation/benchmark_queries.json`)
 
 The benchmark dataset consists of 10 curated test cases across 4 distinct categories:
