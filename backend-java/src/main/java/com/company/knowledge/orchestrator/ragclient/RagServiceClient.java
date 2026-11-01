@@ -1,10 +1,14 @@
 package com.company.knowledge.orchestrator.ragclient;
 
+import com.company.knowledge.audit.dto.AuditEventResponse;
 import com.company.knowledge.orchestrator.ragclient.dto.RagAskRequest;
 import com.company.knowledge.orchestrator.ragclient.dto.RagAskResponse;
 import com.company.knowledge.orchestrator.ragclient.dto.RagHealthResponse;
 import com.company.knowledge.orchestrator.ragclient.dto.RagSearchRequest;
 import com.company.knowledge.orchestrator.ragclient.dto.RagSearchResponse;
+import com.company.knowledge.sync.dto.SyncStatusResponse;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The abstraction boundary between backend-java and rag-python.
@@ -43,4 +47,37 @@ public interface RagServiceClient {
      * @throws RagClientException if the RAG service rejects the request with a 4xx error
      */
     RagAskResponse ask(RagAskRequest request);
+
+    /**
+     * Calls GET /internal/v1/sync/status on the RAG service.
+     *
+     * @return sync status across all connectors and derived overall status
+     * @throws RagServiceUnavailableException if the RAG service cannot be reached or returns 5xx
+     * @throws RagClientException if the RAG service rejects the request with a 4xx error
+     */
+    SyncStatusResponse getSyncStatus();
+
+    /**
+     * Calls POST /internal/v1/audit/events on the RAG service to persist an audit record.
+     *
+     * @param userId user who performed the action
+     * @param action action performed
+     * @param resource target resource
+     * @param details contextual metadata
+     * @throws RagServiceUnavailableException if the RAG service cannot be reached or returns 5xx
+     * @throws RagClientException if the RAG service rejects the request with a 4xx error
+     */
+    void recordAuditEvent(String userId, String action, String resource, Map<String, Object> details);
+
+    /**
+     * Calls GET /internal/v1/audit/events on the RAG service.
+     *
+     * @param userId optional user filter
+     * @param action optional action filter
+     * @param limit maximum events to retrieve
+     * @return list of audit events ordered by timestamp descending
+     * @throws RagServiceUnavailableException if the RAG service cannot be reached or returns 5xx
+     * @throws RagClientException if the RAG service rejects the request with a 4xx error
+     */
+    List<AuditEventResponse> getAuditEvents(String userId, String action, int limit);
 }

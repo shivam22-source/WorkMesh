@@ -21,15 +21,26 @@ All internal endpoints live under `/internal/v1/`. A breaking change to any
 payload means a new version prefix (`/internal/v2/`) with both versions served
 until every caller has moved. Adding an optional field is not a breaking change.
 
+## Deployment Security Note
+
+- **Compose Scope:** Current Docker Compose contains PostgreSQL only (`ekr-postgres`). Application services (`backend-java` and `rag-python`) are not containerized in Compose.
+- **Local Binding:** Local `run-rag` binds strictly to `127.0.0.1:8000`.
+- **Exposure Risk:** Binding Python to `0.0.0.0` or publishing port 8000 can expose unauthenticated internal endpoints.
+- **No Service-to-Service Authentication:** Internal Python endpoints currently have no service-to-service authentication (`Auth: none`), relying entirely on network perimeter isolation.
+- **Production Isolation Requirement:** Future production deployments must keep `rag-python` on a private application network accessible only by `backend-java`, with no public host port mapping.
+
 ## Endpoints
 
-| Method | Path | Purpose | Auth (Phase 1) |
+| Method | Path | Purpose | Auth |
 |---|---|---|---|
 | GET | `/health` | Liveness. Process is up. | none |
 | GET | `/ready` | Readiness. Process can do real work. | none |
 | POST | `/internal/v1/rag/health` | Contract round-trip check. | none |
 | POST | `/internal/v1/rag/search` | Search carrying identity context. | none |
 | POST | `/internal/v1/rag/ask` | Grounded RAG with citations and identity context. | none |
+| GET | `/internal/v1/sync/status` | Read connector sync states and overall status. | none |
+| POST | `/internal/v1/audit/events` | Durable audit event persistence. | none |
+| GET | `/internal/v1/audit/events` | Query recent audit events. | none |
 
 ## POST /internal/v1/rag/health
 

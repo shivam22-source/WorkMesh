@@ -207,6 +207,28 @@ class KnowledgeRepository(ABC):
         """Perform vector similarity search over indexed chunks enforcing ACL filtering."""
         ...
 
+    @abstractmethod
+    def record_audit_event(
+        self,
+        user_id: str,
+        action: str,
+        resource: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        ip_address: Optional[str] = None,
+    ) -> None:
+        """Persist an audit event."""
+        ...
+
+    @abstractmethod
+    def get_audit_events(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve recent audit events ordered by timestamp descending."""
+        ...
+
 
 class InMemoryKnowledgeRepository(KnowledgeRepository):
     """In-memory repository used for fast, isolated unit and pipeline testing."""
@@ -221,6 +243,7 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         self.entities: Dict[str, Entity] = {}
         self.relationships: Dict[Tuple[str, str, str], Relationship] = {}
         self.relationship_owners: Dict[Tuple[str, str, str], Set[str]] = {}
+        self.audit_events: List[Dict[str, Any]] = []
 
     def get_sync_state(self, source_type: str) -> Optional[SyncStateRecord]:
         state = self.sync_states.get(source_type)
@@ -899,6 +922,39 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         # Order descending by similarity score, tie-break by creation date and id
         scored_items.sort(key=lambda x: (-x[0], x[1], x[2]))
         return [x[3] for x in scored_items[:limit]]
+
+    def record_audit_event(
+        self,
+        user_id: str,
+        action: str,
+        resource: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        ip_address: Optional[str] = None,
+    ) -> None:
+        event = {
+            "id": len(self.audit_events) + 1,
+            "userId": user_id,
+            "action": action,
+            "resource": resource,
+            "details": details or {},
+            "ipAddress": ip_address,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        self.audit_events.append(event)
+
+    def get_audit_events(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        filtered = self.audit_events
+        if user_id:
+            filtered = [e for e in filtered if e.get("userId") == user_id]
+        if action:
+            filtered = [e for e in filtered if e.get("action") == action]
+        sorted_events = sorted(filtered, key=lambda e: e.get("timestamp", ""), reverse=True)
+        return sorted_events[:limit]
 
 
 class PostgresKnowledgeRepository(KnowledgeRepository):
@@ -2080,3 +2136,84 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             raise DatabaseUnavailableError(f"Database query failed: {e}") from e
 
         return results
+
+    def record_audit_event(
+        self,
+        user_id: str,
+        action: str,
+        resource: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        ip_address: Optional[str] = None,
+    ) -> None:
+        query = """
+            INSERT INTO audit_events (user_id, action, resource, details, ip_address, timestamp)
+            VALUES (%s, %s, %s, %s, %s, clock_timestamp());
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        query,
+                        (
+                            user_id,
+                            action,
+                            resource,
+                            json.dumps(details or {}),
+                            ip_address,
+                        ),
+                    )
+                conn.commit()
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_record_audit_event_failed user_id=%s action=%s err=%s", user_id, action, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def get_audit_events(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        where_clauses = []
+        params: List[Any] = []
+        if user_id:
+            where_clauses.append("user_id = %s")
+            params.append(user_id)
+        if action:
+            where_clauses.append("action = %s")
+            params.append(action)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+        query = f"""
+            SELECT id, user_id, action, resource, details, ip_address, timestamp
+            FROM audit_events
+            {where_sql}
+            ORDER BY timestamp DESC
+            LIMIT %s;
+        """
+        params.append(limit)
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, tuple(params))
+                    rows = cur.fetchall()
+            events = []
+            for r in rows:
+                meta = r[4] if isinstance(r[4], dict) else json.loads(r[4] or "{}")
+                events.append({
+                    "id": r[0],
+                    "userId": r[1],
+                    "action": r[2],
+                    "resource": r[3],
+                    "details": meta,
+                    "ipAddress": r[5],
+                    "timestamp": r[6].isoformat() if hasattr(r[6], "isoformat") else str(r[6]),
+                })
+            return events
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_get_audit_events_failed err=%s", e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
