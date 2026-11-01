@@ -1,0 +1,37 @@
+{
+  "corpus_scale": {
+    "chunks": 10000,
+    "documents": 2500,
+    "acl_rules": 12500,
+    "sources": [
+      "GITHUB",
+      "SLACK",
+      "EMAIL"
+    ],
+    "simulated_users": 50,
+    "simulated_departments": 5
+  },
+  "retrieval_metrics": {
+    "evaluated_queries": 100,
+    "query_split": "50 exact identifier tickets + 50 semantic rationale queries",
+    "recall_at_1": 60.0,
+    "recall_at_3": 60.0,
+    "recall_at_5": 60.0,
+    "recall_at_10": 61.0,
+    "mean_reciprocal_rank_mrr": 0.6017
+  },
+  "security_metrics": {
+    "adversarial_tests_evaluated": 500,
+    "permission_leaks_detected": 0,
+    "permission_leak_rate": 0.0,
+    "adversarial_query_throughput_ms": 52.4
+  },
+  "latency_percentiles_ms": {
+    "p50": 3858.51,
+    "p90": 3948.24,
+    "p95": 3983.76,
+    "p99": 4153.96,
+    "mean": 3151.40
+  },
+  "configuration": "First-stage RRF baseline (reranker disabled)"
+}

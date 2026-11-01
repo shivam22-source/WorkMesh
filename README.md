@@ -29,7 +29,9 @@ Answers are synthesized strictly from permission-filtered retrieved evidence wit
 WorkMesh includes two evaluation suites: a curated 10-query validation set and a full 10,000-chunk multi-tenant scale benchmark.
 
 ### 1. 10,000-Chunk Scale & Security Benchmark
-Evaluated over 10,000 indexed chunks (2,500 documents across GitHub, Slack, and Email) with 12,500 ACL rules over 50 simulated employees and 5 departments in PostgreSQL + pgvector (`python -m app.cli.scale_benchmark --skip-seed`):
+Evaluated over 10,000 indexed chunks (2,500 documents across GitHub, Slack, and Email) with 12,500 ACL rules over 50 simulated employees and 5 departments in PostgreSQL + pgvector (`python -m app.cli.scale_benchmark --skip-seed`).
+
+*Scale benchmark config: RRF baseline, reranker off.* Raw results: [`data/evaluation/results/scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json).
 
 | Metric | Measured Scale Result | Target | Status |
 |---|---|---|---|
@@ -95,8 +97,8 @@ cd rag-python
 # 5. Run evaluation benchmark (curated 10 queries)
 .venv/Scripts/python.exe -m app.cli.benchmark
 
-# 6. Run 10,000-chunk multi-tenant scale benchmark
-.venv/Scripts/python.exe -m app.cli.scale_benchmark --skip-seed
+# 6. Run 10,000-chunk multi-tenant scale benchmark & ablation study
+.venv/Scripts/python.exe -m app.cli.scale_benchmark --skip-seed --ablation
 
 # 7. Live GitHub REST API connector (fetch real PRs & commits)
 .venv/Scripts/python.exe -m app.cli.sync_real_github --repo "pallets/flask"
