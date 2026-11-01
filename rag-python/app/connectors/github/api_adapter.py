@@ -47,7 +47,7 @@ class GitHubApiAdapter(SourceConnector):
         return headers
 
     def authenticate(self) -> bool:
-        if not self.token or not self.repo:
+        if not self.repo:
             return False
         try:
             with httpx.Client(timeout=10.0) as client:
