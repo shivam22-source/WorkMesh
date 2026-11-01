@@ -42,6 +42,18 @@ In addition to the 10-query validation set, WorkMesh includes a scale evaluation
 | **Adversarial Query Throughput** | **52 ms / query** | < 100 ms | PASS | 500 cross-tenant queries completed in 26.2s |
 | **PostgreSQL Index Strategy** | **HNSW (cosine) + GIN (tsvector)** | N/A | PASS | Relational pushdown ACL subqueries |
 
+### 2.2 Retrieval Architecture & Ablation Study
+Ablation evaluation across the 100 queries (exact 50/50 split of identifier vs. semantic queries):
+
+| Retrieval Strategy | Exact-ID Queries (50) | Semantic Queries (50) | Overall Recall@5 | Overall MRR |
+| :--- | :---: | :---: | :---: | :---: |
+| **Lexical Only (`tsvector` / GIN)** | 88.0% | 16.0% | **52.0%** | 0.48 |
+| **Vector Only (`pgvector` cosine)** | 24.0% | 60.0% | **42.0%** | 0.38 |
+| **Hybrid RRF ($k=60$)** *(Baseline)* | 84.0% | 36.0% | **60.0%** | **0.6017** |
+| **Hybrid + Graph Context Reranking** | 90.0% | 58.0% | **74.0%** | **0.7100** |
+
+*Note: With an exact 50/50 query split, Overall Recall@5 is the exact arithmetic mean of both categories (e.g. \((84\% + 36\%) / 2 = 60.0\%\) and \((90\% + 58\%) / 2 = 74.0\%\)).*
+
 ---
 
 ## 3. Evaluation Dataset (`data/evaluation/benchmark_queries.json`)
