@@ -1,0 +1,205 @@
+{
+  "registries": {
+    "mailboxes": {
+      "alex.engineer@company.internal": { "owner_user_id": "employee_42" },
+      "sam.admin@company.internal": { "owner_user_id": "employee_admin" },
+      "bob.architect@company.internal": { "owner_user_id": "employee_bob" },
+      "carol.security@company.internal": { "owner_user_id": "employee_carol" },
+      "dave.intern@company.internal": { "owner_user_id": "employee_dave" }
+    },
+    "shared_folders": {
+      "finance_reports": { "group_id": "group_finance" },
+      "backend_incidents": { "group_id": "group_backend" },
+      "engineering_announcements": { "group_id": "group_engineering" }
+    },
+    "employee_directory": {
+      "employee_42@company.internal": "employee_42",
+      "alex.engineer@company.internal": "employee_42",
+      "admin@company.internal": "employee_admin",
+      "sam.admin@company.internal": "employee_admin",
+      "bob.architect@company.internal": "employee_bob",
+      "carol.security@company.internal": "employee_carol",
+      "dave.intern@company.internal": "employee_dave"
+    },
+    "group_aliases": {
+      "engineering@company.internal": "group_engineering",
+      "backend@company.internal": "group_backend",
+      "finance@company.internal": "group_finance"
+    }
+  },
+  "messages": [
+    {
+      "id": "email:alex.engineer@company.internal:msg-101-sent",
+      "message_id": "<msg-101@company.internal>",
+      "thread_id": "<thread-101@company.internal>",
+      "in_reply_to": null,
+      "mailbox": "alex.engineer@company.internal",
+      "folder": "Sent",
+      "from_addr": "alex.engineer@company.internal",
+      "to_addrs": ["bob.architect@company.internal"],
+      "cc_addrs": [],
+      "subject": "Validation Flow Refactor for DC-8692",
+      "body_text": "Hi Bob,\n\nI started the validation flow refactor for ticket DC-8692. We are switching to strict fail-closed validation on startup to prevent accidental bypass.\n\nPlease check the attached architecture spec before we roll it out.\n\nBest,\nAlex",
+      "attachments": [
+        {
+          "filename": "validation_spec.pdf",
+          "mime_type": "application/pdf",
+          "size_bytes": 1048576
+        }
+      ],
+      "source_url": "https://mail.company.internal/mail/alex.engineer/sent/msg-101",
+      "created_at": "2026-10-15T09:00:00+00:00",
+      "updated_at": "2026-10-15T09:00:00+00:00"
+    },
+    {
+      "id": "email:bob.architect@company.internal:msg-101-inbox",
+      "message_id": "<msg-101@company.internal>",
+      "thread_id": "<thread-101@company.internal>",
+      "in_reply_to": null,
+      "mailbox": "bob.architect@company.internal",
+      "folder": "INBOX",
+      "from_addr": "alex.engineer@company.internal",
+      "to_addrs": ["bob.architect@company.internal"],
+      "cc_addrs": [],
+      "subject": "Validation Flow Refactor for DC-8692",
+      "body_text": "Hi Bob,\n\nI started the validation flow refactor for ticket DC-8692. We are switching to strict fail-closed validation on startup to prevent accidental bypass.\n\nPlease check the attached architecture spec before we roll it out.\n\nBest,\nAlex",
+      "attachments": [
+        {
+          "filename": "validation_spec.pdf",
+          "mime_type": "application/pdf",
+          "size_bytes": 1048576
+        }
+      ],
+      "source_url": "https://mail.company.internal/mail/bob.architect/inbox/msg-101",
+      "created_at": "2026-10-15T09:00:00+00:00",
+      "updated_at": "2026-10-15T09:00:00+00:00"
+    },
+    {
+      "id": "email:bob.architect@company.internal:msg-102-inbox",
+      "message_id": "<msg-102@company.internal>",
+      "thread_id": "<thread-101@company.internal>",
+      "in_reply_to": "<msg-101@company.internal>",
+      "mailbox": "bob.architect@company.internal",
+      "folder": "INBOX",
+      "from_addr": "bob.architect@company.internal",
+      "to_addrs": ["alex.engineer@company.internal", "carol.security@company.internal"],
+      "cc_addrs": [],
+      "subject": "Re: Validation Flow Refactor for DC-8692",
+      "body_text": "Alex,\n\nLooks solid. I am looping in Carol from security to review the fail-closed error mapping under DC-8692.\n\nCarol, please see Alex's proposed approach.\n\nThanks,\nBob",
+      "attachments": [],
+      "source_url": "https://mail.company.internal/mail/bob.architect/inbox/msg-102",
+      "created_at": "2026-10-15T10:30:00+00:00",
+      "updated_at": "2026-10-15T10:30:00+00:00"
+    },
+    {
+      "id": "email:carol.security@company.internal:msg-103-inbox",
+      "message_id": "<msg-103@company.internal>",
+      "thread_id": "<thread-101@company.internal>",
+      "in_reply_to": "<msg-102@company.internal>",
+      "mailbox": "carol.security@company.internal",
+      "folder": "INBOX",
+      "from_addr": "carol.security@company.internal",
+      "to_addrs": ["alex.engineer@company.internal", "bob.architect@company.internal"],
+      "cc_addrs": ["engineering@company.internal"],
+      "subject": "Re: Validation Flow Refactor for DC-8692",
+      "body_text": "Security approval granted for DC-8692. Fail-closed on startup is required for compliance.\n\nLooping in the entire engineering group so teams are aware of the upcoming change.\n\nRegards,\nCarol",
+      "attachments": [],
+      "source_url": "https://mail.company.internal/mail/carol.security/inbox/msg-103",
+      "created_at": "2026-10-15T11:15:00+00:00",
+      "updated_at": "2026-10-15T11:15:00+00:00"
+    },
+    {
+      "id": "email:alex.engineer@company.internal:msg-201-sent",
+      "message_id": "<msg-201@company.internal>",
+      "thread_id": "<thread-201@company.internal>",
+      "in_reply_to": null,
+      "mailbox": "alex.engineer@company.internal",
+      "folder": "Sent",
+      "from_addr": "alex.engineer@company.internal",
+      "to_addrs": ["bob.architect@company.internal"],
+      "cc_addrs": [],
+      "bcc_addrs": ["dave.intern@company.internal"],
+      "subject": "Confidential Project Phoenix Briefing",
+      "body_text": "Bob,\n\nHere is the initial design brief for Project Phoenix. Keep this strictly within core leads.\n\nBest,\nAlex",
+      "attachments": [],
+      "source_url": "https://mail.company.internal/mail/alex.engineer/sent/msg-201",
+      "created_at": "2026-10-16T14:00:00+00:00",
+      "updated_at": "2026-10-16T14:00:00+00:00"
+    },
+    {
+      "id": "email:bob.architect@company.internal:msg-201-inbox",
+      "message_id": "<msg-201@company.internal>",
+      "thread_id": "<thread-201@company.internal>",
+      "in_reply_to": null,
+      "mailbox": "bob.architect@company.internal",
+      "folder": "INBOX",
+      "from_addr": "alex.engineer@company.internal",
+      "to_addrs": ["bob.architect@company.internal"],
+      "cc_addrs": [],
+      "subject": "Confidential Project Phoenix Briefing",
+      "body_text": "Bob,\n\nHere is the initial design brief for Project Phoenix. Keep this strictly within core leads.\n\nBest,\nAlex",
+      "attachments": [],
+      "source_url": "https://mail.company.internal/mail/bob.architect/inbox/msg-201",
+      "created_at": "2026-10-16T14:00:00+00:00",
+      "updated_at": "2026-10-16T14:00:00+00:00"
+    },
+    {
+      "id": "email:dave.intern@company.internal:msg-201-inbox",
+      "message_id": "<msg-201@company.internal>",
+      "thread_id": "<thread-201@company.internal>",
+      "in_reply_to": null,
+      "mailbox": "dave.intern@company.internal",
+      "folder": "INBOX",
+      "from_addr": "alex.engineer@company.internal",
+      "to_addrs": ["bob.architect@company.internal"],
+      "cc_addrs": [],
+      "bcc_addrs": ["dave.intern@company.internal"],
+      "subject": "Confidential Project Phoenix Briefing",
+      "body_text": "Bob,\n\nHere is the initial design brief for Project Phoenix. Keep this strictly within core leads.\n\nBest,\nAlex",
+      "attachments": [],
+      "source_url": "https://mail.company.internal/mail/dave.intern/inbox/msg-201",
+      "created_at": "2026-10-16T14:00:00+00:00",
+      "updated_at": "2026-10-16T14:00:00+00:00"
+    },
+    {
+      "id": "email:alex.engineer@company.internal:msg-301-finance",
+      "message_id": "<msg-301@company.internal>",
+      "thread_id": "<thread-301@company.internal>",
+      "in_reply_to": null,
+      "mailbox": "alex.engineer@company.internal",
+      "folder": "finance_reports",
+      "from_addr": "alex.engineer@company.internal",
+      "to_addrs": ["finance@company.internal"],
+      "cc_addrs": [],
+      "subject": "Q3 Departmental Financial Summary",
+      "body_text": "Finance Team,\n\nAttached are the finalized Q3 engineering infrastructure expenditure numbers.\n\nRegards,\nAlex",
+      "attachments": [
+        {
+          "filename": "q3_expenditure.csv",
+          "mime_type": "text/csv",
+          "size_bytes": 40960
+        }
+      ],
+      "source_url": "https://mail.company.internal/mail/alex.engineer/finance_reports/msg-301",
+      "created_at": "2026-10-17T08:30:00+00:00",
+      "updated_at": "2026-10-17T08:30:00+00:00"
+    },
+    {
+      "id": "email:alex.engineer@company.internal:msg-401-inbox",
+      "message_id": "<msg-401@company.internal>",
+      "thread_id": "<thread-401@company.internal>",
+      "in_reply_to": null,
+      "mailbox": "alex.engineer@company.internal",
+      "folder": "INBOX",
+      "from_addr": "vendor@partner.com",
+      "to_addrs": ["alex.engineer@company.internal"],
+      "cc_addrs": ["contractor99@company.internal"],
+      "subject": "External Vendor SLA Update",
+      "body_text": "Hello Alex,\n\nOur cloud maintenance window has been updated for this coming weekend.\n\nSupport Team",
+      "attachments": [],
+      "source_url": "https://mail.company.internal/mail/alex.engineer/inbox/msg-401",
+      "created_at": "2026-10-17T15:00:00+00:00",
+      "updated_at": "2026-10-17T15:00:00+00:00"
+    }
+  ]
+}

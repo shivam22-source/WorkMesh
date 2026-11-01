@@ -1,11 +1,13 @@
 """Repository layer for persisting canonical knowledge, vectors, ACLs, and sync state."""
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 import json
 import logging
 import math
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.chunking.models import CanonicalChunk
 from app.connectors.common.models import AclReference, RawSourceItem
@@ -22,6 +24,82 @@ class DatabaseUnavailableError(Exception):
     """Raised when PostgreSQL / pgvector service is unreachable or connection fails."""
 
 
+class FencedSyncError(Exception):
+    """Raised when a sync operation is rejected because a lease is invalid or expired."""
+
+
+@dataclass
+class ClaimResult:
+    """Result of claiming an exclusive synchronization lease."""
+
+    source_type: str
+    cursor_value: Optional[str]
+    lease_token: str
+
+
+INTRINSIC_RELATIONSHIP_METADATA_ALLOWLIST = {
+    "repository", "pr_number", "sha", "channel_id", "thread_ts", "ticket_id"
+}
+
+
+def derive_canonical_metadata(
+    source_entity_id: str, target_entity_id: str, rel_type: str
+) -> Dict[str, Any]:
+    """Derive non-sensitive structural properties from validated endpoint IDs.
+
+    Uses reverse-splitting to handle colons in repository names unambiguously.
+    """
+    canonical: Dict[str, Any] = {}
+    norm_rel = rel_type.lower().strip()
+
+    if norm_rel == RelationshipType.IMPLEMENTED_BY.value:
+        # TICKET (source) -> PR (target)
+        # ticket:<ticket_id> -> pr:<repo>:<pr_num>
+        if ":" in source_entity_id:
+            canonical["ticket_id"] = source_entity_id.split(":", 1)[1]
+        if target_entity_id.startswith("pr:"):
+            prefix, pr_num = target_entity_id.rsplit(":", 1)
+            repo = prefix[len("pr:"):]
+            canonical["repository"] = repo
+            canonical["pr_number"] = pr_num
+
+    elif norm_rel == RelationshipType.CONTAINS.value:
+        # PULL_REQUEST (source) -> COMMIT (target)
+        # pr:<repo>:<pr_num> -> commit:<repo>:<sha>
+        if source_entity_id.startswith("pr:"):
+            prefix, pr_num = source_entity_id.rsplit(":", 1)
+            repo = prefix[len("pr:"):]
+            canonical["repository"] = repo
+            canonical["pr_number"] = pr_num
+        if target_entity_id.startswith("commit:"):
+            prefix, sha = target_entity_id.rsplit(":", 1)
+            repo = prefix[len("commit:"):]
+            canonical["repository"] = repo
+            canonical["sha"] = sha
+
+    elif norm_rel == RelationshipType.AUTHORED_BY.value:
+        # COMMIT (source) -> EMPLOYEE (target)
+        # commit:<repo>:<sha> -> employee:<login>
+        if source_entity_id.startswith("commit:"):
+            prefix, sha = source_entity_id.rsplit(":", 1)
+            repo = prefix[len("commit:"):]
+            canonical["repository"] = repo
+            canonical["sha"] = sha
+
+    elif norm_rel == RelationshipType.DISCUSSED_IN.value:
+        # TICKET (source) -> SLACK_THREAD (target)
+        # ticket:<ticket_id> -> slack:<channel_id>:<thread_ts>
+        if ":" in source_entity_id:
+            canonical["ticket_id"] = source_entity_id.split(":", 1)[1]
+        if target_entity_id.startswith("slack:"):
+            prefix, thread_ts = target_entity_id.rsplit(":", 1)
+            chan_id = prefix[len("slack:"):]
+            canonical["channel_id"] = chan_id
+            canonical["thread_ts"] = thread_ts
+
+    return canonical
+
+
 class KnowledgeRepository(ABC):
     """Abstract persistence layer for knowledge records and vector chunks."""
 
@@ -30,6 +108,40 @@ class KnowledgeRepository(ABC):
 
     @abstractmethod
     def update_sync_state(self, state: SyncStateRecord) -> None: ...
+
+    @abstractmethod
+    def claim_sync(
+        self, source_type: str, lease_token: str, lease_ttl_seconds: int = 300
+    ) -> Optional[ClaimResult]: ...
+
+    @abstractmethod
+    def renew_lease(
+        self, source_type: str, lease_token: str, lease_ttl_seconds: int = 300
+    ) -> bool: ...
+
+    @abstractmethod
+    def complete_sync(
+        self, source_type: str, lease_token: str, final_cursor: Optional[str] = None
+    ) -> None: ...
+
+    @abstractmethod
+    def fail_sync(
+        self, source_type: str, lease_token: str, error_message: str
+    ) -> None: ...
+
+    @abstractmethod
+    def persist_sync_batch(
+        self,
+        source_type: str,
+        lease_token: str,
+        next_cursor: Optional[str],
+        items: List[RawSourceItem],
+        docs: List[CanonicalDocument],
+        chunks: List[CanonicalChunk],
+        acls: List[AclReference],
+        entities: List[Entity],
+        relationships: List[Relationship],
+    ) -> None: ...
 
     @abstractmethod
     def save_source_records(self, items: List[RawSourceItem]) -> None: ...
@@ -101,18 +213,263 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
 
     def __init__(self):
         self.sync_states: Dict[str, SyncStateRecord] = {}
+        self.sync_state_metadata: Dict[str, Dict[str, Any]] = {}
         self.source_records: Dict[str, RawSourceItem] = {}
         self.documents: Dict[str, CanonicalDocument] = {}
         self.chunks: Dict[str, CanonicalChunk] = {}
         self.acls: List[AclReference] = []
         self.entities: Dict[str, Entity] = {}
         self.relationships: Dict[Tuple[str, str, str], Relationship] = {}
+        self.relationship_owners: Dict[Tuple[str, str, str], Set[str]] = {}
 
     def get_sync_state(self, source_type: str) -> Optional[SyncStateRecord]:
-        return self.sync_states.get(source_type)
+        state = self.sync_states.get(source_type)
+        if state:
+            object.__setattr__(state, "metadata", self.sync_state_metadata.get(source_type, {}))
+        return state
 
     def update_sync_state(self, state: SyncStateRecord) -> None:
         self.sync_states[state.source_type] = state
+        if hasattr(state, "metadata") and isinstance(state.metadata, dict):
+            self.sync_state_metadata[state.source_type] = state.metadata
+
+    def claim_sync(
+        self, source_type: str, lease_token: str, lease_ttl_seconds: int = 300
+    ) -> Optional[ClaimResult]:
+        now = datetime.now(timezone.utc)
+        state = self.sync_states.get(source_type)
+        meta = self.sync_state_metadata.get(source_type, {})
+        if state:
+            is_expired = False
+            expires_at_str = meta.get("lease_expires_at")
+            if expires_at_str:
+                try:
+                    exp = datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+                    if exp <= now:
+                        is_expired = True
+                except Exception:
+                    is_expired = True
+            else:
+                started = state.last_sync_started_at
+                if started and (now - started).total_seconds() > lease_ttl_seconds:
+                    is_expired = True
+
+            if state.status == "SYNCING" and not is_expired:
+                return None
+
+            new_expires = (now + timedelta(seconds=lease_ttl_seconds)).isoformat()
+            state.status = "SYNCING"
+            state.last_sync_started_at = now
+            state.records_synced_last_run = 0
+            state.error_message = None
+            object.__setattr__(state, "updated_at", now)
+            meta["lease_token"] = lease_token
+            meta["lease_expires_at"] = new_expires
+            self.sync_state_metadata[source_type] = meta
+            object.__setattr__(state, "metadata", meta)
+            return ClaimResult(
+                source_type=source_type,
+                cursor_value=state.cursor_value,
+                lease_token=lease_token,
+            )
+        else:
+            new_expires = (now + timedelta(seconds=lease_ttl_seconds)).isoformat()
+            new_meta = {
+                "lease_token": lease_token,
+                "lease_expires_at": new_expires,
+            }
+            new_state = SyncStateRecord(
+                source_type=source_type,
+                cursor_value=None,
+                status="SYNCING",
+                last_sync_started_at=now,
+                records_synced_last_run=0,
+                error_message=None,
+            )
+            object.__setattr__(new_state, "metadata", new_meta)
+            self.sync_states[source_type] = new_state
+            self.sync_state_metadata[source_type] = new_meta
+            return ClaimResult(
+                source_type=source_type,
+                cursor_value=None,
+                lease_token=lease_token,
+            )
+
+    def renew_lease(
+        self, source_type: str, lease_token: str, lease_ttl_seconds: int = 300
+    ) -> bool:
+        now = datetime.now(timezone.utc)
+        meta = self.sync_state_metadata.get(source_type, {})
+        if meta.get("lease_token") != lease_token:
+            return False
+        expires_at_str = meta.get("lease_expires_at")
+        if expires_at_str:
+            try:
+                exp = datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+                if exp <= now:
+                    return False
+            except Exception:
+                return False
+        new_expires = (now + timedelta(seconds=lease_ttl_seconds)).isoformat()
+        meta["lease_expires_at"] = new_expires
+        state = self.sync_states.get(source_type)
+        if state:
+            object.__setattr__(state, "metadata", meta)
+            object.__setattr__(state, "updated_at", now)
+        return True
+
+    def complete_sync(
+        self, source_type: str, lease_token: str, final_cursor: Optional[str] = None
+    ) -> None:
+        now = datetime.now(timezone.utc)
+        state = self.sync_states.get(source_type)
+        if not state:
+            raise FencedSyncError(f"No sync state found for {source_type}")
+        meta = self.sync_state_metadata.get(source_type, {})
+        if meta.get("lease_token") != lease_token:
+            raise FencedSyncError(f"Worker fenced out for source {source_type}")
+        expires_at_str = meta.get("lease_expires_at")
+        if expires_at_str:
+            try:
+                exp = datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+                if exp <= now:
+                    raise FencedSyncError(f"Lease expired for source {source_type}")
+            except FencedSyncError:
+                raise
+            except Exception:
+                raise FencedSyncError(f"Lease malformed for source {source_type}")
+        state.status = "SUCCESS"
+        state.last_sync_completed_at = now
+        state.error_message = None
+        object.__setattr__(state, "updated_at", now)
+        if final_cursor is not None:
+            state.cursor_value = final_cursor
+
+    def fail_sync(
+        self, source_type: str, lease_token: str, error_message: str
+    ) -> None:
+        now = datetime.now(timezone.utc)
+        state = self.sync_states.get(source_type)
+        if not state:
+            return
+        meta = self.sync_state_metadata.get(source_type, {})
+        if meta.get("lease_token") != lease_token:
+            return
+        state.status = "FAILED"
+        state.error_message = error_message
+        object.__setattr__(state, "updated_at", now)
+
+    def persist_sync_batch(
+        self,
+        source_type: str,
+        lease_token: str,
+        next_cursor: Optional[str],
+        items: List[RawSourceItem],
+        docs: List[CanonicalDocument],
+        chunks: List[CanonicalChunk],
+        acls: List[AclReference],
+        entities: List[Entity],
+        relationships: List[Relationship],
+    ) -> None:
+        now = datetime.now(timezone.utc)
+        state = self.sync_states.get(source_type)
+        if not state:
+            raise FencedSyncError(f"No sync state found for {source_type}")
+        meta = self.sync_state_metadata.get(source_type, {})
+        if meta.get("lease_token") != lease_token:
+            raise FencedSyncError(f"Worker fenced out for source {source_type}")
+        expires_at_str = meta.get("lease_expires_at")
+        if expires_at_str:
+            try:
+                exp = datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+                if exp <= now:
+                    raise FencedSyncError(f"Lease expired for source {source_type}")
+            except FencedSyncError:
+                raise
+            except Exception:
+                raise FencedSyncError(f"Lease malformed for source {source_type}")
+
+        item_ids = {item.id for item in items}
+
+        # 1. Stale documents & chunks cleanup for no-document replay
+        stored_doc_ids = {d.id for d in self.documents.values() if d.source_record_id in item_ids}
+        new_doc_ids = {d.id for d in docs}
+        stale_doc_ids = stored_doc_ids - new_doc_ids
+        if stale_doc_ids:
+            self.chunks = {cid: c for cid, c in self.chunks.items() if c.document_id not in stale_doc_ids}
+            for sdid in stale_doc_ids:
+                self.documents.pop(sdid, None)
+
+        # 2. Save source records & docs
+        self.save_source_records(items)
+        self.save_documents(docs)
+
+        # 3. Scoped chunk cleanup & replacement
+        self.chunks = {cid: c for cid, c in self.chunks.items() if c.document_id not in new_doc_ids}
+        self.save_chunks(chunks)
+
+        # 4. Scoped ACL replacement
+        self.acls = [
+            a for a in self.acls
+            if not (a.resource_type == "SOURCE_RECORD" and a.resource_id in item_ids)
+        ]
+        self.save_acls(acls)
+
+        # 5. Entities validation & saving
+        self.save_entities(entities)
+
+        # 6. Scoped relationship ownership replacement and immutable upsert
+        if item_ids:
+            affected_keys = [
+                k for k, owners in self.relationship_owners.items()
+                if any(iid in owners for iid in item_ids)
+            ]
+            for k in affected_keys:
+                self.relationship_owners[k].difference_update(item_ids)
+                if not self.relationship_owners[k]:
+                    self.relationship_owners.pop(k, None)
+                    self.relationships.pop(k, None)
+
+        for rel in relationships:
+            key = (rel.source_entity_id, rel.target_entity_id, rel.relationship_type)
+            canonical_meta = derive_canonical_metadata(rel.source_entity_id, rel.target_entity_id, rel.relationship_type)
+            # Verify incoming rel.metadata vs canonical
+            for k, v in canonical_meta.items():
+                if k in rel.metadata and str(rel.metadata[k]) != str(v):
+                    raise ValueError(
+                        f"Metadata conflict for relationship {key}: key '{k}' has conflicting values '{rel.metadata[k]}' vs '{v}'"
+                    )
+
+            if key in self.relationships:
+                existing = self.relationships[key]
+                for k, v in canonical_meta.items():
+                    if k in existing.metadata and str(existing.metadata[k]) != str(v):
+                        raise ValueError(
+                            f"Stored relationship metadata conflict for {key}: stored '{k}'='{existing.metadata[k]}' != canonical '{v}'"
+                        )
+            else:
+                stored_meta = {k: v for k, v in canonical_meta.items() if k in INTRINSIC_RELATIONSHIP_METADATA_ALLOWLIST}
+                self.relationships[key] = Relationship(
+                    source_entity_id=rel.source_entity_id,
+                    target_entity_id=rel.target_entity_id,
+                    relationship_type=rel.relationship_type,
+                    metadata=stored_meta,
+                    created_at=rel.created_at,
+                )
+
+            owners = set()
+            if "source_record_id" in rel.metadata and rel.metadata["source_record_id"]:
+                owners.add(rel.metadata["source_record_id"])
+            if "source_record_ids" in rel.metadata and isinstance(rel.metadata["source_record_ids"], list):
+                owners.update(rel.metadata["source_record_ids"])
+            if owners:
+                self.relationship_owners.setdefault(key, set()).update(owners)
+
+        # 7. Advance checkpoint inside batch; status stays SYNCING
+        state.status = "SYNCING"
+        state.cursor_value = next_cursor
+        state.records_synced_last_run = (state.records_synced_last_run or 0) + len(items)
+        object.__setattr__(state, "updated_at", now)
 
     def save_source_records(self, items: List[RawSourceItem]) -> None:
         for item in items:
@@ -177,11 +534,56 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
     def save_relationships(self, relationships: List[Relationship]) -> None:
         for rel in relationships:
             key = (rel.source_entity_id, rel.target_entity_id, rel.relationship_type)
+            canonical_meta = derive_canonical_metadata(rel.source_entity_id, rel.target_entity_id, rel.relationship_type)
+            for k, v in canonical_meta.items():
+                if k in rel.metadata and str(rel.metadata[k]) != str(v):
+                    raise ValueError(
+                        f"Metadata conflict for relationship {key}: key '{k}' has conflicting values '{rel.metadata[k]}' vs '{v}'"
+                    )
+
             if key in self.relationships:
                 existing = self.relationships[key]
-                existing.metadata = {**existing.metadata, **rel.metadata}
+                for k, v in canonical_meta.items():
+                    if k in existing.metadata and str(existing.metadata[k]) != str(v):
+                        raise ValueError(
+                            f"Stored relationship metadata conflict for {key}: stored '{k}'='{existing.metadata[k]}' != canonical '{v}'"
+                        )
             else:
-                self.relationships[key] = rel
+                stored_meta = {k: v for k, v in canonical_meta.items() if k in INTRINSIC_RELATIONSHIP_METADATA_ALLOWLIST}
+                self.relationships[key] = Relationship(
+                    source_entity_id=rel.source_entity_id,
+                    target_entity_id=rel.target_entity_id,
+                    relationship_type=rel.relationship_type,
+                    metadata=stored_meta,
+                    created_at=rel.created_at,
+                )
+
+            owners = set()
+            if "source_record_id" in rel.metadata and rel.metadata["source_record_id"]:
+                owners.add(rel.metadata["source_record_id"])
+            if "source_record_ids" in rel.metadata and isinstance(rel.metadata["source_record_ids"], list):
+                owners.update(rel.metadata["source_record_ids"])
+            # Fallback for documented extraction rules if neither source_record_id nor source_record_ids is given:
+            if not owners:
+                if rel.relationship_type == RelationshipType.IMPLEMENTED_BY.value:
+                    target_ent = self.entities.get(rel.target_entity_id)
+                    if target_ent and target_ent.source_record_id:
+                        owners.add(target_ent.source_record_id)
+                elif rel.relationship_type == RelationshipType.DISCUSSED_IN.value:
+                    target_ent = self.entities.get(rel.target_entity_id)
+                    if target_ent and target_ent.source_record_id:
+                        owners.add(target_ent.source_record_id)
+                elif rel.relationship_type == RelationshipType.AUTHORED_BY.value:
+                    source_ent = self.entities.get(rel.source_entity_id)
+                    if source_ent and source_ent.source_record_id:
+                        owners.add(source_ent.source_record_id)
+                elif rel.relationship_type == RelationshipType.CONTAINS.value:
+                    source_ent = self.entities.get(rel.source_entity_id)
+                    if source_ent and source_ent.source_record_id:
+                        owners.add(source_ent.source_record_id)
+
+            if owners:
+                self.relationship_owners.setdefault(key, set()).update(owners)
 
     def get_entity(
         self,
@@ -193,38 +595,46 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         if not entity:
             return None
 
-        # 1. Anchored entity (PULL_REQUEST, COMMIT, SLACK_THREAD)
+        # Branch 1: Direct primary anchor authorization
+        is_direct_auth = False
         if entity.source_record_id is not None:
-            acls = [
-                acl for acl in self.acls
-                if acl.resource_type == "SOURCE_RECORD" and acl.resource_id == entity.source_record_id
+            anchor_acls = [
+                a for a in self.acls
+                if a.resource_type == "SOURCE_RECORD" and a.resource_id == entity.source_record_id
             ]
-            if not has_read_permission(acls, user_id=user_id, group_ids=group_ids):
-                return None
-            return entity
+            is_direct_auth = has_read_permission(anchor_acls, user_id=user_id, group_ids=group_ids)
+            if is_direct_auth:
+                return entity
 
-        # 2. Unanchored entity (TICKET, EMPLOYEE)
-        # Provenance visibility rule: visible iff at least one incident relationship
-        # connects to an authorized anchored entity.
-        for rel in self.relationships.values():
-            other_id = None
-            if rel.source_entity_id == entity.id:
-                other_id = rel.target_entity_id
-            elif rel.target_entity_id == entity.id:
-                other_id = rel.source_entity_id
-
-            if other_id:
-                other = self.entities.get(other_id)
-                if other and other.source_record_id is not None:
-                    other_acls = [
-                        acl for acl in self.acls
-                        if acl.resource_type == "SOURCE_RECORD" and acl.resource_id == other.source_record_id
+        # Branch 2: Supporting relationship provenance authorization
+        is_rel_auth = False
+        for rel_key, rel in self.relationships.items():
+            if rel.source_entity_id == entity_id or rel.target_entity_id == entity_id:
+                owner_ids = self.relationship_owners.get(rel_key, set())
+                for oid in owner_ids:
+                    rel_acls = [
+                        a for a in self.acls
+                        if a.resource_type == "SOURCE_RECORD" and a.resource_id == oid
                     ]
-                    if has_read_permission(other_acls, user_id=user_id, group_ids=group_ids):
-                        return entity
+                    if has_read_permission(rel_acls, user_id=user_id, group_ids=group_ids):
+                        is_rel_auth = True
+                        break
+                if is_rel_auth:
+                    break
 
-        # Deny by default: no authorized provenance exists
-        return None
+        if not is_rel_auth:
+            return None  # Denied by default
+
+        # Authorized ONLY via relationship provenance:
+        # Redact private anchor identifier and private metadata
+        safe_meta = {
+            k: v for k, v in entity.metadata.items()
+            if k in {"repository", "number", "sha", "channel_id", "thread_ts", "ticket_id"}
+        }
+        return entity.model_copy(update={
+            "source_record_id": None,
+            "metadata": safe_meta,
+        })
 
     def get_relationships_for_entity(
         self,
@@ -238,14 +648,14 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         if norm_dir not in {"OUTGOING", "INCOMING", "BOTH"}:
             raise ValueError(f"Invalid traversal direction '{direction}': must be OUTGOING, INCOMING, or BOTH")
 
-        # Starting entity must be authorized
+        # 1. Starting entity must be authorized
         start_entity = self.get_entity(entity_id, user_id=user_id, group_ids=group_ids)
         if not start_entity:
             return []
 
         results: List[Tuple[Relationship, Entity]] = []
 
-        for rel in self.relationships.values():
+        for rel_key, rel in self.relationships.items():
             if relationship_type and rel.relationship_type != relationship_type:
                 continue
 
@@ -265,10 +675,49 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
             if not neighbor_id:
                 continue
 
-            # Neighbor entity must be authorized
-            neighbor_entity = self.get_entity(neighbor_id, user_id=user_id, group_ids=group_ids)
-            if not neighbor_entity:
+            # 2. Relationship must have at least one readable owner in relationship_owners
+            owner_ids = self.relationship_owners.get(rel_key, set())
+            if not owner_ids:
+                continue  # Unowned legacy edge: strictly hidden
+
+            has_rel_access = any(
+                has_read_permission(
+                    [a for a in self.acls if a.resource_type == "SOURCE_RECORD" and a.resource_id == oid],
+                    user_id=user_id,
+                    group_ids=group_ids,
+                )
+                for oid in owner_ids
+            )
+            if not has_rel_access:
                 continue
+
+            # 3. Neighbor entity visibility & projection
+            raw_neighbor = self.entities.get(neighbor_id)
+            if not raw_neighbor:
+                continue
+
+            direct_neighbor_auth = False
+            if raw_neighbor.source_record_id is not None:
+                n_acls = [
+                    a for a in self.acls
+                    if a.resource_type == "SOURCE_RECORD" and a.resource_id == raw_neighbor.source_record_id
+                ]
+                direct_neighbor_auth = has_read_permission(n_acls, user_id=user_id, group_ids=group_ids)
+
+            if direct_neighbor_auth:
+                neighbor_entity = raw_neighbor
+            else:
+                # Neighbor visibility established through this authorized supporting relationship!
+                # Redact primary anchor and isolate metadata strictly to safe structural fields
+                canonical_rel_meta = derive_canonical_metadata(rel.source_entity_id, rel.target_entity_id, rel.relationship_type)
+                safe_neighbor_meta = {
+                    k: v for k, v in raw_neighbor.metadata.items()
+                    if k in {"repository", "number", "sha", "channel_id", "thread_ts", "ticket_id"} and (k in canonical_rel_meta or k == "number")
+                }
+                neighbor_entity = raw_neighbor.model_copy(update={
+                    "source_record_id": None,
+                    "metadata": safe_neighbor_meta,
+                })
 
             results.append((rel, neighbor_entity))
 
@@ -473,7 +922,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
     def get_sync_state(self, source_type: str) -> Optional[SyncStateRecord]:
         query = """
             SELECT source_type, cursor_value, status, last_sync_started_at,
-                   last_sync_completed_at, records_synced_last_run, error_message
+                   last_sync_completed_at, records_synced_last_run, error_message, metadata
             FROM sync_state WHERE source_type = %s;
         """
         try:
@@ -483,7 +932,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                     row = cur.fetchone()
                     if not row:
                         return None
-                    return SyncStateRecord(
+                    record = SyncStateRecord(
                         source_type=row[0],
                         cursor_value=row[1],
                         status=row[2],
@@ -492,6 +941,9 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                         records_synced_last_run=row[5],
                         error_message=row[6],
                     )
+                    meta = row[7] if len(row) > 7 and row[7] else {}
+                    object.__setattr__(record, "metadata", meta if isinstance(meta, dict) else json.loads(meta or "{}"))
+                    return record
         except Exception as e:
             logger.error("get_sync_state_failed source_type=%s err=%s", source_type, e)
             return None
@@ -500,8 +952,8 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         query = """
             INSERT INTO sync_state (
                 source_type, cursor_value, status, last_sync_started_at,
-                last_sync_completed_at, records_synced_last_run, error_message, updated_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                last_sync_completed_at, records_synced_last_run, error_message, metadata, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             ON CONFLICT (source_type) DO UPDATE SET
                 cursor_value = EXCLUDED.cursor_value,
                 status = EXCLUDED.status,
@@ -509,8 +961,11 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                 last_sync_completed_at = EXCLUDED.last_sync_completed_at,
                 records_synced_last_run = EXCLUDED.records_synced_last_run,
                 error_message = EXCLUDED.error_message,
+                metadata = EXCLUDED.metadata,
                 updated_at = CURRENT_TIMESTAMP;
         """
+        state_meta = getattr(state, "metadata", {}) or {}
+        meta_json = json.dumps(state_meta) if isinstance(state_meta, dict) else str(state_meta)
         with self._get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -523,9 +978,416 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                         state.last_sync_completed_at,
                         state.records_synced_last_run,
                         state.error_message,
+                        meta_json,
                     ),
                 )
             conn.commit()
+
+    def claim_sync(
+        self, source_type: str, lease_token: str, lease_ttl_seconds: int = 300
+    ) -> Optional[ClaimResult]:
+        query = """
+            INSERT INTO sync_state (
+                source_type, cursor_value, status, last_sync_started_at, records_synced_last_run, metadata, updated_at
+            )
+            VALUES (
+                %s, NULL, 'SYNCING', clock_timestamp(), 0,
+                jsonb_build_object(
+                    'lease_token', %s::text,
+                    'lease_expires_at', to_jsonb((clock_timestamp() + (%s || ' seconds')::interval)::text)
+                ),
+                clock_timestamp()
+            )
+            ON CONFLICT (source_type) DO UPDATE SET
+                status = 'SYNCING',
+                last_sync_started_at = clock_timestamp(),
+                records_synced_last_run = 0,
+                metadata = jsonb_build_object(
+                    'lease_token', EXCLUDED.metadata->>'lease_token',
+                    'lease_expires_at', to_jsonb((clock_timestamp() + (%s || ' seconds')::interval)::text)
+                ),
+                updated_at = clock_timestamp()
+            WHERE sync_state.status != 'SYNCING' 
+               OR COALESCE(
+                    CASE 
+                        WHEN sync_state.metadata->>'lease_expires_at' IS NOT NULL 
+                         AND pg_input_is_valid(sync_state.metadata->>'lease_expires_at', 'timestamptz')
+                        THEN (sync_state.metadata->>'lease_expires_at')::timestamptz
+                        ELSE NULL
+                    END,
+                    sync_state.last_sync_started_at + (%s || ' seconds')::interval,
+                    sync_state.updated_at + (%s || ' seconds')::interval
+                  ) < clock_timestamp()
+            RETURNING source_type, cursor_value, metadata->>'lease_token';
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        query,
+                        (
+                            source_type,
+                            lease_token,
+                            str(lease_ttl_seconds),
+                            str(lease_ttl_seconds),
+                            str(lease_ttl_seconds),
+                            str(lease_ttl_seconds),
+                        ),
+                    )
+                    row = cur.fetchone()
+                conn.commit()
+                if row:
+                    return ClaimResult(
+                        source_type=row[0],
+                        cursor_value=row[1],
+                        lease_token=row[2],
+                    )
+                return None
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_claim_sync_failed source_type=%s err=%s", source_type, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def renew_lease(
+        self, source_type: str, lease_token: str, lease_ttl_seconds: int = 300
+    ) -> bool:
+        query = """
+            UPDATE sync_state
+            SET metadata = jsonb_set(
+                    COALESCE(metadata, '{}'::jsonb),
+                    '{lease_expires_at}',
+                    to_jsonb((clock_timestamp() + (%s || ' seconds')::interval)::text)
+                ),
+                updated_at = clock_timestamp()
+            WHERE source_type = %s 
+              AND metadata->>'lease_token' = %s
+              AND (
+                  CASE 
+                      WHEN metadata->>'lease_expires_at' IS NOT NULL 
+                       AND pg_input_is_valid(metadata->>'lease_expires_at', 'timestamptz')
+                      THEN (metadata->>'lease_expires_at')::timestamptz
+                      ELSE NULL
+                  END > clock_timestamp()
+              );
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, (str(lease_ttl_seconds), source_type, lease_token))
+                    success = cur.rowcount > 0
+                conn.commit()
+                return success
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_renew_lease_failed source_type=%s err=%s", source_type, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def complete_sync(
+        self, source_type: str, lease_token: str, final_cursor: Optional[str] = None
+    ) -> None:
+        query = """
+            UPDATE sync_state
+            SET status = 'SUCCESS',
+                last_sync_completed_at = clock_timestamp(),
+                error_message = NULL,
+                updated_at = clock_timestamp(),
+                cursor_value = COALESCE(%s, cursor_value)
+            WHERE source_type = %s 
+              AND metadata->>'lease_token' = %s
+              AND (
+                  CASE 
+                      WHEN metadata->>'lease_expires_at' IS NOT NULL 
+                       AND pg_input_is_valid(metadata->>'lease_expires_at', 'timestamptz')
+                      THEN (metadata->>'lease_expires_at')::timestamptz
+                      ELSE NULL
+                  END > clock_timestamp()
+              );
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, (final_cursor, source_type, lease_token))
+                    if cur.rowcount == 0:
+                        raise FencedSyncError(
+                            f"Worker fenced out or lease expired for source {source_type}"
+                        )
+                conn.commit()
+        except (DatabaseUnavailableError, FencedSyncError):
+            raise
+        except Exception as e:
+            logger.error("postgres_complete_sync_failed source_type=%s err=%s", source_type, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def fail_sync(
+        self, source_type: str, lease_token: str, error_message: str
+    ) -> None:
+        query = """
+            UPDATE sync_state
+            SET status = 'FAILED',
+                error_message = %s,
+                updated_at = clock_timestamp()
+            WHERE source_type = %s 
+              AND metadata->>'lease_token' = %s;
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, (error_message, source_type, lease_token))
+                conn.commit()
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_fail_sync_failed source_type=%s err=%s", source_type, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def persist_sync_batch(
+        self,
+        source_type: str,
+        lease_token: str,
+        next_cursor: Optional[str],
+        items: List[RawSourceItem],
+        docs: List[CanonicalDocument],
+        chunks: List[CanonicalChunk],
+        acls: List[AclReference],
+        entities: List[Entity],
+        relationships: List[Relationship],
+    ) -> None:
+        try:
+            with self._get_connection() as conn:
+                with conn.transaction():
+                    with conn.cursor() as cur:
+                        # 1. Row lock on sync_state and lease check
+                        cur.execute("""
+                            SELECT metadata->>'lease_token',
+                                   ((CASE 
+                                       WHEN metadata->>'lease_expires_at' IS NOT NULL 
+                                        AND pg_input_is_valid(metadata->>'lease_expires_at', 'timestamptz')
+                                       THEN (metadata->>'lease_expires_at')::timestamptz
+                                       ELSE NULL
+                                     END) > clock_timestamp()) AS is_valid
+                            FROM sync_state 
+                            WHERE source_type = %s 
+                            FOR UPDATE;
+                        """, (source_type,))
+                        row = cur.fetchone()
+                        if not row or row[0] != lease_token or not row[1]:
+                            raise FencedSyncError(f"Worker fenced out for source {source_type}")
+
+                        item_ids = [item.id for item in items]
+
+                        # 2. No-document replay cleanup:
+                        if item_ids:
+                            cur.execute("""
+                                SELECT id FROM documents WHERE source_record_id = ANY(%s);
+                            """, (item_ids,))
+                            stored_doc_ids = [r[0] for r in cur.fetchall()]
+                            new_doc_ids = [d.id for d in docs]
+                            stale_doc_ids = list(set(stored_doc_ids) - set(new_doc_ids))
+                            if stale_doc_ids:
+                                cur.execute("DELETE FROM chunks WHERE document_id = ANY(%s);", (stale_doc_ids,))
+                                cur.execute("DELETE FROM documents WHERE id = ANY(%s);", (stale_doc_ids,))
+
+                        # 3. Save source records (insert/upsert)
+                        for item in items:
+                            cur.execute("""
+                                INSERT INTO source_records (id, source_type, source_id, source_url, title, author_id, raw_content, metadata, created_at, updated_at)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                ON CONFLICT (id) DO UPDATE SET
+                                    source_url = EXCLUDED.source_url,
+                                    title = EXCLUDED.title,
+                                    author_id = EXCLUDED.author_id,
+                                    raw_content = EXCLUDED.raw_content,
+                                    metadata = EXCLUDED.metadata,
+                                    updated_at = EXCLUDED.updated_at;
+                            """, (
+                                item.id,
+                                item.source_type.value if hasattr(item.source_type, "value") else str(item.source_type),
+                                item.source_id,
+                                item.source_url,
+                                item.title,
+                                item.author_id,
+                                item.raw_content,
+                                json.dumps(item.metadata),
+                                item.created_at,
+                                item.updated_at,
+                            ))
+
+                        # 4. Save documents (insert/upsert)
+                        for doc in docs:
+                            cur.execute("""
+                                INSERT INTO documents (
+                                    id, source_record_id, source_type, title, content, author, url,
+                                    metadata, created_at, updated_at
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                ON CONFLICT (id) DO UPDATE SET
+                                    title = EXCLUDED.title,
+                                    content = EXCLUDED.content,
+                                    author = EXCLUDED.author,
+                                    metadata = EXCLUDED.metadata,
+                                    updated_at = EXCLUDED.updated_at;
+                            """, (
+                                doc.id,
+                                doc.source_record_id,
+                                doc.source_type,
+                                doc.title,
+                                doc.content,
+                                doc.author,
+                                doc.url,
+                                json.dumps(doc.metadata),
+                                doc.created_at,
+                                doc.updated_at,
+                            ))
+
+                        # 5. Scoped chunk cleanup and insert
+                        batch_doc_ids = list(set(d.id for d in docs))
+                        if batch_doc_ids:
+                            cur.execute("DELETE FROM chunks WHERE document_id = ANY(%s);", (batch_doc_ids,))
+                        for chunk in chunks:
+                            if chunk.embedding is not None:
+                                cur.execute("""
+                                    INSERT INTO chunks (
+                                        id, document_id, chunk_index, content, token_count,
+                                        embedding, metadata, created_at
+                                    ) VALUES (%s, %s, %s, %s, %s, %s::vector, %s, %s)
+                                    ON CONFLICT (id) DO UPDATE SET
+                                        content = EXCLUDED.content,
+                                        token_count = EXCLUDED.token_count,
+                                        embedding = EXCLUDED.embedding,
+                                        metadata = EXCLUDED.metadata;
+                                """, (
+                                    chunk.id,
+                                    chunk.document_id,
+                                    chunk.chunk_index,
+                                    chunk.content,
+                                    chunk.token_count,
+                                    chunk.embedding,
+                                    json.dumps(chunk.metadata),
+                                    chunk.created_at,
+                                ))
+                            else:
+                                cur.execute("""
+                                    INSERT INTO chunks (
+                                        id, document_id, chunk_index, content, token_count,
+                                        metadata, created_at
+                                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                                    ON CONFLICT (id) DO UPDATE SET
+                                        content = EXCLUDED.content,
+                                        token_count = EXCLUDED.token_count,
+                                        metadata = EXCLUDED.metadata;
+                                """, (
+                                    chunk.id,
+                                    chunk.document_id,
+                                    chunk.chunk_index,
+                                    chunk.content,
+                                    chunk.token_count,
+                                    json.dumps(chunk.metadata),
+                                    chunk.created_at,
+                                ))
+
+                        # 6. Scoped ACL replacement
+                        if item_ids:
+                            cur.execute("""
+                                DELETE FROM acl_references 
+                                WHERE resource_type = 'SOURCE_RECORD' AND resource_id = ANY(%s);
+                            """, (item_ids,))
+                        for acl in acls:
+                            p_type = acl.principal_type.value if hasattr(acl.principal_type, "value") else str(acl.principal_type)
+                            cur.execute("""
+                                INSERT INTO acl_references (resource_type, resource_id, principal_type, principal_id, permission)
+                                VALUES (%s, %s, %s, %s, %s);
+                            """, (acl.resource_type, acl.resource_id, p_type, acl.principal_id, acl.permission))
+
+                        # 7. Entities validation & insert/upsert
+                        self._save_entities_with_cursor(cur, entities)
+
+                        # 8. Scoped relationship ownership replacement and immutable upsert
+                        if item_ids:
+                            cur.execute("""
+                                SELECT DISTINCT relationship_id FROM relationship_owners WHERE source_record_id = ANY(%s);
+                            """, (item_ids,))
+                            affected_rel_ids = [r[0] for r in cur.fetchall()]
+                            cur.execute("""
+                                DELETE FROM relationship_owners WHERE source_record_id = ANY(%s);
+                            """, (item_ids,))
+                            if affected_rel_ids:
+                                cur.execute("""
+                                    DELETE FROM relationships 
+                                    WHERE id = ANY(%s) 
+                                      AND NOT EXISTS (SELECT 1 FROM relationship_owners ro WHERE ro.relationship_id = relationships.id);
+                                """, (affected_rel_ids,))
+
+                        for rel in relationships:
+                            canonical_meta = derive_canonical_metadata(rel.source_entity_id, rel.target_entity_id, rel.relationship_type)
+                            # Verify incoming rel.metadata vs canonical
+                            for k, v in canonical_meta.items():
+                                if k in rel.metadata and str(rel.metadata[k]) != str(v):
+                                    raise ValueError(
+                                        f"Metadata conflict for relationship ({rel.source_entity_id}, {rel.target_entity_id}, {rel.relationship_type}): "
+                                        f"key '{k}' has conflicting values '{rel.metadata[k]}' vs '{v}'"
+                                    )
+
+                            cur.execute("""
+                                INSERT INTO relationships (source_entity_id, target_entity_id, relationship_type, metadata, created_at)
+                                VALUES (%s, %s, %s, %s, %s)
+                                ON CONFLICT (source_entity_id, target_entity_id, relationship_type) 
+                                DO NOTHING
+                                RETURNING id;
+                            """, (
+                                rel.source_entity_id,
+                                rel.target_entity_id,
+                                rel.relationship_type,
+                                json.dumps(canonical_meta),
+                                rel.created_at,
+                            ))
+                            row_insert = cur.fetchone()
+                            if row_insert:
+                                rel_id = row_insert[0]
+                            else:
+                                cur.execute("""
+                                    SELECT id, metadata FROM relationships
+                                    WHERE source_entity_id = %s AND target_entity_id = %s AND relationship_type = %s;
+                                """, (rel.source_entity_id, rel.target_entity_id, rel.relationship_type))
+                                existing_row = cur.fetchone()
+                                if not existing_row:
+                                    continue
+                                rel_id = existing_row[0]
+                                stored_meta = existing_row[1] if isinstance(existing_row[1], dict) else json.loads(existing_row[1] or "{}")
+                                for k, v in canonical_meta.items():
+                                    if k in stored_meta and str(stored_meta[k]) != str(v):
+                                        raise ValueError(
+                                            f"Stored relationship metadata conflict for ({rel.source_entity_id}, {rel.target_entity_id}, {rel.relationship_type}): "
+                                            f"stored '{k}'='{stored_meta[k]}' != canonical '{v}'"
+                                        )
+
+                            owners = set()
+                            if "source_record_id" in rel.metadata and rel.metadata["source_record_id"]:
+                                owners.add(rel.metadata["source_record_id"])
+                            if "source_record_ids" in rel.metadata and isinstance(rel.metadata["source_record_ids"], list):
+                                owners.update(rel.metadata["source_record_ids"])
+                            for owner_id in owners:
+                                cur.execute("""
+                                    INSERT INTO relationship_owners (relationship_id, source_record_id)
+                                    VALUES (%s, %s)
+                                    ON CONFLICT (relationship_id, source_record_id) DO NOTHING;
+                                """, (rel_id, owner_id))
+
+                        # 9. In the SAME transaction: advance checkpoint with status = 'SYNCING'
+                        cur.execute("""
+                            UPDATE sync_state
+                            SET status = 'SYNCING',
+                                cursor_value = %s,
+                                records_synced_last_run = COALESCE(records_synced_last_run, 0) + %s,
+                                updated_at = clock_timestamp()
+                            WHERE source_type = %s 
+                              AND metadata->>'lease_token' = %s;
+                        """, (next_cursor, len(items), source_type, lease_token))
+        except (DatabaseUnavailableError, FencedSyncError, ValueError):
+            raise
+        except Exception as e:
+            logger.error("postgres_persist_sync_batch_failed source_type=%s err=%s", source_type, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
 
     def save_source_records(self, items: List[RawSourceItem]) -> None:
         if not items:
@@ -653,13 +1515,8 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                     )
             conn.commit()
 
-    def save_entities(self, entities: List[Entity]) -> None:
-        if not entities:
-            return
-
+    def _prevalidate_entities(self, entities: List[Entity]) -> Dict[str, Optional[str]]:
         batch_anchors: Dict[str, Optional[str]] = {}
-
-        # 1. Intra-batch pre-validation pass
         for entity in entities:
             if entity.entity_type in {EntityType.TICKET.value, EntityType.EMPLOYEE.value}:
                 entity.source_record_id = None
@@ -676,7 +1533,36 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                     )
             else:
                 batch_anchors[entity.id] = entity.source_record_id
+        return batch_anchors
 
+    def _save_entities_with_cursor(
+        self, cur, entities: List[Entity], batch_anchors: Optional[Dict[str, Optional[str]]] = None
+    ) -> None:
+        if not entities:
+            return
+
+        if batch_anchors is None:
+            batch_anchors = self._prevalidate_entities(entities)
+
+        # 2. Pre-check existing persisted records in this transaction
+        entity_ids = list(batch_anchors.keys())
+        cur.execute(
+            "SELECT id, source_record_id FROM entities WHERE id = ANY(%s);",
+            (entity_ids,),
+        )
+        existing_rows = cur.fetchall()
+        existing_map = {row[0]: row[1] for row in existing_rows}
+        for entity in entities:
+            if entity.id in existing_map:
+                existing_src = existing_map[entity.id]
+                if existing_src != entity.source_record_id:
+                    raise ValueError(
+                        f"Provenance conflict for entity '{entity.id}': "
+                        f"existing source_record_id='{existing_src}', "
+                        f"incoming source_record_id='{entity.source_record_id}'"
+                    )
+
+        # 3. Conflict-aware SQL execution
         upsert_query = """
             INSERT INTO entities (id, entity_type, name, source_record_id, metadata, created_at)
             VALUES (%s, %s, %s, %s, %s, %s)
@@ -686,52 +1572,38 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             WHERE entities.source_record_id IS NOT DISTINCT FROM EXCLUDED.source_record_id
             RETURNING id;
         """
+        for entity in entities:
+            cur.execute(
+                upsert_query,
+                (
+                    entity.id,
+                    entity.entity_type,
+                    entity.name,
+                    entity.source_record_id,
+                    json.dumps(entity.metadata),
+                    entity.created_at,
+                ),
+            )
+            row = cur.fetchone()
+            if not row:
+                cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (entity.id,))
+                res = cur.fetchone()
+                actual_src = res[0] if res else "unknown"
+                raise ValueError(
+                    f"Provenance conflict for entity '{entity.id}': "
+                    f"existing source_record_id='{actual_src}', "
+                    f"incoming source_record_id='{entity.source_record_id}'"
+                )
+
+    def save_entities(self, entities: List[Entity]) -> None:
+        if not entities:
+            return
+        batch_anchors = self._prevalidate_entities(entities)
         try:
             with self._get_connection() as conn:
                 with conn.transaction():
                     with conn.cursor() as cur:
-                        # 2. Pre-check existing persisted records in this transaction
-                        entity_ids = list(batch_anchors.keys())
-                        cur.execute(
-                            "SELECT id, source_record_id FROM entities WHERE id = ANY(%s);",
-                            (entity_ids,),
-                        )
-                        existing_rows = cur.fetchall()
-                        existing_map = {row[0]: row[1] for row in existing_rows}
-                        for entity in entities:
-                            if entity.id in existing_map:
-                                existing_src = existing_map[entity.id]
-                                if existing_src != entity.source_record_id:
-                                    raise ValueError(
-                                        f"Provenance conflict for entity '{entity.id}': "
-                                        f"existing source_record_id='{existing_src}', "
-                                        f"incoming source_record_id='{entity.source_record_id}'"
-                                    )
-
-                        # 3. Conflict-aware SQL execution
-                        for entity in entities:
-                            cur.execute(
-                                upsert_query,
-                                (
-                                    entity.id,
-                                    entity.entity_type,
-                                    entity.name,
-                                    entity.source_record_id,
-                                    json.dumps(entity.metadata),
-                                    entity.created_at,
-                                ),
-                            )
-                            row = cur.fetchone()
-                            if not row:
-                                # WHERE condition failed on conflict due to concurrent/unseen provenance divergence
-                                cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (entity.id,))
-                                res = cur.fetchone()
-                                actual_src = res[0] if res else "unknown"
-                                raise ValueError(
-                                    f"Provenance conflict for entity '{entity.id}': "
-                                    f"existing source_record_id='{actual_src}', "
-                                    f"incoming source_record_id='{entity.source_record_id}'"
-                                )
+                        self._save_entities_with_cursor(cur, entities, batch_anchors=batch_anchors)
         except DatabaseUnavailableError:
             raise
         except ValueError:
@@ -743,28 +1615,84 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
     def save_relationships(self, relationships: List[Relationship]) -> None:
         if not relationships:
             return
-        query = """
-            INSERT INTO relationships (source_entity_id, target_entity_id, relationship_type, metadata, created_at)
-            VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (source_entity_id, target_entity_id, relationship_type) DO UPDATE SET
-                metadata = EXCLUDED.metadata;
-        """
         try:
             with self._get_connection() as conn:
-                with conn.cursor() as cur:
-                    for rel in relationships:
-                        cur.execute(
-                            query,
-                            (
+                with conn.transaction():
+                    with conn.cursor() as cur:
+                        for rel in relationships:
+                            canonical_meta = derive_canonical_metadata(rel.source_entity_id, rel.target_entity_id, rel.relationship_type)
+                            for k, v in canonical_meta.items():
+                                if k in rel.metadata and str(rel.metadata[k]) != str(v):
+                                    raise ValueError(
+                                        f"Metadata conflict for relationship ({rel.source_entity_id}, {rel.target_entity_id}, {rel.relationship_type}): "
+                                        f"incoming '{k}'='{rel.metadata[k]}' != canonical '{v}'"
+                                    )
+
+                            cur.execute("""
+                                INSERT INTO relationships (source_entity_id, target_entity_id, relationship_type, metadata, created_at)
+                                VALUES (%s, %s, %s, %s, %s)
+                                ON CONFLICT (source_entity_id, target_entity_id, relationship_type) DO NOTHING
+                                RETURNING id;
+                            """, (
                                 rel.source_entity_id,
                                 rel.target_entity_id,
                                 rel.relationship_type,
-                                json.dumps(rel.metadata),
+                                json.dumps(canonical_meta),
                                 rel.created_at,
-                            ),
-                        )
-                conn.commit()
+                            ))
+                            row_insert = cur.fetchone()
+                            if row_insert:
+                                rel_id = row_insert[0]
+                            else:
+                                cur.execute("""
+                                    SELECT id, metadata FROM relationships
+                                    WHERE source_entity_id = %s AND target_entity_id = %s AND relationship_type = %s;
+                                """, (rel.source_entity_id, rel.target_entity_id, rel.relationship_type))
+                                existing_row = cur.fetchone()
+                                if not existing_row:
+                                    continue
+                                rel_id = existing_row[0]
+                                stored_meta = existing_row[1] if isinstance(existing_row[1], dict) else json.loads(existing_row[1] or "{}")
+                                for k, v in canonical_meta.items():
+                                    if k in stored_meta and str(stored_meta[k]) != str(v):
+                                        raise ValueError(
+                                            f"Stored relationship metadata conflict for ({rel.source_entity_id}, {rel.target_entity_id}, {rel.relationship_type}): "
+                                            f"stored '{k}'='{stored_meta[k]}' != canonical '{v}'"
+                                        )
+
+                            owners = set()
+                            if "source_record_id" in rel.metadata and rel.metadata["source_record_id"]:
+                                owners.add(rel.metadata["source_record_id"])
+                            if "source_record_ids" in rel.metadata and isinstance(rel.metadata["source_record_ids"], list):
+                                owners.update(rel.metadata["source_record_ids"])
+                            # Documented extraction fallback if unassigned
+                            if not owners:
+                                if rel.relationship_type == RelationshipType.IMPLEMENTED_BY.value:
+                                    cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.target_entity_id,))
+                                    r = cur.fetchone()
+                                    if r and r[0]: owners.add(r[0])
+                                elif rel.relationship_type == RelationshipType.DISCUSSED_IN.value:
+                                    cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.target_entity_id,))
+                                    r = cur.fetchone()
+                                    if r and r[0]: owners.add(r[0])
+                                elif rel.relationship_type == RelationshipType.AUTHORED_BY.value:
+                                    cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.source_entity_id,))
+                                    r = cur.fetchone()
+                                    if r and r[0]: owners.add(r[0])
+                                elif rel.relationship_type == RelationshipType.CONTAINS.value:
+                                    cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.source_entity_id,))
+                                    r = cur.fetchone()
+                                    if r and r[0]: owners.add(r[0])
+
+                            for owner_id in owners:
+                                cur.execute("""
+                                    INSERT INTO relationship_owners (relationship_id, source_record_id)
+                                    VALUES (%s, %s)
+                                    ON CONFLICT (relationship_id, source_record_id) DO NOTHING;
+                                """, (rel_id, owner_id))
         except DatabaseUnavailableError:
+            raise
+        except ValueError:
             raise
         except Exception as e:
             logger.error("postgres_save_relationships_failed err=%s", e)
@@ -776,77 +1704,72 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
     ) -> Optional[Entity]:
+        clean_user = str(user_id).strip() if user_id and str(user_id).strip() else None
+        clean_groups = [str(g).strip() for g in group_ids if str(g).strip()] if group_ids else []
+
+        principal_conditions = ["a.principal_type = 'PUBLIC'"]
+        acl_params: List[Any] = []
+        if clean_user:
+            principal_conditions.append("(a.principal_type = 'USER' AND a.principal_id = %s)")
+            acl_params.append(clean_user)
+        if clean_groups:
+            principal_conditions.append("(a.principal_type = 'GROUP' AND a.principal_id = ANY(%s))")
+            acl_params.append(clean_groups)
+        principals_sql = " OR ".join(principal_conditions)
+
+        query = f"""
+            SELECT e.id, e.entity_type, e.name, e.source_record_id, e.metadata, e.created_at,
+                   -- Branch 1: Direct primary anchor authorization
+                   (e.source_record_id IS NOT NULL AND EXISTS (
+                       SELECT 1 FROM acl_references a
+                       WHERE a.resource_type = 'SOURCE_RECORD'
+                         AND a.resource_id = e.source_record_id
+                         AND UPPER(a.permission) = 'READ'
+                         AND ({principals_sql})
+                   )) AS is_direct_anchor_authorized,
+                   -- Branch 2: Supporting relationship provenance authorization
+                   EXISTS (
+                       SELECT 1 
+                       FROM relationships r
+                       JOIN relationship_owners ro ON ro.relationship_id = r.id
+                       JOIN acl_references a ON (
+                           a.resource_type = 'SOURCE_RECORD'
+                           AND a.resource_id = ro.source_record_id
+                           AND UPPER(a.permission) = 'READ'
+                           AND ({principals_sql})
+                       )
+                       WHERE r.source_entity_id = e.id OR r.target_entity_id = e.id
+                   ) AS is_rel_provenance_authorized
+            FROM entities e
+            WHERE e.id = %s;
+        """
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "SELECT id, entity_type, name, source_record_id, metadata, created_at FROM entities WHERE id = %s;",
-                        (entity_id,),
-                    )
+                    cur.execute(query, tuple(acl_params + acl_params + [entity_id]))
                     row = cur.fetchone()
                     if not row:
                         return None
 
-                    eid, etype, name, s_rec_id, meta, created_at = row
+                    eid, etype, name, s_rec_id, meta, created_at, is_direct_auth, is_rel_auth = row
+                    if not (is_direct_auth or is_rel_auth):
+                        return None
+
                     meta_dict = meta if isinstance(meta, dict) else json.loads(meta or "{}")
-                    entity = Entity(
+                    safe_source_record_id = s_rec_id if is_direct_auth else None
+                    safe_metadata = meta_dict if is_direct_auth else {
+                        k: v for k, v in meta_dict.items()
+                        if k in {"repository", "number", "sha", "channel_id", "thread_ts", "ticket_id"}
+                    }
+
+                    return Entity(
                         id=eid,
                         entity_type=etype,
                         name=name,
-                        source_record_id=s_rec_id,
-                        metadata=meta_dict,
+                        source_record_id=safe_source_record_id,
+                        metadata=safe_metadata,
                         created_at=created_at,
                     )
-
-                    clean_user = str(user_id).strip() if user_id is not None and str(user_id).strip() else None
-                    clean_groups = [str(g).strip() for g in group_ids if str(g).strip()] if group_ids else []
-
-                    principal_conditions = ["a.principal_type = 'PUBLIC'"]
-                    acl_params: List[Any] = []
-                    if clean_user:
-                        principal_conditions.append("(a.principal_type = 'USER' AND a.principal_id = %s)")
-                        acl_params.append(clean_user)
-                    if clean_groups:
-                        principal_conditions.append("(a.principal_type = 'GROUP' AND a.principal_id = ANY(%s))")
-                        acl_params.append(clean_groups)
-                    principals_sql = " OR ".join(principal_conditions)
-
-                    # 1. Anchored entity: verify its source_record_id ACL
-                    if entity.source_record_id is not None:
-                        check_query = f"""
-                            SELECT 1 FROM acl_references a
-                            WHERE UPPER(a.permission) = 'READ'
-                              AND a.resource_type = 'SOURCE_RECORD'
-                              AND a.resource_id = %s
-                              AND ({principals_sql})
-                            LIMIT 1;
-                        """
-                        cur.execute(check_query, tuple([entity.source_record_id] + acl_params))
-                        if cur.fetchone():
-                            return entity
-                        return None
-
-                    # 2. Unanchored entity (TICKET, EMPLOYEE): verify incident relationship to authorized source record
-                    incident_query = f"""
-                        SELECT 1
-                        FROM relationships r
-                        JOIN entities other ON (
-                            (r.source_entity_id = %s AND r.target_entity_id = other.id)
-                            OR (r.target_entity_id = %s AND r.source_entity_id = other.id)
-                        )
-                        JOIN acl_references a ON (
-                            a.resource_type = 'SOURCE_RECORD'
-                            AND a.resource_id = other.source_record_id
-                            AND UPPER(a.permission) = 'READ'
-                        )
-                        WHERE other.source_record_id IS NOT NULL
-                          AND ({principals_sql})
-                        LIMIT 1;
-                    """
-                    cur.execute(incident_query, tuple([entity_id, entity_id] + acl_params))
-                    if cur.fetchone():
-                        return entity
-                    return None
         except DatabaseUnavailableError:
             raise
         except Exception as e:
@@ -869,50 +1792,126 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         if not start_entity:
             return []
 
+        clean_user = str(user_id).strip() if user_id and str(user_id).strip() else None
+        clean_groups = [str(g).strip() for g in group_ids if str(g).strip()] if group_ids else []
+
+        principal_conditions = ["a.principal_type = 'PUBLIC'"]
+        acl_params: List[Any] = []
+        if clean_user:
+            principal_conditions.append("(a.principal_type = 'USER' AND a.principal_id = %s)")
+            acl_params.append(clean_user)
+        if clean_groups:
+            principal_conditions.append("(a.principal_type = 'GROUP' AND a.principal_id = ANY(%s))")
+            acl_params.append(clean_groups)
+        principals_sql = " OR ".join(principal_conditions)
+
+        where_parts = []
+        query_params: List[Any] = []
+
+        if norm_dir == "OUTGOING":
+            where_parts.append("r.source_entity_id = %s")
+            query_params.append(entity_id)
+        elif norm_dir == "INCOMING":
+            where_parts.append("r.target_entity_id = %s")
+            query_params.append(entity_id)
+        elif norm_dir == "BOTH":
+            where_parts.append("(r.source_entity_id = %s OR r.target_entity_id = %s)")
+            query_params.extend([entity_id, entity_id])
+
+        if relationship_type:
+            where_parts.append("r.relationship_type = %s")
+            query_params.append(relationship_type)
+
+        na_principals_sql = principals_sql.replace("a.", "na.")
+
+        query = f"""
+            SELECT r.source_entity_id, r.target_entity_id, r.relationship_type, r.metadata, r.created_at,
+                   n.id, n.entity_type, n.name, n.source_record_id, n.metadata, n.created_at,
+                   (n.source_record_id IS NOT NULL AND EXISTS (
+                       SELECT 1 FROM acl_references na
+                       WHERE na.resource_type = 'SOURCE_RECORD'
+                         AND na.resource_id = n.source_record_id
+                         AND UPPER(na.permission) = 'READ'
+                         AND ({na_principals_sql})
+                   )) AS is_direct_neighbor_auth
+            FROM relationships r
+            JOIN entities n ON (
+                CASE
+                    WHEN %s = 'OUTGOING' THEN r.target_entity_id = n.id
+                    WHEN %s = 'INCOMING' THEN r.source_entity_id = n.id
+                    ELSE (r.source_entity_id = %s AND r.target_entity_id = n.id)
+                      OR (r.target_entity_id = %s AND r.source_entity_id = n.id)
+                END
+            )
+            WHERE {" AND ".join(where_parts)}
+              AND EXISTS (
+                  SELECT 1 
+                  FROM relationship_owners ro
+                  JOIN acl_references a ON (
+                      a.resource_type = 'SOURCE_RECORD'
+                      AND a.resource_id = ro.source_record_id
+                      AND UPPER(a.permission) = 'READ'
+                      AND ({principals_sql})
+                  )
+                  WHERE ro.relationship_id = r.id
+              )
+            ORDER BY r.relationship_type, r.id;
+        """
+        all_params = (
+            acl_params
+            + [norm_dir, norm_dir, entity_id, entity_id]
+            + query_params
+            + acl_params
+        )
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cur:
-                    where_parts = []
-                    params: List[Any] = []
-
-                    if norm_dir == "OUTGOING":
-                        where_parts.append("r.source_entity_id = %s")
-                        params.append(entity_id)
-                    elif norm_dir == "INCOMING":
-                        where_parts.append("r.target_entity_id = %s")
-                        params.append(entity_id)
-                    elif norm_dir == "BOTH":
-                        where_parts.append("(r.source_entity_id = %s OR r.target_entity_id = %s)")
-                        params.extend([entity_id, entity_id])
-
-                    if relationship_type:
-                        where_parts.append("r.relationship_type = %s")
-                        params.append(relationship_type)
-
-                    query = f"""
-                        SELECT r.source_entity_id, r.target_entity_id, r.relationship_type, r.metadata, r.created_at
-                        FROM relationships r
-                        WHERE {" AND ".join(where_parts)}
-                        ORDER BY r.relationship_type, r.id;
-                    """
-                    cur.execute(query, tuple(params))
+                    cur.execute(query, tuple(all_params))
                     rows = cur.fetchall()
 
             results: List[Tuple[Relationship, Entity]] = []
             for row in rows:
-                s_id, t_id, r_type, meta, created_at = row
-                meta_dict = meta if isinstance(meta, dict) else json.loads(meta or "{}")
+                (
+                    s_id, t_id, r_type, r_meta, r_created,
+                    n_id, n_type, n_name, n_s_rec_id, n_meta, n_created,
+                    is_direct_neighbor_auth,
+                ) = row
+                rel_meta_dict = r_meta if isinstance(r_meta, dict) else json.loads(r_meta or "{}")
+                n_meta_dict = n_meta if isinstance(n_meta, dict) else json.loads(n_meta or "{}")
+
                 rel = Relationship(
                     source_entity_id=s_id,
                     target_entity_id=t_id,
                     relationship_type=r_type,
-                    metadata=meta_dict,
-                    created_at=created_at,
+                    metadata=rel_meta_dict,
+                    created_at=r_created,
                 )
-                neighbor_id = t_id if s_id == entity_id else s_id
-                neighbor_entity = self.get_entity(neighbor_id, user_id=user_id, group_ids=group_ids)
-                if neighbor_entity:
-                    results.append((rel, neighbor_entity))
+
+                if is_direct_neighbor_auth:
+                    neighbor_entity = Entity(
+                        id=n_id,
+                        entity_type=n_type,
+                        name=n_name,
+                        source_record_id=n_s_rec_id,
+                        metadata=n_meta_dict,
+                        created_at=n_created,
+                    )
+                else:
+                    canonical_rel_meta = derive_canonical_metadata(s_id, t_id, r_type)
+                    safe_neighbor_meta = {
+                        k: v for k, v in n_meta_dict.items()
+                        if k in {"repository", "number", "sha", "channel_id", "thread_ts", "ticket_id"} and (k in canonical_rel_meta or k == "number")
+                    }
+                    neighbor_entity = Entity(
+                        id=n_id,
+                        entity_type=n_type,
+                        name=n_name,
+                        source_record_id=None,
+                        metadata=safe_neighbor_meta,
+                        created_at=n_created,
+                    )
+
+                results.append((rel, neighbor_entity))
 
             results.sort(key=lambda x: (x[0].relationship_type, x[1].id))
             return results

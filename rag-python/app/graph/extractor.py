@@ -63,15 +63,28 @@ def extract_entities_and_relationships(
         target_id: str,
         rel_type: RelationshipType,
         metadata: Optional[Dict] = None,
+        source_record_id: Optional[str] = None,
     ) -> None:
         key = (source_id, target_id, rel_type.value)
+        meta = dict(metadata or {})
+        if source_record_id:
+            meta["source_record_id"] = source_record_id
+            meta["source_record_ids"] = [source_record_id]
         if key not in relationships:
             relationships[key] = Relationship(
                 source_entity_id=source_id,
                 target_entity_id=target_id,
                 relationship_type=rel_type.value,
-                metadata=metadata or {},
+                metadata=meta,
             )
+        else:
+            existing = relationships[key]
+            if source_record_id:
+                sids = set(existing.metadata.get("source_record_ids", []))
+                if existing.metadata.get("source_record_id"):
+                    sids.add(existing.metadata["source_record_id"])
+                sids.add(source_record_id)
+                existing.metadata["source_record_ids"] = sorted(list(sids))
 
     # Track PRs and Commits by ticket and repo for deterministic linking
     prs_by_ticket: Dict[Tuple[str, str], List[str]] = {}  # (repo, ticket) -> [pr_entity_id]
@@ -133,6 +146,7 @@ def extract_entities_and_relationships(
                         target_id=pr_id,
                         rel_type=RelationshipType.IMPLEMENTED_BY,
                         metadata={"repository": repo, "pr_number": pr_num},
+                        source_record_id=item.id,
                     )
                     prs_by_ticket.setdefault((repo, tid), []).append(pr_id)
 
@@ -146,6 +160,7 @@ def extract_entities_and_relationships(
                         target_id=commit_entity_id,
                         rel_type=RelationshipType.CONTAINS,
                         metadata={"repository": repo},
+                        source_record_id=item.id,
                     )
 
             # Handle Commit
@@ -195,6 +210,7 @@ def extract_entities_and_relationships(
                         target_id=employee_id,
                         rel_type=RelationshipType.AUTHORED_BY,
                         metadata={"repository": repo, "sha": sha},
+                        source_record_id=item.id,
                     )
 
                 # Extract referenced tickets in commit
@@ -212,6 +228,7 @@ def extract_entities_and_relationships(
                         target_id=commit_id,
                         rel_type=RelationshipType.CONTAINS,
                         metadata={"repository": repo},
+                        source_record_id=item.id,
                     )
 
         # -------------------------------------------------------------------
@@ -261,6 +278,7 @@ def extract_entities_and_relationships(
                     target_id=thread_id,
                     rel_type=RelationshipType.DISCUSSED_IN,
                     metadata={"channel_id": channel_id, "thread_ts": thread_ts},
+                    source_record_id=item.id,
                 )
 
     # -----------------------------------------------------------------------
