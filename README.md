@@ -54,6 +54,13 @@ To isolate the contribution of each retrieval stage, an ablation evaluation was 
 
 *Note: With an exact 50/50 query split, Overall Recall@5 is the exact arithmetic mean of the Exact-ID and Semantic categories (e.g. \((84\% + 36\%) / 2 = 60.0\%\) for baseline RRF, and \((90\% + 58\%) / 2 = 74.0\%\) with graph reranking).*
 
+### 3. Limitations & Known Trade-offs
+To preserve engineering integrity, the current benchmark methodology recognizes the following constraints:
+- **Synthetic Domain Corpus:** The 10,000-chunk scale corpus and benchmark queries originate from the same domain generator; real employee queries introduce typos, conversational ambiguity, and vocabulary mismatch.
+- **Deterministic Mock Embeddings:** The offline evaluation harness uses deterministic unit-normalized hash embeddings to run self-contained without paid third-party API dependencies; production dense bi-encoders (e.g. OpenAI `text-embedding-3` or `bge-large`) will exhibit different semantic cluster geometries.
+- **Binary Relevance Against Single Target:** Retrieval accuracy is evaluated strictly binary (0 or 1) against a single authoritative target permalink, whereas enterprise queries often feature graded relevance spanning multi-channel threads.
+- **Heuristic Graph Boosting:** Entity context boosting uses fixed heuristic weights (+0.15 for linked PRs and tickets) evaluated on the benchmark set rather than a learned cross-encoder model trained on held-out splits.
+
 ---
 
 ## Architecture Overview
