@@ -137,6 +137,12 @@ curl -s -X POST http://localhost:8080/api/v1/ask \
   -d '{"question": "Why did we change the validation flow?"}'
 ```
 
+### Interactive Demo Console UI
+
+Once `backend-java` or the Docker demo stack is running, open the interactive demo console:
+- **Live Gateway UI**: [`http://localhost:8080/`](http://localhost:8080/) (served directly from Spring Boot static resources).
+- **Standalone Offline UI**: Open [`demo-ui/index.html`](demo-ui/index.html) directly in any web browser. Includes an Offline Simulation toggle for reliable presentations without container dependencies, side-by-side ACL leakage audit, Ask AI with grounded citations, and scale/ablation metrics.
+
 See [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md) for the complete 8–12 minute live demonstration walkthrough.
 
 ---
