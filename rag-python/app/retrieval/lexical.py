@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from app.contracts.rag_search import RagSearchResultItem
 from app.indexing.repository import KnowledgeRepository
+from app.retrieval.expansion import expand_query_terms
 
 logger = logging.getLogger(__name__)
 
@@ -39,17 +40,19 @@ class LexicalRetriever:
 
         effective_user_id = user_id if user_id is not None else self.default_user_id
         effective_group_ids = group_ids if group_ids is not None else self.default_group_ids
+        search_query = expand_query_terms(query)
 
         logger.debug(
-            "lexical_search_executing query=%s limit=%d source_types=%s user_id=%s groups=%s",
+            "lexical_search_executing query=%s expanded=%s limit=%d source_types=%s user_id=%s groups=%s",
             query,
+            search_query,
             limit,
             source_types,
             effective_user_id,
             effective_group_ids,
         )
         return self.repository.search_lexical(
-            query=query,
+            query=search_query,
             limit=limit,
             source_types=source_types,
             user_id=effective_user_id,
