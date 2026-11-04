@@ -15,9 +15,26 @@ Powered by a single FastAPI service on PostgreSQL 16 with pgvector.
 
 ---
 
+## Real vs. Mocked & Stubbed Components
+
+To ensure complete transparency regarding system capabilities and boundaries:
+
+| Component | Status | Details |
+|---|---|---|
+| **Embeddings & Vector Index** | **Real** | Local HuggingFace `sentence-transformers` (`all-MiniLM-L6-v2`, 384 dimensions) with PostgreSQL 16 `pgvector` HNSW index. No third-party API keys required. |
+| **Lexical Search & Hybrid Fusion** | **Real** | PostgreSQL `tsvector` with GIN indexing, fused with vector search using Reciprocal Rank Fusion ($k=60$) and graph relationship boosts. |
+| **Pushdown Security & RBAC** | **Real** | SQL-level ACL filtering inside PostgreSQL queries. Production mode enforces signed PyJWT tokens (`sub`, `role`, `groups`) and rejects header simulation. |
+| **Concurrency Control & Metrics** | **Real** | Concurrency limiter guards against worker pool starvation, shedding excess load with HTTP 503 (`Retry-After: 1`). Per-stage timings and P95 latency exposed on `/metrics`. |
+| **Audit Logging** | **Real** | Transactional database logging with fail-open resilience to prevent user query blocking. |
+| **Benchmark Corpus** | **Synthetic** | **Synthetic data**: 10,000 template-generated chunks across 2,500 documents and 12,500 ACL rules. This is not real company data. |
+| **LLM Answer Synthesis** | **Stubbed** | Deterministic rule-grounded passage extractor (`MockLLMProvider`). Extracts direct evidence and formats citations without calling a commercial LLM API (such as OpenAI or Anthropic). |
+| **Connector Feeds** | **Mocked** | GitHub, Slack, and Email connectors ingest from local JSON fixture files rather than live SaaS OAuth APIs. |
+
+---
+
 ## Evaluation Benchmark & Real Ablation Study
 
-Evaluated over 10,000 multi-tenant chunks (2,500 documents across GitHub, Slack, and Email) with 12,500 ACL rules over 50 simulated users and 5 departments in PostgreSQL + pgvector (`python -m app.cli.scale_benchmark --skip-seed --ablation`).
+Evaluated over 10,000 multi-tenant synthetic chunks (2,500 documents across GitHub, Slack, and Email) with 12,500 ACL rules over 50 simulated users and 5 departments in PostgreSQL + pgvector (`python -m app.cli.scale_benchmark --skip-seed --ablation`).
 
 ### 1. Scale & Security Benchmark
 
@@ -95,13 +112,13 @@ docker compose -f docker-compose.demo.yml up --build -d
 # Verify readiness (checks live database connection)
 curl http://localhost:8000/ready
 
-# Search enterprise knowledge
+# Search enterprise knowledge (dev mode)
 curl -s -X POST http://localhost:8000/api/v1/search \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"query": "DC-8692"}'
 
-# Ask a grounded question
+# Ask a grounded question (dev mode)
 curl -s -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
@@ -143,7 +160,7 @@ cd rag-python
 .venv/Scripts/pytest.exe tests
 ```
 
-312 passed tests (308 offline with mock embeddings, 4 real model tests when weights are cached) covering hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, and error handling contracts.
+315 passed tests (311 run completely offline with mock embeddings, 4 real model tests when weights are cached) covering hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, and error handling contracts.
 
 ---
 
