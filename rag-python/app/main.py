@@ -8,6 +8,7 @@ from http import HTTPStatus
 import logging
 from pathlib import Path
 import sys
+import time
 from typing import Any, Dict
 import uuid
 
@@ -15,7 +16,8 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 
-from app.api import health, internal_rag, public_v1
+from app.api import health, internal_rag, metrics, public_v1
+from app.api.metrics import record_request_metric
 from app.auth.user_context import AccessDeniedError
 from app.common.config import get_settings
 from app.indexing.repository import DatabaseUnavailableError
@@ -67,7 +69,7 @@ def create_app() -> FastAPI:
     )
 
     # -----------------------------------------------------------------------
-    # Middleware: Trace ID propagation
+    # Middleware: Trace ID propagation and metrics recording
     # -----------------------------------------------------------------------
     @application.middleware("http")
     async def trace_id_middleware(request: Request, call_next):
@@ -77,8 +79,16 @@ def create_app() -> FastAPI:
             or uuid.uuid4().hex
         )
         request.state.trace_id = trace_id
+        start_time = time.perf_counter()
         response = await call_next(request)
+        duration = time.perf_counter() - start_time
         response.headers["X-Trace-Id"] = trace_id
+        record_request_metric(
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_seconds=duration,
+        )
         return response
 
     # -----------------------------------------------------------------------
@@ -87,6 +97,7 @@ def create_app() -> FastAPI:
     application.include_router(health.router)
     application.include_router(public_v1.router)
     application.include_router(internal_rag.router)
+    application.include_router(metrics.router)
 
     # -----------------------------------------------------------------------
     # Static Demo Console UI Root
