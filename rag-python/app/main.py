@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 import sys
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import uuid
 
 from fastapi import FastAPI, HTTPException, Request, status
@@ -21,7 +21,7 @@ from app.api import health, internal_rag, metrics, public_v1
 from app.api.concurrency import ConcurrencyLimitExceededError
 from app.api.metrics import record_request_metric
 from app.auth.user_context import AccessDeniedError, AuthenticationRequiredError
-from app.common.config import get_settings
+from app.common.config import DEFAULT_DEV_JWT_SECRET, Settings, get_settings
 from app.indexing.repository import DatabaseUnavailableError
 
 
@@ -80,14 +80,19 @@ TAGS_METADATA = [
 ]
 
 
-def create_app() -> FastAPI:
-    settings = get_settings()
+def create_app(settings: Optional[Settings] = None) -> FastAPI:
+    if settings is None:
+        settings = get_settings()
     configure_logging(settings.log_level)
 
     if settings.auth_mode.lower().strip() == "dev":
         logging.getLogger(__name__).warning(
             "SECURITY WARNING: AUTH_MODE is set to 'dev'. Header-based identity spoofing is enabled. Dev mode is NOT safe for production!"
         )
+        if settings.jwt_secret == DEFAULT_DEV_JWT_SECRET:
+            logging.getLogger(__name__).warning(
+                "SECURITY WARNING: Using default JWT secret in dev mode. Set a strong JWT_SECRET before deploying to production."
+            )
 
     application = FastAPI(
         title="WorkMesh Platform API",

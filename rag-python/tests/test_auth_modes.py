@@ -5,8 +5,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.auth.jwt_utils import create_jwt_token
-from app.common.config import Settings, get_settings
+from app.common.config import DEFAULT_DEV_JWT_SECRET, Settings, get_settings
 from app.dependencies import get_hybrid_retriever, get_repository
+
+STRONG_PROD_SECRET = "production_super_strong_secret_key_exceeding_32_characters"
 from app.indexing.repository import InMemoryKnowledgeRepository
 from app.main import create_app
 from app.retrieval.hybrid import HybridRetriever
@@ -24,7 +26,7 @@ def retriever(repo: InMemoryKnowledgeRepository) -> HybridRetriever:
 
 def test_prod_mode_rejects_forged_role_header(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
     """In prod mode, any simulation headers (X-User-*) are strictly rejected with 401."""
-    prod_settings = Settings(auth_mode="prod")
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: prod_settings
     app.dependency_overrides[get_repository] = lambda: repo
@@ -42,7 +44,7 @@ def test_prod_mode_rejects_forged_role_header(repo: InMemoryKnowledgeRepository,
 
 def test_prod_mode_rejects_missing_jwt(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
     """In prod mode, requests lacking an Authorization Bearer token fail closed with 401."""
-    prod_settings = Settings(auth_mode="prod")
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: prod_settings
     app.dependency_overrides[get_repository] = lambda: repo
@@ -59,7 +61,7 @@ def test_prod_mode_rejects_missing_jwt(repo: InMemoryKnowledgeRepository, retrie
 
 def test_prod_mode_accepts_valid_jwt(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
     """In prod mode, a properly signed and non-expired JWT is accepted."""
-    prod_settings = Settings(auth_mode="prod")
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: prod_settings
     app.dependency_overrides[get_repository] = lambda: repo
@@ -85,7 +87,7 @@ def test_prod_mode_accepts_valid_jwt(repo: InMemoryKnowledgeRepository, retrieve
 
 def test_prod_mode_rejects_expired_jwt(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
     """In prod mode, an expired JWT is rejected with 401."""
-    prod_settings = Settings(auth_mode="prod")
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: prod_settings
     app.dependency_overrides[get_repository] = lambda: repo
@@ -111,7 +113,7 @@ def test_prod_mode_rejects_expired_jwt(repo: InMemoryKnowledgeRepository, retrie
 
 def test_prod_mode_rejects_tampered_jwt(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
     """In prod mode, a JWT signed with a different key or tampered signature is rejected with 401."""
-    prod_settings = Settings(auth_mode="prod")
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: prod_settings
     app.dependency_overrides[get_repository] = lambda: repo
@@ -137,7 +139,7 @@ def test_prod_mode_rejects_tampered_jwt(repo: InMemoryKnowledgeRepository, retri
 
 def test_prod_mode_require_admin_role_enforcement(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
     """In prod mode, valid JWT without ADMIN role receives 403 Forbidden on admin endpoints."""
-    prod_settings = Settings(auth_mode="prod")
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: prod_settings
     app.dependency_overrides[get_repository] = lambda: repo
@@ -194,3 +196,51 @@ def test_dev_mode_still_works(repo: InMemoryKnowledgeRepository, retriever: Hybr
         json={"query": "test query"},
     )
     assert resp_search.status_code == 200
+
+
+def test_prod_mode_default_secret_fails_to_start(monkeypatch):
+    """Prod mode with default dev secret must fail startup (raise clear ValueError, app must not boot)."""
+    monkeypatch.setenv("AUTH_MODE", "prod")
+    monkeypatch.setenv("JWT_SECRET", DEFAULT_DEV_JWT_SECRET)
+    get_settings.cache_clear()
+    with pytest.raises(ValueError, match="cannot use the known dev default"):
+        create_app()
+
+
+def test_prod_mode_unset_secret_fails_to_start(monkeypatch):
+    """Prod mode with unset JWT secret must fail startup (app must not boot)."""
+    monkeypatch.setenv("AUTH_MODE", "prod")
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    get_settings.cache_clear()
+    with pytest.raises(ValueError, match="JWT_SECRET is required"):
+        create_app()
+
+
+def test_prod_mode_short_secret_fails_to_start(monkeypatch):
+    """Prod mode with secret shorter than 32 characters must fail startup."""
+    monkeypatch.setenv("AUTH_MODE", "prod")
+    monkeypatch.setenv("JWT_SECRET", "too_short_secret_under_32")
+    get_settings.cache_clear()
+    with pytest.raises(ValueError, match="at least 32 characters"):
+        create_app()
+
+
+def test_prod_mode_strong_secret_starts(monkeypatch):
+    """Prod mode with a strong 32+ character secret starts up successfully."""
+    monkeypatch.setenv("AUTH_MODE", "prod")
+    monkeypatch.setenv("JWT_SECRET", STRONG_PROD_SECRET)
+    get_settings.cache_clear()
+    app = create_app()
+    assert app is not None
+
+
+def test_dev_mode_default_secret_starts_with_warning(monkeypatch, caplog):
+    """Dev mode with default secret starts and logs a security warning."""
+    import logging
+    monkeypatch.setenv("AUTH_MODE", "dev")
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    get_settings.cache_clear()
+    with caplog.at_level(logging.WARNING):
+        app = create_app()
+        assert app is not None
+        assert any("default JWT secret in dev mode" in record.message for record in caplog.records)

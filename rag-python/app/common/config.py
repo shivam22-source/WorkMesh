@@ -4,9 +4,13 @@ Every value is environment-driven so nothing host-specific is committed.
 """
 
 from functools import lru_cache
+import logging
 from typing import Optional
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEFAULT_DEV_JWT_SECRET = "workmesh_jwt_secret_dev_key_only_change_in_prod"
 
 
 class Settings(BaseSettings):
@@ -26,8 +30,34 @@ class Settings(BaseSettings):
 
     # Auth settings
     auth_mode: str = "prod"  # "prod" or "dev"
-    jwt_secret: str = "workmesh_jwt_secret_dev_key_only_change_in_prod"
+    jwt_secret: Optional[str] = None
     jwt_algorithm: str = "HS256"
+
+    @model_validator(mode="after")
+    def validate_auth_settings(self) -> "Settings":
+        mode = (self.auth_mode or "prod").strip().lower()
+        if mode == "dev":
+            if not self.jwt_secret:
+                self.jwt_secret = DEFAULT_DEV_JWT_SECRET
+            if self.jwt_secret == DEFAULT_DEV_JWT_SECRET:
+                logging.getLogger(__name__).warning(
+                    "SECURITY WARNING: Using default JWT secret in dev mode. Set a strong JWT_SECRET before deploying to production."
+                )
+        else:
+            # Production mode validation
+            if not self.jwt_secret:
+                raise ValueError(
+                    "JWT_SECRET is required in production mode (AUTH_MODE=prod). App startup aborted."
+                )
+            if self.jwt_secret == DEFAULT_DEV_JWT_SECRET:
+                raise ValueError(
+                    "JWT_SECRET cannot use the known dev default in production mode. App startup aborted."
+                )
+            if len(self.jwt_secret) < 32:
+                raise ValueError(
+                    f"JWT_SECRET is too short ({len(self.jwt_secret)} characters). Must be at least 32 characters in production mode. App startup aborted."
+                )
+        return self
 
     # PostgreSQL / pgvector settings
     postgres_host: str = "172.19.63.124"
