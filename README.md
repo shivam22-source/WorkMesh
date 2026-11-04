@@ -171,7 +171,7 @@ cd rag-python
 .venv/Scripts/pytest.exe tests
 ```
 
-315 passed tests (311 run completely offline with mock embeddings, 4 real model tests when weights are cached) covering hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, and error handling contracts.
+321 passed tests (317 run completely offline with mock embeddings, 4 real model tests when weights are cached) covering hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
 
 ---
 
