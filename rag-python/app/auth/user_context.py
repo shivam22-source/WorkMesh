@@ -40,35 +40,37 @@ DEFAULT_GROUPS = {"group_engineering", "group_backend"}
 
 def get_current_user(
     x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    x_user_groups: Optional[str] = Header(None, alias="X-User-Groups"),
 ) -> UserContext:
-    """Deterministic authentication provider for development and testing.
+    """Deterministic authentication provider for development, integration, and testing.
 
-    Always provides employee_42 unless an optional X-User-Id header is passed.
+    Provides employee_42 unless optional X-User-Id, X-User-Role, or X-User-Groups
+    headers are passed to simulate different tenant principals.
     """
-    if x_user_id and x_user_id.strip():
-        clean_id = x_user_id.strip()
-        if clean_id.lower() == "employee_admin":
-            return UserContext(
-                user_id="employee_admin",
-                email="admin@company.internal",
-                name="Sam Admin",
-                role="ADMIN",
-                group_ids={"group_engineering"},
-            )
+    clean_id = x_user_id.strip() if x_user_id and x_user_id.strip() else DEFAULT_USER_ID
+    clean_role = x_user_role.strip().upper() if x_user_role and x_user_role.strip() else None
+
+    if x_user_groups is not None:
+        groups = {g.strip() for g in x_user_groups.split(",") if g.strip()}
+    else:
+        groups = set(DEFAULT_GROUPS)
+
+    if clean_id.lower() == "employee_admin":
         return UserContext(
-            user_id=clean_id,
-            email=f"{clean_id}@company.internal",
-            name=f"Test User ({clean_id})",
-            role=DEFAULT_ROLE,
-            group_ids=set(DEFAULT_GROUPS),
+            user_id="employee_admin",
+            email="admin@company.internal",
+            name="Sam Admin",
+            role=clean_role or "ADMIN",
+            group_ids=groups if x_user_groups is not None else {"group_engineering"},
         )
 
     return UserContext(
-        user_id=DEFAULT_USER_ID,
-        email=DEFAULT_EMAIL,
-        name=DEFAULT_NAME,
-        role=DEFAULT_ROLE,
-        group_ids=set(DEFAULT_GROUPS),
+        user_id=clean_id,
+        email=f"{clean_id}@company.internal",
+        name=f"Test User ({clean_id})",
+        role=clean_role or DEFAULT_ROLE,
+        group_ids=groups,
     )
 
 
