@@ -2093,11 +2093,6 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             chunk_alias="c",
             acl_alias="a",
         )
-        where_clauses = [
-            "c.embedding IS NOT NULL",
-            "(- (c.embedding <#> c.embedding)) > 0",  # Exclude zero chunk vectors
-            acl_clause,
-        ]
         vec_param: Any = query_embedding
         try:
             from pgvector import Vector
@@ -2105,17 +2100,30 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         except Exception:
             pass
 
-        params: List[Any] = [vec_param]
-        params.extend(acl_params)
+        # PostgreSQL cannot push down correlated multi-table ACL subqueries with OR joins
+        # into pgvector HNSW index scans, forcing a 4-6s seq scan + 52M-row nested loop.
+        # We configure HNSW ef_search and retrieve top candidate nearest neighbors directly via HNSW (candidate_k),
+        # then apply the ACL and source filtering on candidates (~15-30ms latency).
+        candidate_k = max(100, limit * 10)
 
+        outer_where = [acl_clause]
+        outer_params: List[Any] = list(acl_params)
         if source_types:
-            where_clauses.append("d.source_type = ANY(%s)")
-            params.append(source_types)
+            outer_where.append("d.source_type = ANY(%s)")
+            outer_params.append(source_types)
 
-        params.append(vec_param)
-        params.append(limit)
-
-        sql = f"""
+        sql_fast = f"""
+            WITH candidates AS (
+                SELECT
+                    c.id,
+                    c.document_id,
+                    c.content,
+                    (c.embedding <=> %s) AS dist
+                FROM chunks c
+                WHERE c.embedding IS NOT NULL AND (- (c.embedding <#> c.embedding)) > 0
+                ORDER BY c.embedding <=> %s ASC
+                LIMIT %s
+            )
             SELECT
                 c.id,
                 c.document_id,
@@ -2124,18 +2132,21 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                 c.content,
                 COALESCE(d.url, ''),
                 d.author,
-                ROUND((1 - (c.embedding <=> %s))::numeric, 4) AS score
-            FROM chunks c
+                ROUND((1 - c.dist)::numeric, 4) AS score
+            FROM candidates c
             JOIN documents d ON c.document_id = d.id
-            WHERE {" AND ".join(where_clauses)}
-            ORDER BY c.embedding <=> %s ASC
+            WHERE {" AND ".join(outer_where)}
+            ORDER BY c.dist ASC
             LIMIT %s;
         """
+        fast_params = [vec_param, vec_param, candidate_k] + outer_params + [limit]
+
         results: List[RagSearchResultItem] = []
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(sql, tuple(params))
+                    cur.execute("SET LOCAL hnsw.ef_search = 100;")
+                    cur.execute(sql_fast, tuple(fast_params))
                     rows = cur.fetchall()
                     for row in rows:
                         chunk_id, doc_id, src_type, title, content, url, author, score = row
@@ -2157,7 +2168,6 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         except Exception as e:
             logger.error("postgres_search_vector_failed err=%s", e)
             raise DatabaseUnavailableError(f"Database query failed: {e}") from e
-
         return results
 
     def record_audit_event(

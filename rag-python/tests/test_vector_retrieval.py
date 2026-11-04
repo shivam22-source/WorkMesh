@@ -236,4 +236,5 @@ def test_postgres_search_vector_sql_structure():
     assert "(- (c.embedding <#> c.embedding)) > 0" in executed_sql
     assert "d.source_type = ANY(%s)" in executed_sql
     assert "ORDER BY c.embedding <=> %s ASC" in executed_sql
-    assert executed_params == (pgvector.Vector(test_vector), ["GITHUB"], pgvector.Vector(test_vector), 5)
+    expected_vec = pgvector.Vector(test_vector)
+    assert executed_params == (expected_vec, expected_vec, 100, ["GITHUB"], 5)

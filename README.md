@@ -68,24 +68,28 @@ Raw results: [`data/evaluation/results/ablation_results.json`](data/evaluation/r
 
 WorkMesh protects database and embedding workers from starvation under spike traffic using a concurrency limiter on `/api/v1/search` and `/api/v1/ask`. When the active worker pool is saturated (limit: 15 concurrent queries), the service fails fast with `503 Service Unavailable` and a `Retry-After: 1` header instead of timing out.
 
-Load test executed via Locust (`loadtest/locustfile.py`) across 5, 10, 15, 25, 50, and 100 concurrent users against the local server. Each run executed for at least 60 seconds after warm-up requests were discarded. Latencies report exclusively on successful requests:
+Load test executed via Locust (`loadtest/locustfile.py`) across 1 (baseline), 5, 10, 15, 25, 50, and 100 concurrent users against the local server using 52 distinct queries (preventing micro-cache skew). Each run executed for at least 60 seconds after warm-up requests were discarded. Latencies report exclusively on successful requests:
 
 | Concurrency Level | Total Requests | Successful (2xx) | 503 Backpressure Shed | Other Errors | P50 Latency (Success) | P95 Latency (Success) | Throughput (Success) |
 |---|---|---|---|---|---|---|---|
-| **5 Users** | 50 | 50 | 0 | 0 | **5,200 ms** | **6,300 ms** | 0.81 req/s |
-| **10 Users** | 69 | 69 | 0 | 0 | **7,400 ms** | **8,500 ms** | 1.12 req/s |
-| **15 Users** | 81 | 81 | 0 | 0 | **8,800 ms** | **10,000 ms** | 1.28 req/s |
-| **25 Users** | 4,504 | 75 | 4,429 | 0 | **9,200 ms** | **11,000 ms** | 1.18 req/s |
-| **50 Users** | 13,261 | 74 | 13,187 | 0 | **10,000 ms** | **12,000 ms** | 1.15 req/s |
-| **100 Users** | 11,828 | 60 | 11,768 | 0 | **11,000 ms** | **13,000 ms** | 0.95 req/s |
+| **1 User** (baseline) | 218 | 218 | 0 | 0 | **110.0 ms** | **230.0 ms** | 3.75 req/s |
+| **5 Users** | 1,012 | 1,012 | 0 | 0 | **120.0 ms** | **320.0 ms** | 17.36 req/s |
+| **10 Users** | 1,777 | 1,777 | 0 | 0 | **160.0 ms** | **520.0 ms** | 29.89 req/s |
+| **15 Users** | 2,285 | 2,282 | 3 | 0 | **210.0 ms** | **640.0 ms** | 38.37 req/s |
+| **25 Users** | 3,351 | 2,147 | 1,204 | 0 | **380.0 ms** | **1,100.0 ms** | 36.16 req/s |
+| **50 Users** | 4,424 | 1,802 | 2,622 | 0 | **760.0 ms** | **1,400.0 ms** | 30.35 req/s |
+| **100 Users** | 4,595 | 1,729 | 2,866 | 0 | **1,400.0 ms** | **2,400.0 ms** | 29.04 req/s |
 
 **Environment & Setup:**
 - **Machine**: 13th Gen Intel(R) Core(TM) i5-13500HX (14 cores, 20 logical threads), 16 GB RAM, Windows 11.
 - **Topology**: FastAPI application (`127.0.0.1:8000`) and PostgreSQL 16 + pgvector container ran on the same physical host machine.
 - **Embedding Provider**: Local HuggingFace `sentence-transformers` (`all-MiniLM-L6-v2`, 384 dimensions) running on CPU.
 - **Concurrency Limit**: 15 concurrent queries (`SEARCH_CONCURRENCY_LIMIT=15`).
+- **Query Pool**: 52 distinct queries covering Jira tickets, architectural questions, operational scenarios, and multi-source connector concepts.
 
-The application handles up to 15 concurrent users without shedding, processing all queries at roughly 1.3 requests/second with p95 latency reaching 10 seconds. Beyond 15 concurrent users, the server saturates its concurrency gate and sheds the vast majority of excess traffic with immediate 503 responses (~10–300 ms) to keep the database stable. Because CPU-bound embedding and multi-stage PostgreSQL searches take ~5–11 seconds per request on this machine, sustained successful throughput peaks at ~1.2 queries per second.
+Before optimization, PostgreSQL vector queries bypassed the HNSW index due to correlated multi-table ACL pushdown joins, resulting in 52.48 million row nested-loop semi-joins taking ~3.9 seconds per query. By retrieving top nearest-neighbor candidate chunks directly via the HNSW index (`idx_chunks_embedding_hnsw` with `ef_search=100`) and evaluating pushdown ACLs on candidate chunks, vector search latency dropped from ~3,920 ms to ~28 ms.
+
+The application handles up to 15 concurrent users without backpressure shedding, processing up to 38.4 successful requests/second with p95 latency under 640 ms. Beyond 15 concurrent users, the concurrency limiter sheds excess traffic with immediate HTTP 503 responses (~20–300 ms), keeping database connections healthy while sustaining 29–36 successful req/sec.
 
 ---
 
@@ -171,7 +175,7 @@ cd rag-python
 .venv/Scripts/pytest.exe tests
 ```
 
-321 passed tests (317 run completely offline with mock embeddings, 4 real model tests when weights are cached) covering hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
+327 passed with model weights cached; 323 passed and 4 skipped without them (achieved by pointing `HF_HOME` and `SENTENCE_TRANSFORMERS_HOME` to an empty temporary directory so tests marked `@pytest.mark.real_model` are safely skipped). Covers hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
 
 ---
 

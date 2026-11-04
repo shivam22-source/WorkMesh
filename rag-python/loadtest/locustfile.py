@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from app.auth.jwt_utils import create_jwt_token
 
 TEST_QUERIES = [
+    # 1. Exact Ticket IDs / Technical Identifiers (15)
     "DC-8692",
     "payment card validation",
     "HikariCP connection pool timeout",
@@ -22,6 +23,51 @@ TEST_QUERIES = [
     "dead letter queue malformed records",
     "leakDetectionThreshold starvation",
     "OAuth2 session expiry",
+    "PR-1042",
+    "CVE-2024-38819",
+    "DC-1965",
+    "DC-1980",
+    "DC-7741",
+    # 2. Architecture & Design Topics (15)
+    "How does the permission pushdown architecture protect tenant data?",
+    "Why was PostgreSQL full-text search chosen over dedicated Elasticsearch?",
+    "How does token bucket rate limiting prevent service degradation?",
+    "What is the disaster recovery and database backup procedure?",
+    "How do we handle schema migrations across distributed environments?",
+    "Explain the reciprocal rank fusion algorithm implementation",
+    "What are the best practices for handling transient database disconnections?",
+    "How does the audit logging system guarantee durability without blocking?",
+    "Why did we migrate from 1536 zero-padded embeddings to 384 native dimensions?",
+    "How are cross-source relationship graphs constructed between Slack and GitHub?",
+    "Zero-trust authentication using asymmetric and symmetric signed JWTs",
+    "Entity graph resolution for ticket employee document relationships",
+    "Database fencing and distributed advisory locking for connector syncs",
+    "Extractive grounded citations and hallucination mitigation strategy",
+    "Deterministic reranking and lexical score normalization formulas",
+    # 3. Operational & Engineering Topics (12)
+    "fix payment verification flow",
+    "docker compose healthcheck timeout postgres",
+    "jwt token expiration and refresh handling",
+    "ssl certificate renewal in kubernetes cluster",
+    "memory leak in background sync worker",
+    "postgres pgvector hnsw index parameters",
+    "slack thread message normalization pipeline",
+    "github webhook delivery failure retry strategy",
+    "audit event retention and partitioning policy",
+    "concurrency limit 503 retry-after header",
+    "prometheus metrics scrape configuration",
+    "fastapi lifespan startup validation checks",
+    # 4. Multi-Source Connectors & Chunking (10)
+    "GitHub pull request comment indexing and commit author resolution",
+    "Slack channel access control lists and user group mapping",
+    "Email connector MIME boundary parsing and header extraction",
+    "Chunk token count boundary heuristics and markdown splitting",
+    "pgvector cosine distance operator vs inner product",
+    "Database connection pool exhaustion and keepalive settings",
+    "Backpressure retry after header and graceful degradation",
+    "Admin audit trail export and compliance filtering",
+    "Connector sync state cursor checkpointing and replay",
+    "Synthetic corpus scale benchmark and ablation evaluation",
 ]
 
 TEST_QUESTIONS = [

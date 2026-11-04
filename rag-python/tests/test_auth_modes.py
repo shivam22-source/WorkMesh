@@ -210,7 +210,7 @@ def test_prod_mode_default_secret_fails_to_start(monkeypatch):
 def test_prod_mode_unset_secret_fails_to_start(monkeypatch):
     """Prod mode with unset JWT secret must fail startup (app must not boot)."""
     monkeypatch.setenv("AUTH_MODE", "prod")
-    monkeypatch.delenv("JWT_SECRET", raising=False)
+    monkeypatch.setenv("JWT_SECRET", "")
     get_settings.cache_clear()
     with pytest.raises(ValueError, match="JWT_SECRET is required"):
         create_app()
@@ -237,8 +237,9 @@ def test_prod_mode_strong_secret_starts(monkeypatch):
 def test_dev_mode_default_secret_starts_with_warning(monkeypatch, caplog):
     """Dev mode with default secret starts and logs a security warning."""
     import logging
+    from app.common.config import DEFAULT_DEV_JWT_SECRET
     monkeypatch.setenv("AUTH_MODE", "dev")
-    monkeypatch.delenv("JWT_SECRET", raising=False)
+    monkeypatch.setenv("JWT_SECRET", DEFAULT_DEV_JWT_SECRET)
     get_settings.cache_clear()
     with caplog.at_level(logging.WARNING):
         app = create_app()
