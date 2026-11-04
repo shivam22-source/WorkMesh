@@ -7,32 +7,32 @@
   "strategies": {
     "lexical_only": {
       "strategy_name": "Lexical Only (tsvector / GIN)",
-      "exact_id_recall_at_5": 88.0,
-      "semantic_recall_at_5": 16.0,
-      "overall_recall_at_5": 52.0,
-      "overall_mrr": 0.4800
+      "exact_id_recall_at_5": 100.0,
+      "semantic_recall_at_5": 20.0,
+      "overall_recall_at_5": 60.0,
+      "overall_mrr": 0.6
     },
     "vector_only": {
       "strategy_name": "Vector Only (pgvector cosine)",
-      "exact_id_recall_at_5": 24.0,
-      "semantic_recall_at_5": 60.0,
-      "overall_recall_at_5": 42.0,
-      "overall_mrr": 0.3800
+      "exact_id_recall_at_5": 42.0,
+      "semantic_recall_at_5": 34.0,
+      "overall_recall_at_5": 38.0,
+      "overall_mrr": 0.3062
     },
     "hybrid_rrf_baseline": {
       "strategy_name": "Hybrid RRF (k=60) [Baseline]",
-      "exact_id_recall_at_5": 84.0,
-      "semantic_recall_at_5": 36.0,
-      "overall_recall_at_5": 60.0,
-      "overall_mrr": 0.6017
+      "exact_id_recall_at_5": 100.0,
+      "semantic_recall_at_5": 44.0,
+      "overall_recall_at_5": 72.0,
+      "overall_mrr": 0.6748
     },
     "hybrid_graph_reranked": {
       "strategy_name": "Hybrid + Graph Context Reranking",
-      "exact_id_recall_at_5": 90.0,
-      "semantic_recall_at_5": 58.0,
-      "overall_recall_at_5": 74.0,
-      "overall_mrr": 0.7100
+      "exact_id_recall_at_5": 100.0,
+      "semantic_recall_at_5": 50.0,
+      "overall_recall_at_5": 75.0,
+      "overall_mrr": 0.6837
     }
   },
-  "notes": "With an exact 50/50 query split, Overall Recall@5 is the exact arithmetic mean of Exact-ID and Semantic categories (e.g. (84% + 36%)/2 = 60.0% for baseline RRF, and (90% + 58%)/2 = 74.0% with graph reranking)."
+  "notes": "With an exact 50/50 query split, Overall Recall@5 is the exact arithmetic mean of Exact-ID and Semantic categories."
 }

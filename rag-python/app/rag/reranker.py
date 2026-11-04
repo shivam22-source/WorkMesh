@@ -45,6 +45,10 @@ def map_document_id_to_entity_id(document_id: str) -> Optional[str]:
     if m_slack:
         return f"slack:{m_slack.group(1)}:{m_slack.group(2)}"
 
+    # 4. Scale benchmark documents
+    if document_id.startswith("scale:doc:"):
+        return document_id
+
     return None
 
 

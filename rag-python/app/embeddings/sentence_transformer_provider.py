@@ -48,10 +48,15 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             truncated = truncated / norm
         return truncated.tolist()
 
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str], batch_size: int = 256) -> List[List[float]]:
         if not texts:
             return []
-        embeddings = self.model.encode(texts, normalize_embeddings=True)
+        embeddings = self.model.encode(
+            texts,
+            batch_size=batch_size,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )
         if isinstance(embeddings, list):
             embeddings = np.array(embeddings)
         return [self._adjust_dimension(emb) for emb in embeddings]

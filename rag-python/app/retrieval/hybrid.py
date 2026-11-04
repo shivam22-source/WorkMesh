@@ -5,7 +5,7 @@ deduplicated result list ranked by Reciprocal Rank Fusion (RRF).
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from app.contracts.rag_search import RagSearchResultItem
 from app.indexing.repository import KnowledgeRepository
@@ -64,6 +64,7 @@ class HybridRetriever:
         k: int = DEFAULT_RRF_K,
         default_user_id: Optional[str] = None,
         default_group_ids: Optional[List[str]] = None,
+        embedding_provider: Optional[Any] = None,
     ):
         self.default_user_id = default_user_id
         self.default_group_ids = default_group_ids
@@ -79,6 +80,7 @@ class HybridRetriever:
             )
             self.vector_retriever = VectorRetriever(
                 repository,
+                embedding_provider=embedding_provider,
                 default_user_id=default_user_id,
                 default_group_ids=default_group_ids,
             )
