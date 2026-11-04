@@ -68,15 +68,24 @@ Raw results: [`data/evaluation/results/ablation_results.json`](data/evaluation/r
 
 WorkMesh protects database and embedding workers from starvation under spike traffic using a concurrency limiter on `/api/v1/search` and `/api/v1/ask`. When the active worker pool is saturated (limit: 15 concurrent queries), the service fails fast with `503 Service Unavailable` and a `Retry-After: 1` header instead of timing out.
 
-Load test executed via Locust (`loadtest/locustfile.py`) across 10, 50, and 100 concurrent users against the local server:
+Load test executed via Locust (`loadtest/locustfile.py`) across 5, 10, 15, 25, 50, and 100 concurrent users against the local server. Each run executed for at least 60 seconds after warm-up requests were discarded. Latencies report exclusively on successful requests:
 
-| Concurrency Level | Total Requests | Successful | 503 Backpressure Shed | Error Count | P95 Latency | Mean Latency |
-|---|---|---|---|---|---|---|
-| **10 Users** | 10 | 10 | 0 | **0** | **9,400 ms** | 8,142 ms |
-| **50 Users** | 2,564 | 15 | 2,549 | **2,549 (503s)** | **66 ms** | 83.8 ms |
-| **100 Users** | 3,136 | 15 | 3,121 | **3,121 (503s)** | **480 ms** | 245 ms |
+| Concurrency Level | Total Requests | Successful (2xx) | 503 Backpressure Shed | Other Errors | P50 Latency (Success) | P95 Latency (Success) | Throughput (Success) |
+|---|---|---|---|---|---|---|---|
+| **5 Users** | 50 | 50 | 0 | 0 | **5,200 ms** | **6,300 ms** | 0.81 req/s |
+| **10 Users** | 69 | 69 | 0 | 0 | **7,400 ms** | **8,500 ms** | 1.12 req/s |
+| **15 Users** | 81 | 81 | 0 | 0 | **8,800 ms** | **10,000 ms** | 1.28 req/s |
+| **25 Users** | 4,504 | 75 | 4,429 | 0 | **9,200 ms** | **11,000 ms** | 1.18 req/s |
+| **50 Users** | 13,261 | 74 | 13,187 | 0 | **10,000 ms** | **12,000 ms** | 1.15 req/s |
+| **100 Users** | 11,828 | 60 | 11,768 | 0 | **11,000 ms** | **13,000 ms** | 0.95 req/s |
 
-*Note: At 50 and 100 concurrent users, the concurrency limit (15 concurrent active queries) was saturated. Fast-fail backpressure returned HTTP 503 with `Retry-After: 1` in ~20–60ms, preventing database connection exhaustion.*
+**Environment & Setup:**
+- **Machine**: 13th Gen Intel(R) Core(TM) i5-13500HX (14 cores, 20 logical threads), 16 GB RAM, Windows 11.
+- **Topology**: FastAPI application (`127.0.0.1:8000`) and PostgreSQL 16 + pgvector container ran on the same physical host machine.
+- **Embedding Provider**: Local HuggingFace `sentence-transformers` (`all-MiniLM-L6-v2`, 384 dimensions) running on CPU.
+- **Concurrency Limit**: 15 concurrent queries (`SEARCH_CONCURRENCY_LIMIT=15`).
+
+The application handles up to 15 concurrent users without shedding, processing all queries at roughly 1.3 requests/second with p95 latency reaching 10 seconds. Beyond 15 concurrent users, the server saturates its concurrency gate and sheds the vast majority of excess traffic with immediate 503 responses (~10–300 ms) to keep the database stable. Because CPU-bound embedding and multi-stage PostgreSQL searches take ~5–11 seconds per request on this machine, sustained successful throughput peaks at ~1.2 queries per second.
 
 ---
 

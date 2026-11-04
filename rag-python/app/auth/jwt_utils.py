@@ -17,9 +17,12 @@ def create_jwt_token(
     extra_claims: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Create a signed JWT token containing user identity, role, and group claims."""
-    settings = get_settings()
-    sec = secret or settings.jwt_secret
-    algo = algorithm or settings.jwt_algorithm
+    sec = secret
+    algo = algorithm or "HS256"
+    if not sec:
+        settings = get_settings()
+        sec = sec or settings.jwt_secret
+        algo = algorithm or settings.jwt_algorithm
     now = datetime.now(timezone.utc)
     claims: Dict[str, Any] = {
         "sub": user_id,

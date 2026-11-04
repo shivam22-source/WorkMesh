@@ -3,7 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.concurrency import search_concurrency_limiter
+from app.api.concurrency import ConcurrencyLimiter, search_concurrency_limiter
 from app.api.metrics import record_request_metric, reset_metrics_for_testing
 from app.contracts.rag_search import RagSearchResultItem
 from app.dependencies import get_hybrid_retriever, get_repository
@@ -105,3 +105,23 @@ def test_metrics_exposes_p95_latency(test_client):
 
     assert 'quantile="0.95"' in content
     assert "workmesh_search_latency_p95_seconds" in content
+
+
+def test_concurrency_limiter_allows_exact_n_concurrent_and_sheds_excess():
+    """Limiter must allow exactly N concurrent requests and shed only the excess."""
+    limiter = ConcurrencyLimiter(max_concurrent=3)
+    assert limiter.acquire() is True
+    assert limiter.acquire() is True
+    assert limiter.acquire() is True
+    # 4th request must be shed (False)
+    assert limiter.acquire() is False
+    assert limiter.active_count == 3
+
+    # Release one
+    limiter.release()
+    assert limiter.active_count == 2
+
+    # Now one can acquire again
+    assert limiter.acquire() is True
+    # And 4th is shed again
+    assert limiter.acquire() is False
