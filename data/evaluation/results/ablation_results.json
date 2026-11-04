@@ -14,24 +14,24 @@
     },
     "vector_only": {
       "strategy_name": "Vector Only (pgvector cosine)",
-      "exact_id_recall_at_5": 42.0,
-      "semantic_recall_at_5": 34.0,
-      "overall_recall_at_5": 38.0,
-      "overall_mrr": 0.3062
+      "exact_id_recall_at_5": 38.0,
+      "semantic_recall_at_5": 30.0,
+      "overall_recall_at_5": 34.0,
+      "overall_mrr": 0.2804
     },
     "hybrid_rrf_baseline": {
       "strategy_name": "Hybrid RRF (k=60) [Baseline]",
       "exact_id_recall_at_5": 100.0,
-      "semantic_recall_at_5": 44.0,
-      "overall_recall_at_5": 72.0,
-      "overall_mrr": 0.6748
+      "semantic_recall_at_5": 40.0,
+      "overall_recall_at_5": 70.0,
+      "overall_mrr": 0.6655
     },
     "hybrid_graph_reranked": {
       "strategy_name": "Hybrid + Graph Context Reranking",
       "exact_id_recall_at_5": 100.0,
-      "semantic_recall_at_5": 50.0,
-      "overall_recall_at_5": 75.0,
-      "overall_mrr": 0.6837
+      "semantic_recall_at_5": 42.0,
+      "overall_recall_at_5": 71.0,
+      "overall_mrr": 0.6701
     }
   },
   "notes": "With an exact 50/50 query split, Overall Recall@5 is the exact arithmetic mean of Exact-ID and Semantic categories."
