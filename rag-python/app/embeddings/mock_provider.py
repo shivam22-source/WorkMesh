@@ -14,7 +14,7 @@ class MockEmbeddingProvider(EmbeddingProvider):
     or external API keys.
     """
 
-    def __init__(self, dimension: int = 1536):
+    def __init__(self, dimension: int = 384):
         self._dimension = dimension
 
     @property

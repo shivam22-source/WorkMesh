@@ -19,7 +19,7 @@ from app.retrieval.vector import VectorRetriever
 
 @pytest.fixture
 def embedding_provider() -> MockEmbeddingProvider:
-    return MockEmbeddingProvider(dimension=1536)
+    return MockEmbeddingProvider(dimension=384)
 
 
 @pytest.fixture
@@ -124,7 +124,7 @@ def test_empty_query_returns_empty_without_calling_provider(
     populated_repository: InMemoryKnowledgeRepository,
 ):
     mock_provider = MagicMock()
-    mock_provider.dimension = 1536
+    mock_provider.dimension = 384
     r = VectorRetriever(repository=populated_repository, embedding_provider=mock_provider)
 
     assert r.search("") == []
@@ -142,7 +142,7 @@ def test_empty_query_returns_empty_without_calling_provider(
 
 def test_zero_query_vector_returns_empty(retriever: VectorRetriever):
     """A zero query vector has no direction and must return [] without division by zero."""
-    zero_vec = [0.0] * 1536
+    zero_vec = [0.0] * 384
     assert retriever.search_by_vector(zero_vec) == []
 
 
@@ -159,7 +159,7 @@ def test_zero_chunk_vectors_are_excluded(
         content="Zero vector chunk content",
         token_count=10,
         content_hash="zero_hash",
-        embedding=[0.0] * 1536,
+        embedding=[0.0] * 384,
     )
     populated_repository.chunks[zero_chunk.id] = zero_chunk
     populated_repository.documents["doc:zero"] = CanonicalDocument(
@@ -222,7 +222,7 @@ def test_postgres_search_vector_sql_structure():
         ("chunk:1", "doc:1", "GITHUB", "PR Title", "Fix payment verification", "https://github.com/...", "dev", 0.88),
     ]
 
-    test_vector = [0.05] * 1536
+    test_vector = [0.05] * 384
     results = repo.search_vector(test_vector, limit=5, source_types=["GITHUB"])
 
     assert len(results) == 1

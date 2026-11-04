@@ -10,6 +10,7 @@ import re
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.chunking.models import CanonicalChunk
+from app.common.config import get_settings
 from app.connectors.common.models import AclReference, RawSourceItem
 from app.contracts.rag_search import RagSearchResultItem
 from app.graph.models import Entity, EntityType, Relationship, RelationshipType
@@ -870,7 +871,7 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
-        expected_dim = 1536
+        expected_dim = get_settings().embedding_dimension
         if len(query_embedding) != expected_dim:
             raise ValueError(
                 f"Query embedding dimension mismatch: expected {expected_dim}, got {len(query_embedding)}"
@@ -2075,7 +2076,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
     ) -> List[RagSearchResultItem]:
-        expected_dim = 1536
+        expected_dim = get_settings().embedding_dimension
         if len(query_embedding) != expected_dim:
             raise ValueError(
                 f"Query embedding dimension mismatch: expected {expected_dim}, got {len(query_embedding)}"

@@ -222,7 +222,11 @@ def generate_and_seed_scale_corpus(
     logger.info("generating_synthetic_corpus docs=%d chunks=%d", num_docs, target_chunks)
 
     if embedder is None:
-        embedder = SentenceTransformerEmbeddingProvider(dimension=1536)
+        settings = get_settings()
+        embedder = SentenceTransformerEmbeddingProvider(
+            model_name=settings.embedding_model,
+            dimension=settings.embedding_dimension,
+        )
 
     conn = psycopg.connect(db_url)
     register_vector(conn)
@@ -406,8 +410,9 @@ def _setup_retriever_and_reranker(
         def execute(self, query, params=None, **kwargs):
             if params:
                 from pgvector import Vector
+                dim = get_settings().embedding_dimension
                 params = tuple(
-                    Vector(p) if isinstance(p, list) and len(p) == 1536 else p
+                    Vector(p) if isinstance(p, list) and len(p) == dim else p
                     for p in params
                 )
             return super().execute(query, params, **kwargs)
@@ -743,10 +748,15 @@ def main():
 
     logger.info("connecting_to_database url=%s", db_url.split("@")[-1])
 
+    settings = get_settings()
+    dim = settings.embedding_dimension
     if args.embedding_provider == "sentence-transformers":
-        embedder = SentenceTransformerEmbeddingProvider(dimension=1536)
+        embedder = SentenceTransformerEmbeddingProvider(
+            model_name=settings.embedding_model,
+            dimension=dim,
+        )
     else:
-        embedder = MockEmbeddingProvider(dimension=1536)
+        embedder = MockEmbeddingProvider(dimension=dim)
 
     # 1. Generate and seed 10,000 chunks (or reuse existing)
     t_start = time.perf_counter()

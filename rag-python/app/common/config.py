@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # PostgreSQL / pgvector settings
-    postgres_host: str = "localhost"
+    postgres_host: str = "172.19.63.124"
     postgres_port: int = 5432
     postgres_db: str = "knowledge"
     postgres_user: str = "knowledge"
@@ -38,7 +38,8 @@ class Settings(BaseSettings):
 
     # Embedding settings
     embedding_provider: str = "sentence-transformers"  # local sentence-transformers only
-    embedding_dimension: int = 1536
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dimension: int = 384
     openai_api_key: Optional[str] = None
 
     # Source connectors

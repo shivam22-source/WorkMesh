@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS chunks (
     chunk_index INT NOT NULL,
     content TEXT NOT NULL,
     token_count INT,
-    embedding vector(1536),
+    embedding vector(384),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', content)) STORED,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

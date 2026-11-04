@@ -28,7 +28,7 @@ Evaluated over 10,000 multi-tenant chunks (2,500 documents across GitHub, Slack,
 | **Recall@10** | **76.0%** | >= 60.0% | PASS |
 | **Mean Reciprocal Rank (MRR)** | **0.6748** | >= 0.5000 | PASS |
 | **Cross-Tenant Permission Leak Rate** | **0.0%** (0 leaks / 500 adversarial queries) | 0.0% | PASS |
-| **Adversarial Security Throughput** | **147.2 ms / query** (500 queries in 73.6s) | < 200 ms | PASS |
+| **Adversarial Security Throughput** | **120.2 ms / query** (500 queries in 60.1s) | < 200 ms | PASS |
 
 Raw results: [`data/evaluation/results/scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json).
 

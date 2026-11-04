@@ -32,9 +32,13 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         else:
             base_dim = self.model.get_sentence_embedding_dimension()
         self._base_dimension = base_dim
-        # If dimension is specified (e.g. 1536 for pgvector schema compatibility),
-        # pad or truncate embeddings to match the expected schema dimension.
-        self._dimension = dimension if dimension is not None else base_dim
+
+        if dimension is not None and dimension != base_dim:
+            raise ValueError(
+                f"Embedding dimension mismatch: model '{model_name}' produces {base_dim} dimensions, "
+                f"but requested dimension is {dimension}. Zero padding and truncation are disabled."
+            )
+        self._dimension = base_dim
         self._cache_size = cache_size
         self._query_cache: OrderedDict[str, List[float]] = OrderedDict()
         self._cache_hits = 0
@@ -59,17 +63,11 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         return self._dimension
 
     def _adjust_dimension(self, vector: np.ndarray) -> List[float]:
-        if len(vector) == self._dimension:
-            return vector.tolist()
-        if len(vector) < self._dimension:
-            padded = np.pad(vector, (0, self._dimension - len(vector)))
-            return padded.tolist()
-        # len(vector) > self._dimension: truncate and re-normalize
-        truncated = vector[: self._dimension]
-        norm = np.linalg.norm(truncated)
-        if norm > 0:
-            truncated = truncated / norm
-        return truncated.tolist()
+        if len(vector) != self._dimension:
+            raise ValueError(
+                f"Embedding dimension mismatch: expected {self._dimension}, got {len(vector)}"
+            )
+        return vector.tolist()
 
     def embed_texts(self, texts: List[str], batch_size: int = 256) -> List[List[float]]:
         if not texts:

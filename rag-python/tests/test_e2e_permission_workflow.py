@@ -32,7 +32,7 @@ def test_end_to_end_cross_tenant_permission_isolation():
         content="Internal engineering Kubernetes cluster credentials and deployment keys.",
         content_hash="hash_eng_1",
         token_count=12,
-        embedding=[0.1] * 1536,
+        embedding=[0.1] * 384,
         metadata={"source_type": "GITHUB", "title": doc_eng.title, "url": doc_eng.url},
     )
     acl_eng = AclReference(
@@ -59,7 +59,7 @@ def test_end_to_end_cross_tenant_permission_isolation():
         content="Confidential executive compensation bonus packages for executive directors.",
         content_hash="hash_fin_1",
         token_count=10,
-        embedding=[0.2] * 1536,
+        embedding=[0.2] * 384,
         metadata={"source_type": "EMAIL", "title": doc_fin.title, "url": doc_fin.url},
     )
     acl_fin = AclReference(

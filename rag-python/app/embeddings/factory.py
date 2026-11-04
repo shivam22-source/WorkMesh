@@ -20,7 +20,7 @@ def get_embedding_provider(name: Optional[str] = None) -> EmbeddingProvider:
 
     if provider_name in ("sentence-transformers", "sentence_transformers", "local", "minilm"):
         return SentenceTransformerEmbeddingProvider(
-            model_name="all-MiniLM-L6-v2",
+            model_name=settings.embedding_model,
             dimension=settings.embedding_dimension,
         )
 

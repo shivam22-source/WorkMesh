@@ -33,7 +33,7 @@ def test_pipeline_runs_and_populates_repository():
     # Ensure all chunks have embeddings
     for chunk in repo.chunks.values():
         assert chunk.embedding is not None
-        assert len(chunk.embedding) == 1536
+        assert len(chunk.embedding) == 384
 
     # Verify sync checkpoint
     sync_state = repo.get_sync_state("GITHUB")

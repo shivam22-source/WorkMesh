@@ -480,7 +480,7 @@ class TestSqlParameterOrdering:
 
     def test_vector_sql_param_order_with_user_group_source_filter(self):
         """Manually trace the parameter list for search_vector with all options."""
-        query_emb = [0.1] * 1536
+        query_emb = [0.1] * 384
         user_id = "employee_42"
         group_ids = ["group_eng"]
         source_types = ["SLACK"]

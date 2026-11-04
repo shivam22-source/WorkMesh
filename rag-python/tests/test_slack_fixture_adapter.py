@@ -108,7 +108,7 @@ def test_slack_ingestion_pipeline_end_to_end():
     # Ensure all Slack chunks have embeddings and metadata
     for chunk in repo.chunks.values():
         assert chunk.embedding is not None
-        assert len(chunk.embedding) == 1536
+        assert len(chunk.embedding) == 384
         assert chunk.metadata["source_type"] == "SLACK"
         assert "payments-engineering" in chunk.metadata.get("title", "") or "general-dev" in chunk.metadata.get("title", "")
 
