@@ -240,6 +240,7 @@ def test_postgres_search_vector_sql_structure():
     assert "ORDER BY c.embedding <=> %s ASC" in executed_sql
     expected_vec = pgvector.Vector(test_vector)
     assert executed_params == (expected_vec, expected_vec, 100, ["GITHUB"], 5)
+    mock_conn.transaction.assert_called_once()
 
 
 def test_postgres_search_vector_fallback_for_low_access_user():

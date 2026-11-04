@@ -2163,33 +2163,34 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         results: List[RagSearchResultItem] = []
         try:
             with self._get_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SET LOCAL hnsw.ef_search = 100;")
-                    try:
-                        cur.execute("SET LOCAL hnsw.iterative_scan = 'relaxed_order';")
-                    except Exception:
-                        pass
-                    cur.execute(sql_fast, tuple(fast_params))
-                    rows = cur.fetchall()
-                    if len(rows) < limit:
-                        # Low-access user or sparse candidate survival; execute exact fallback with iterative scan
-                        cur.execute(sql_fallback, tuple(fallback_params))
+                with conn.transaction():
+                    with conn.cursor() as cur:
+                        cur.execute("SET LOCAL hnsw.ef_search = 100;")
+                        try:
+                            cur.execute("SET LOCAL hnsw.iterative_scan = 'relaxed_order';")
+                        except Exception:
+                            pass
+                        cur.execute(sql_fast, tuple(fast_params))
                         rows = cur.fetchall()
-                    for row in rows:
-                        chunk_id, doc_id, src_type, title, content, url, author, score = row
-                        snippet = content[:300].strip() + ("..." if len(content) > 300 else "")
-                        results.append(
-                            RagSearchResultItem(
-                                chunk_id=chunk_id,
-                                document_id=doc_id,
-                                source_type=src_type,
-                                title=title,
-                                snippet=snippet,
-                                source_url=url,
-                                author=author,
-                                score=round(float(score), 4) if score is not None else 0.0,
+                        if len(rows) < limit:
+                            # Low-access user or sparse candidate survival; execute exact fallback with iterative scan
+                            cur.execute(sql_fallback, tuple(fallback_params))
+                            rows = cur.fetchall()
+                        for row in rows:
+                            chunk_id, doc_id, src_type, title, content, url, author, score = row
+                            snippet = content[:300].strip() + ("..." if len(content) > 300 else "")
+                            results.append(
+                                RagSearchResultItem(
+                                    chunk_id=chunk_id,
+                                    document_id=doc_id,
+                                    source_type=src_type,
+                                    title=title,
+                                    snippet=snippet,
+                                    source_url=url,
+                                    author=author,
+                                    score=round(float(score), 4) if score is not None else 0.0,
+                                )
                             )
-                        )
         except DatabaseUnavailableError:
             raise
         except Exception as e:

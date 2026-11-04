@@ -628,3 +628,42 @@ def test_live_postgres_low_access_user_vector_search_and_no_leakage():
     # Completely unauthorized user gets zero results
     unauth_results = repo.search_vector(test_vector, limit=5, user_id="unauthorized_ghost_user", group_ids=[])
     assert len(unauth_results) == 0
+
+
+@pytest.mark.skipif(LIVE_POSTGRES_URL is None, reason="Requires real PostgreSQL service")
+def test_live_postgres_hnsw_settings_transaction_scoping():
+    """Verify hnsw.ef_search and hnsw.iterative_scan are SET LOCAL inside transaction and revert without leak."""
+    from app.common.config import get_settings
+    settings = get_settings()
+    repo = PostgresKnowledgeRepository(settings.database_url)
+
+    with repo._get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT '[1]'::vector;")
+            cur.execute("SHOW hnsw.ef_search;")
+            ef_initial = cur.fetchone()[0]
+            cur.execute("SHOW hnsw.iterative_scan;")
+            iter_initial = cur.fetchone()[0]
+
+        # Commit initial check so connection is idle for the scoped transaction
+        conn.commit()
+
+        # Execute scoped transaction block as done in search_vector
+        with conn.transaction():
+            with conn.cursor() as cur:
+                cur.execute("SET LOCAL hnsw.ef_search = 100;")
+                cur.execute("SET LOCAL hnsw.iterative_scan = 'relaxed_order';")
+                cur.execute("SHOW hnsw.ef_search;")
+                assert cur.fetchone()[0] == "100"
+                cur.execute("SHOW hnsw.iterative_scan;")
+                assert cur.fetchone()[0] == "relaxed_order"
+
+        # Verify parameters immediately revert upon transaction exit on the same connection
+        with conn.cursor() as cur:
+            cur.execute("SHOW hnsw.ef_search;")
+            ef_after = cur.fetchone()[0]
+            cur.execute("SHOW hnsw.iterative_scan;")
+            iter_after = cur.fetchone()[0]
+
+        assert ef_after == ef_initial, f"hnsw.ef_search leaked! Expected {ef_initial}, got {ef_after}"
+        assert iter_after == iter_initial, f"hnsw.iterative_scan leaked! Expected {iter_initial}, got {iter_after}"
