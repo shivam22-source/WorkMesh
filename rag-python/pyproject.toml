@@ -31,3 +31,6 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "real_model: tests requiring sentence-transformers model weights in local cache",
+]

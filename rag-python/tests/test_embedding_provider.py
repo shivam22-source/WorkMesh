@@ -32,12 +32,26 @@ def test_factory_returns_mock_when_explicitly_requested():
     assert provider.dimension == 384
 
 
-def test_factory_returns_sentence_transformers_by_default():
+def test_factory_returns_mock_by_default_in_tests():
     provider = get_embedding_provider()
-    assert isinstance(provider, SentenceTransformerEmbeddingProvider)
+    assert isinstance(provider, MockEmbeddingProvider)
     assert provider.dimension == 384
 
 
+@pytest.mark.real_model
+def test_factory_returns_sentence_transformers_when_configured(monkeypatch):
+    from app.common.config import get_settings
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "sentence-transformers")
+    get_settings.cache_clear()
+    try:
+        provider = get_embedding_provider()
+        assert isinstance(provider, SentenceTransformerEmbeddingProvider)
+        assert provider.dimension == 384
+    finally:
+        get_settings.cache_clear()
+
+
+@pytest.mark.real_model
 def test_factory_returns_sentence_transformers():
     provider = get_embedding_provider("sentence-transformers")
     assert isinstance(provider, SentenceTransformerEmbeddingProvider)
@@ -58,6 +72,7 @@ def test_factory_returns_sentence_transformers():
     assert sim_related > sim_unrelated
 
 
+@pytest.mark.real_model
 def test_sentence_transformer_dimension_mismatch_raises_error():
     with pytest.raises(ValueError, match="Embedding dimension mismatch"):
         SentenceTransformerEmbeddingProvider(dimension=1536)

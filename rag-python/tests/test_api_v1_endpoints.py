@@ -358,3 +358,126 @@ def test_ready_reports_503_when_database_is_unavailable(mock_repo):
     assert data["error"] == "Service Unavailable"
     assert "database service is unavailable" in data["message"]
     assert data["traceId"] is not None
+
+
+# ---------------------------------------------------------------------------
+# Ported Java Error & Resilience Tests (SearchControllerTest / SearchServiceImplTest port)
+# ---------------------------------------------------------------------------
+
+def test_ask_when_rag_service_unavailable_returns_503(mock_repo, mock_retriever):
+    """Port of Java askWhenRagServiceUnavailableReturns503: database failure returns 503."""
+    class FailingRagService:
+        def ask(self, request):
+            raise DatabaseUnavailableError("PostgreSQL connection refused")
+
+    app = create_app()
+    app.dependency_overrides[get_repository] = lambda: mock_repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: mock_retriever
+    app.dependency_overrides[get_grounded_rag_service] = lambda: FailingRagService()
+    test_client = TestClient(app)
+
+    response = test_client.post(
+        "/api/v1/ask",
+        json={"question": "why did validation change"},
+        headers={"X-User-Id": "employee_42"},
+    )
+    assert response.status_code == 503
+    data = response.json()
+    assert data["status"] == 503
+    assert data["error"] == "Service Unavailable"
+    assert "database service is unavailable" in data["message"]
+    assert data["traceId"] is not None
+
+
+def test_ask_when_internal_error_returns_500(mock_repo, mock_retriever):
+    """Port of Java askWhenRagClientErrorReturns500: unhandled exception returns 500."""
+    class CrashingRagService:
+        def ask(self, request):
+            raise RuntimeError("Unexpected pipeline crash")
+
+    app = create_app()
+    app.dependency_overrides[get_repository] = lambda: mock_repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: mock_retriever
+    app.dependency_overrides[get_grounded_rag_service] = lambda: CrashingRagService()
+    test_client = TestClient(app, raise_server_exceptions=False)
+
+    response = test_client.post(
+        "/api/v1/ask",
+        json={"question": "why did validation change"},
+        headers={"X-User-Id": "employee_42"},
+    )
+    assert response.status_code == 500
+    data = response.json()
+    assert data["status"] == 500
+    assert data["error"] == "Internal Server Error"
+    assert data["traceId"] is not None
+
+
+def test_ask_audit_remains_recorded_when_rag_client_throws_exception(mock_repo, mock_retriever):
+    """Port of Java askAuditRemainsRecordedWhenRagClientThrowsException: audit event logged even on RAG failure."""
+    class FailingRagService:
+        def ask(self, request):
+            raise RuntimeError("RAG processing failed")
+
+    app = create_app()
+    app.dependency_overrides[get_repository] = lambda: mock_repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: mock_retriever
+    app.dependency_overrides[get_grounded_rag_service] = lambda: FailingRagService()
+    test_client = TestClient(app, raise_server_exceptions=False)
+
+    response = test_client.post(
+        "/api/v1/ask",
+        json={"question": "audit persistence check"},
+        headers={"X-User-Id": "employee_42"},
+    )
+    assert response.status_code == 500
+
+    # Verify audit event was still written to repo
+    events = mock_repo.get_audit_events(user_id="employee_42", action="ASK")
+    assert len(events) == 1
+    assert events[0]["details"]["question"] == "audit persistence check"
+
+
+def test_ask_handles_insufficient_evidence_with_empty_citations(client, mock_rag_service):
+    """Port of Java askHandlesInsufficientEvidenceWithEmptyCitations: returns INSUFFICIENT_EVIDENCE with empty citations."""
+    mock_rag_service.response = RagAskResponse(
+        question="What is the quantum encryption secret?",
+        answer="I cannot answer this question based on the authorized documents available to you.",
+        citations=[],
+        confidence="LOW",
+        status="INSUFFICIENT_EVIDENCE",
+    )
+
+    response = client.post(
+        "/api/v1/ask",
+        json={"question": "What is the quantum encryption secret?"},
+        headers={"X-User-Id": "employee_42"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "INSUFFICIENT_EVIDENCE"
+    assert data["confidence"] == "LOW"
+    assert data["citations"] == []
+
+
+def test_search_when_retriever_fails_returns_503(mock_repo):
+    """Search returns 503 with ApiError shape when database query fails."""
+    class FailingRetriever:
+        def search(self, *args, **kwargs):
+            raise DatabaseUnavailableError("Database query failed")
+
+    app = create_app()
+    app.dependency_overrides[get_repository] = lambda: mock_repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: FailingRetriever()
+    test_client = TestClient(app)
+
+    response = test_client.post(
+        "/api/v1/search",
+        json={"query": "payment"},
+        headers={"X-User-Id": "employee_42"},
+    )
+    assert response.status_code == 503
+    data = response.json()
+    assert data["status"] == 503
+    assert data["error"] == "Service Unavailable"
+    assert data["traceId"] is not None

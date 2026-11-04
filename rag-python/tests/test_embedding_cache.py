@@ -1,8 +1,10 @@
 """Tests for SentenceTransformerEmbeddingProvider query LRU caching."""
 
+import pytest
 from app.embeddings.sentence_transformer_provider import SentenceTransformerEmbeddingProvider
 
 
+@pytest.mark.real_model
 def test_query_embedding_lru_cache():
     provider = SentenceTransformerEmbeddingProvider(cache_size=2)
     provider.clear_cache()
