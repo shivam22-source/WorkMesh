@@ -59,6 +59,26 @@ def _build_api_error(
     )
 
 
+TAGS_METADATA = [
+    {
+        "name": "public_v1",
+        "description": "Public enterprise search, grounded Q&A, and administrative management endpoints.",
+    },
+    {
+        "name": "health",
+        "description": "Liveness (/health) and readiness (/ready) probes for container orchestration.",
+    },
+    {
+        "name": "metrics",
+        "description": "Prometheus-compatible operational metrics and request latency summaries.",
+    },
+    {
+        "name": "internal",
+        "description": "Internal contract endpoints for multi-source knowledge retrieval.",
+    },
+]
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.log_level)
@@ -66,7 +86,10 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="WorkMesh Platform API",
         version="1.0.0",
-        description="Unified Enterprise Knowledge & Context Platform API.",
+        description="Unified Enterprise Knowledge & Context Platform API with permission-aware search and grounded Q&A.",
+        openapi_tags=TAGS_METADATA,
+        docs_url="/docs",
+        redoc_url="/redoc",
     )
 
     # -----------------------------------------------------------------------
