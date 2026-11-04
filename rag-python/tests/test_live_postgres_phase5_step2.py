@@ -602,3 +602,29 @@ def test_live_postgres_relationship_ownership_and_authorization_queries():
     repo.save_entities([ent_secret])
     unauthorized_start = repo.get_relationships_for_entity("pr:repo:classified", direction="OUTGOING", user_id="standard_user")
     assert unauthorized_start == []
+
+
+@pytest.mark.skipif(LIVE_POSTGRES_URL is None, reason="Requires real PostgreSQL service")
+def test_live_postgres_low_access_user_vector_search_and_no_leakage():
+    """Verify in real PostgreSQL that low-access user (test_user_1, 1%) retrieves permitted chunks with no ACL leakage."""
+    from app.common.config import get_settings
+    settings = get_settings()
+    repo = PostgresKnowledgeRepository(settings.database_url)
+
+    test_vector = [0.05] * 384
+    # test_user_1 has access to 25 documents out of 2500
+    results = repo.search_vector(test_vector, limit=5, user_id="test_user_1", group_ids=[])
+    assert len(results) > 0, "Low-access user must retrieve permitted results via iterative scan/fallback"
+
+    # Verify every returned chunk belongs to an authorized document
+    with repo._get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT resource_id FROM acl_references WHERE principal_id = 'test_user_1';")
+            allowed_doc_ids = set(r[0] for r in cur.fetchall())
+
+    for r in results:
+        assert r.document_id in allowed_doc_ids, f"Returned document {r.document_id} outside user ACL!"
+
+    # Completely unauthorized user gets zero results
+    unauth_results = repo.search_vector(test_vector, limit=5, user_id="unauthorized_ghost_user", group_ids=[])
+    assert len(unauth_results) == 0

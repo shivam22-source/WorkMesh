@@ -218,23 +218,152 @@ def test_postgres_search_vector_sql_structure():
     repo._get_connection = MagicMock(return_value=mock_conn)
     mock_conn.__enter__.return_value = mock_conn
 
-    # Setup mock return row
+    # Setup mock return rows (5 items so fast path fulfills the limit)
     mock_cursor.fetchall.return_value = [
-        ("chunk:1", "doc:1", "GITHUB", "PR Title", "Fix payment verification", "https://github.com/...", "dev", 0.88),
+        (f"chunk:{i}", f"doc:{i}", "GITHUB", f"PR Title {i}", "Content", "https://...", "dev", 0.88 - (i-1)*0.01)
+        for i in range(1, 6)
     ]
 
     test_vector = [0.05] * 384
     results = repo.search_vector(test_vector, limit=5, source_types=["GITHUB"])
 
-    assert len(results) == 1
+    assert len(results) == 5
     assert results[0].chunk_id == "chunk:1"
     assert results[0].score == 0.88
 
-    # Verify SQL query used pgvector <=> cosine distance and excluded zero vectors
+    # Verify SQL query used pgvector <=> cosine distance and candidate retrieval
     executed_sql, executed_params = mock_cursor.execute.call_args[0]
+    assert "WITH candidates AS" in executed_sql
     assert "c.embedding <=>" in executed_sql
     assert "(- (c.embedding <#> c.embedding)) > 0" in executed_sql
     assert "d.source_type = ANY(%s)" in executed_sql
     assert "ORDER BY c.embedding <=> %s ASC" in executed_sql
     expected_vec = pgvector.Vector(test_vector)
     assert executed_params == (expected_vec, expected_vec, 100, ["GITHUB"], 5)
+
+
+def test_postgres_search_vector_fallback_for_low_access_user():
+    """When fewer candidates survive ACL filtering than limit, exact fallback is invoked."""
+    repo = PostgresKnowledgeRepository("postgresql://mock:mock@localhost:5432/mock")
+
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    repo._get_connection = MagicMock(return_value=mock_conn)
+    mock_conn.__enter__.return_value = mock_conn
+
+    # First fetchall (from sql_fast) returns only 1 row (< limit of 5)
+    # Second fetchall (from sql_fallback) returns 3 rows
+    mock_cursor.fetchall.side_effect = [
+        [("chunk:1", "doc:1", "GITHUB", "PR 1", "Content 1", "https://...", "dev", 0.90)],
+        [
+            ("chunk:1", "doc:1", "GITHUB", "PR 1", "Content 1", "https://...", "dev", 0.90),
+            ("chunk:2", "doc:2", "GITHUB", "PR 2", "Content 2", "https://...", "dev", 0.85),
+            ("chunk:3", "doc:3", "GITHUB", "PR 3", "Content 3", "https://...", "dev", 0.80),
+        ],
+    ]
+
+    test_vector = [0.05] * 384
+    results = repo.search_vector(test_vector, limit=5, source_types=["GITHUB"], user_id="low_access_user")
+
+    assert len(results) == 3
+    assert [r.chunk_id for r in results] == ["chunk:1", "chunk:2", "chunk:3"]
+
+    # Verify fallback query was executed last
+    fallback_sql, fallback_params = mock_cursor.execute.call_args[0]
+    assert "FROM chunks c" in fallback_sql
+    assert "JOIN documents d ON c.document_id = d.id" in fallback_sql
+    assert "ORDER BY c.embedding <=> %s ASC" in fallback_sql
+    expected_vec = pgvector.Vector(test_vector)
+    # Param structure for fallback: [vec_param, acl_param, source_types, vec_param, limit]
+    assert fallback_params[-2] == expected_vec
+    assert fallback_params[-1] == 5
+
+
+def test_low_access_user_gets_results_and_zero_acl_leakage(embedding_provider: MockEmbeddingProvider):
+    """A low-access user (1% of corpus) retrieves their permitted chunks, never unauthorized ones."""
+    from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType
+    from datetime import datetime, timezone
+
+    repo = InMemoryKnowledgeRepository()
+    
+    # Ingest 100 documents (each with 1 chunk)
+    # 99 docs restricted to 'group_finance'
+    # 1 doc restricted to 'user_special' (1% access)
+    for i in range(100):
+        doc_id = f"doc_{i:03d}"
+        source_id = f"raw_{doc_id}"
+        is_special = (i == 42)
+        
+        raw_item = RawSourceItem(
+            id=source_id,
+            source_type=SourceType.GITHUB,
+            source_id=doc_id,
+            source_url=f"https://github.com/repo/{doc_id}",
+            title=f"Secret Doc {doc_id}",
+            raw_content=f"Content for {doc_id} with sensitive keyword search",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        doc = CanonicalDocument(
+            id=doc_id,
+            source_record_id=source_id,
+            source_type="GITHUB",
+            title=f"Secret Doc {doc_id}",
+            content=f"Content for {doc_id} with sensitive keyword search",
+            url=f"https://github.com/repo/{doc_id}",
+            author="engineer",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        # Unique vector per document
+        vec = [0.01 * (i % 50)] * 384
+        chunk = CanonicalChunk(
+            id=f"chunk_{i:03d}",
+            document_id=doc_id,
+            chunk_index=0,
+            token_count=10,
+            content_hash=f"hash_{i:03d}",
+            content=f"Content for {doc_id}",
+            embedding=vec,
+            created_at=datetime.now(timezone.utc),
+        )
+        
+        if is_special:
+            acls = [AclReference(
+                resource_type="DOCUMENT",
+                resource_id=doc_id,
+                principal_type=PrincipalType.USER,
+                principal_id="user_special",
+                permission="READ",
+            )]
+        else:
+            acls = [AclReference(
+                resource_type="DOCUMENT",
+                resource_id=doc_id,
+                principal_type=PrincipalType.GROUP,
+                principal_id="group_finance",
+                permission="READ",
+            )]
+            
+        repo.save_documents([doc])
+        repo.save_chunks([chunk])
+        repo.save_acls(acls)
+
+    retriever = VectorRetriever(repository=repo, embedding_provider=embedding_provider)
+    
+    # 1. Low access user search
+    query_vec = [0.01 * (42 % 50)] * 384
+    results = repo.search_vector(query_vec, limit=5, user_id="user_special", group_ids=[])
+    assert len(results) == 1
+    assert results[0].chunk_id == "chunk_042"
+    assert results[0].document_id == "doc_042"
+
+    # 2. Verify NO unauthorized chunk is present
+    for r in results:
+        assert r.document_id == "doc_042"
+        assert r.chunk_id == "chunk_042"
+
+    # 3. Completely unauthorized user gets 0 results
+    unauth_results = repo.search_vector(query_vec, limit=5, user_id="unauthorized_user", group_ids=[])
+    assert len(unauth_results) == 0

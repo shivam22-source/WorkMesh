@@ -2141,13 +2141,40 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         """
         fast_params = [vec_param, vec_param, candidate_k] + outer_params + [limit]
 
+        sql_fallback = f"""
+            SELECT
+                c.id,
+                c.document_id,
+                d.source_type,
+                COALESCE(d.title, ''),
+                c.content,
+                COALESCE(d.url, ''),
+                d.author,
+                ROUND((1 - (c.embedding <=> %s))::numeric, 4) AS score
+            FROM chunks c
+            JOIN documents d ON c.document_id = d.id
+            WHERE c.embedding IS NOT NULL AND (- (c.embedding <#> c.embedding)) > 0
+              AND {" AND ".join(outer_where)}
+            ORDER BY c.embedding <=> %s ASC
+            LIMIT %s;
+        """
+        fallback_params = [vec_param] + outer_params + [vec_param, limit]
+
         results: List[RagSearchResultItem] = []
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute("SET LOCAL hnsw.ef_search = 100;")
+                    try:
+                        cur.execute("SET LOCAL hnsw.iterative_scan = 'relaxed_order';")
+                    except Exception:
+                        pass
                     cur.execute(sql_fast, tuple(fast_params))
                     rows = cur.fetchall()
+                    if len(rows) < limit:
+                        # Low-access user or sparse candidate survival; execute exact fallback with iterative scan
+                        cur.execute(sql_fallback, tuple(fallback_params))
+                        rows = cur.fetchall()
                     for row in rows:
                         chunk_id, doc_id, src_type, title, content, url, author, score = row
                         snippet = content[:300].strip() + ("..." if len(content) > 300 else "")
