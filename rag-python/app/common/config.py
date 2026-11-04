@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     github_token: Optional[str] = None
     github_repo: Optional[str] = None
 
+    # Backpressure & concurrency limits
+    search_concurrency_limit: int = 15
+    search_retry_after_seconds: int = 1
+
     @property
     def database_url(self) -> str:
         return (

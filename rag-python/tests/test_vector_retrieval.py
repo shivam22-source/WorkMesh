@@ -2,6 +2,7 @@
 
 import math
 from unittest.mock import MagicMock
+import pgvector
 import pytest
 
 from app.chunking.models import CanonicalChunk
@@ -235,4 +236,4 @@ def test_postgres_search_vector_sql_structure():
     assert "(- (c.embedding <#> c.embedding)) > 0" in executed_sql
     assert "d.source_type = ANY(%s)" in executed_sql
     assert "ORDER BY c.embedding <=> %s ASC" in executed_sql
-    assert executed_params == (test_vector, ["GITHUB"], test_vector, 5)
+    assert executed_params == (pgvector.Vector(test_vector), ["GITHUB"], pgvector.Vector(test_vector), 5)

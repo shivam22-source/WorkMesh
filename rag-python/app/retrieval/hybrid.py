@@ -5,6 +5,7 @@ deduplicated result list ranked by Reciprocal Rank Fusion (RRF).
 """
 
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
 from app.contracts.rag_search import RagSearchResultItem
@@ -89,6 +90,12 @@ class HybridRetriever:
 
         self.query_classifier = query_classifier or QueryClassifier()
         self.k = k
+        self.last_stage_timings: Dict[str, float] = {
+            "lexicalMs": 0.0,
+            "vectorMs": 0.0,
+            "fuseMs": 0.0,
+            "graphMs": 0.0,
+        }
 
     def search(
         self,
@@ -112,6 +119,7 @@ class HybridRetriever:
             Note: RagSearchResultItem.score represents the RRF score, not a raw similarity or lexical score.
         """
         if not query or not query.strip():
+            self.last_stage_timings = {"lexicalMs": 0.0, "vectorMs": 0.0, "fuseMs": 0.0, "graphMs": 0.0}
             return []
 
         effective_user_id = user_id if user_id is not None else self.default_user_id
@@ -133,6 +141,7 @@ class HybridRetriever:
         candidate_pool_limit = max(limit * 2, 20)
 
         # Execute both retrievers with pushdown metadata & ACL filtering
+        t_lex0 = time.perf_counter()
         lexical_candidates = self.lexical_retriever.search(
             query=cleaned_query,
             limit=candidate_pool_limit,
@@ -140,6 +149,9 @@ class HybridRetriever:
             user_id=effective_user_id,
             group_ids=effective_group_ids,
         )
+        lexical_ms = round((time.perf_counter() - t_lex0) * 1000.0, 2)
+
+        t_vec0 = time.perf_counter()
         vector_candidates = self.vector_retriever.search(
             query=cleaned_query,
             limit=candidate_pool_limit,
@@ -147,18 +159,28 @@ class HybridRetriever:
             user_id=effective_user_id,
             group_ids=effective_group_ids,
         )
+        vector_ms = round((time.perf_counter() - t_vec0) * 1000.0, 2)
 
         # Fuse and deduplicate results
+        t_fuse0 = time.perf_counter()
         fused = self._fuse_results(
             lexical_results=lexical_candidates,
             vector_results=vector_candidates,
             limit=limit,
         )
+        fuse_ms = round((time.perf_counter() - t_fuse0) * 1000.0, 2)
 
         # Apply safety metadata filter in case an underlying source did not filter
         if source_types:
             normalized_types = {st.upper() for st in source_types}
             fused = [item for item in fused if item.source_type.upper() in normalized_types]
+
+        self.last_stage_timings = {
+            "lexicalMs": lexical_ms,
+            "vectorMs": vector_ms,
+            "fuseMs": fuse_ms,
+            "graphMs": 0.0,
+        }
 
         return fused
 

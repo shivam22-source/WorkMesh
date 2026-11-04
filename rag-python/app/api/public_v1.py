@@ -11,7 +11,9 @@ from typing import Annotated, Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field, field_validator
 
+from app.api.concurrency import ConcurrencyLimitExceededError, search_concurrency_limiter
 from app.auth.user_context import AccessDeniedError, UserContext, get_current_user, require_admin
+from app.common.config import get_settings
 from app.contracts.rag_ask import RagAskRequest
 from app.dependencies import (
     get_grounded_rag_service,
@@ -66,12 +68,20 @@ class SearchResultItem(BaseModel):
     score: float
 
 
+class StageTimings(BaseModel):
+    lexicalMs: float = 0.0
+    vectorMs: float = 0.0
+    fuseMs: float = 0.0
+    graphMs: float = 0.0
+
+
 class SearchResponse(BaseModel):
     query: str
     totalResults: int
     results: List[SearchResultItem]
     searchTimeMs: int
     status: str = "SUCCESS"
+    timings: Optional[StageTimings] = None
 
 
 # ---------------------------------------------------------------------------
@@ -198,55 +208,67 @@ def search(
     repo: Annotated[KnowledgeRepository, Depends(get_repository)],
 ) -> SearchResponse:
     """Execute permission-aware hybrid search across indexed enterprise knowledge."""
-    start_time = time.perf_counter()
-    client_ip = req.client.host if req.client else None
-
-    logger.info(
-        "search_initiated user_id=%s groups=%s query='%s'",
-        user.user_id,
-        user.group_ids,
-        request.query,
-    )
-
-    _record_audit_safe(
-        repo=repo,
-        user_id=user.user_id,
-        action="SEARCH",
-        resource="knowledge_index",
-        details={"query": request.query, "limit": request.resolved_limit},
-        ip_address=client_ip,
-    )
-
-    results = retriever.search(
-        query=request.query,
-        limit=request.resolved_limit,
-        source_types=request.resolved_source_types,
-        user_id=user.user_id,
-        group_ids=list(user.group_ids),
-    )
-
-    items = [
-        SearchResultItem(
-            chunkId=r.chunk_id,
-            documentId=r.document_id,
-            sourceType=r.source_type,
-            title=r.title,
-            snippet=r.snippet,
-            sourceUrl=r.source_url,
-            author=r.author,
-            score=r.score,
+    if not search_concurrency_limiter.acquire():
+        raise ConcurrencyLimitExceededError(
+            retry_after=get_settings().search_retry_after_seconds
         )
-        for r in results
-    ]
 
-    elapsed_ms = int((time.perf_counter() - start_time) * 1000)
-    return SearchResponse(
-        query=request.query,
-        totalResults=len(items),
-        results=items,
-        searchTimeMs=elapsed_ms,
-        status="SUCCESS",
-    )
+    try:
+        start_time = time.perf_counter()
+        client_ip = req.client.host if req.client else None
+
+        logger.info(
+            "search_initiated user_id=%s groups=%s query='%s'",
+            user.user_id,
+            user.group_ids,
+            request.query,
+        )
+
+        _record_audit_safe(
+            repo=repo,
+            user_id=user.user_id,
+            action="SEARCH",
+            resource="knowledge_index",
+            details={"query": request.query, "limit": request.resolved_limit},
+            ip_address=client_ip,
+        )
+
+        results = retriever.search(
+            query=request.query,
+            limit=request.resolved_limit,
+            source_types=request.resolved_source_types,
+            user_id=user.user_id,
+            group_ids=list(user.group_ids),
+        )
+
+        items = [
+            SearchResultItem(
+                chunkId=r.chunk_id,
+                documentId=r.document_id,
+                sourceType=r.source_type,
+                title=r.title,
+                snippet=r.snippet,
+                sourceUrl=r.source_url,
+                author=r.author,
+                score=r.score,
+            )
+            for r in results
+        ]
+
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+        raw_timings = getattr(retriever, "last_stage_timings", None)
+        stage_timings = StageTimings(**raw_timings) if raw_timings else None
+
+        return SearchResponse(
+            query=request.query,
+            totalResults=len(items),
+            results=items,
+            searchTimeMs=elapsed_ms,
+            status="SUCCESS",
+            timings=stage_timings,
+        )
+    finally:
+        search_concurrency_limiter.release()
 
 
 @router.post("/ask", response_model=AskResponse)
@@ -258,49 +280,57 @@ def ask(
     repo: Annotated[KnowledgeRepository, Depends(get_repository)],
 ) -> AskResponse:
     """Execute grounded question answering with verifiable citations."""
-    client_ip = req.client.host if req.client else None
-
-    logger.info(
-        "ask_initiated user_id=%s question='%s'",
-        user.user_id,
-        request.question,
-    )
-
-    _record_audit_safe(
-        repo=repo,
-        user_id=user.user_id,
-        action="ASK",
-        resource="knowledge_assistant",
-        details={"question": request.question},
-        ip_address=client_ip,
-    )
-
-    rag_request = RagAskRequest(
-        question=request.question,
-        user_id=user.user_id,
-        group_ids=list(user.group_ids),
-        source_types=request.resolved_source_types,
-    )
-
-    rag_response = rag_service.ask(rag_request)
-
-    citations = [
-        CitationItem(
-            sourceType=c.source_type,
-            title=c.title,
-            url=c.url,
-            snippet=c.snippet,
+    if not search_concurrency_limiter.acquire():
+        raise ConcurrencyLimitExceededError(
+            retry_after=get_settings().search_retry_after_seconds
         )
-        for c in (rag_response.citations or [])
-    ]
 
-    return AskResponse(
-        question=rag_response.question,
-        answer=rag_response.answer,
-        citations=citations,
-        confidence=rag_response.confidence,
-        status=rag_response.status,
-    )
+    try:
+        client_ip = req.client.host if req.client else None
+
+        logger.info(
+            "ask_initiated user_id=%s question='%s'",
+            user.user_id,
+            request.question,
+        )
+
+        _record_audit_safe(
+            repo=repo,
+            user_id=user.user_id,
+            action="ASK",
+            resource="knowledge_assistant",
+            details={"question": request.question},
+            ip_address=client_ip,
+        )
+
+        rag_request = RagAskRequest(
+            question=request.question,
+            user_id=user.user_id,
+            group_ids=list(user.group_ids),
+            source_types=request.resolved_source_types,
+        )
+
+        rag_response = rag_service.ask(rag_request)
+
+        citations = [
+            CitationItem(
+                sourceType=c.source_type,
+                title=c.title,
+                url=c.url,
+                snippet=c.snippet,
+            )
+            for c in (rag_response.citations or [])
+        ]
+
+        return AskResponse(
+            question=rag_response.question,
+            answer=rag_response.answer,
+            citations=citations,
+            confidence=rag_response.confidence,
+            status=rag_response.status,
+        )
+    finally:
+        search_concurrency_limiter.release()
 
 
 def _get_sync_status_common(

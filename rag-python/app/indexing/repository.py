@@ -2098,14 +2098,21 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             "(- (c.embedding <#> c.embedding)) > 0",  # Exclude zero chunk vectors
             acl_clause,
         ]
-        params: List[Any] = [query_embedding]
+        vec_param: Any = query_embedding
+        try:
+            from pgvector import Vector
+            vec_param = Vector(query_embedding)
+        except Exception:
+            pass
+
+        params: List[Any] = [vec_param]
         params.extend(acl_params)
 
         if source_types:
             where_clauses.append("d.source_type = ANY(%s)")
             params.append(source_types)
 
-        params.append(query_embedding)
+        params.append(vec_param)
         params.append(limit)
 
         sql = f"""

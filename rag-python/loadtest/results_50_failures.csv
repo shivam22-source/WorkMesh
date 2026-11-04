@@ -1,0 +1,3 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/api/v1/search,HTTPError('503 Server Error: Service Unavailable for url: /api/v1/search'),1893,2026-11-04T14:44:37Z,2026-11-04T14:44:50Z
+POST,/api/v1/ask,HTTPError('503 Server Error: Service Unavailable for url: /api/v1/ask'),656,2026-11-04T14:44:37Z,2026-11-04T14:44:50Z

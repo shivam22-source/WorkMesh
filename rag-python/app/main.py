@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.api import health, internal_rag, metrics, public_v1
+from app.api.concurrency import ConcurrencyLimitExceededError
 from app.api.metrics import record_request_metric
 from app.auth.user_context import AccessDeniedError, AuthenticationRequiredError
 from app.common.config import get_settings
@@ -175,6 +176,30 @@ def create_app() -> FastAPI:
             message=exc.message,
             path=request.url.path,
             trace_id=trace_id,
+        )
+
+    @application.exception_handler(ConcurrencyLimitExceededError)
+    async def concurrency_limit_handler(
+        request: Request, exc: ConcurrencyLimitExceededError
+    ) -> JSONResponse:
+        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
+        logging.getLogger(__name__).warning(
+            "concurrency_limit_exceeded path=%s retry_after=%d trace_id=%s",
+            request.url.path,
+            exc.retry_after,
+            trace_id,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            headers={"Retry-After": str(exc.retry_after)},
+            content={
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "status": status.HTTP_503_SERVICE_UNAVAILABLE,
+                "error": "Service Unavailable",
+                "message": exc.message,
+                "path": request.url.path,
+                "traceId": trace_id,
+            },
         )
 
     @application.exception_handler(AccessDeniedError)

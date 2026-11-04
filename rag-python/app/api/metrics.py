@@ -81,12 +81,26 @@ def get_prometheus_metrics() -> Response:
             sorted_lat = sorted(latencies)
             p50 = sorted_lat[int(count * 0.5)]
             p90 = sorted_lat[min(int(count * 0.9), count - 1)]
+            p95 = sorted_lat[min(int(count * 0.95), count - 1)]
             p99 = sorted_lat[min(int(count * 0.99), count - 1)]
             lines.append(f'workmesh_http_request_duration_seconds{{path="{path}",quantile="0.5"}} {p50:.6f}')
             lines.append(f'workmesh_http_request_duration_seconds{{path="{path}",quantile="0.9"}} {p90:.6f}')
+            lines.append(f'workmesh_http_request_duration_seconds{{path="{path}",quantile="0.95"}} {p95:.6f}')
             lines.append(f'workmesh_http_request_duration_seconds{{path="{path}",quantile="0.99"}} {p99:.6f}')
             lines.append(f'workmesh_http_request_duration_seconds_sum{{path="{path}"}} {total:.6f}')
             lines.append(f'workmesh_http_request_duration_seconds_count{{path="{path}"}} {count}')
+
+    # Dedicated P95 search latency metric
+    search_latencies = _request_latencies.get("/api/v1/search", [])
+    search_p95 = 0.0
+    if search_latencies:
+        sorted_search = sorted(search_latencies)
+        search_p95 = sorted_search[min(int(len(sorted_search) * 0.95), len(sorted_search) - 1)]
+    lines.extend([
+        "# HELP workmesh_search_latency_p95_seconds P95 latency for search queries in seconds.",
+        "# TYPE workmesh_search_latency_p95_seconds gauge",
+        f"workmesh_search_latency_p95_seconds {search_p95:.6f}",
+    ])
 
     output = "\n".join(lines) + "\n"
     return Response(content=output, media_type="text/plain; version=0.0.4; charset=utf-8")
