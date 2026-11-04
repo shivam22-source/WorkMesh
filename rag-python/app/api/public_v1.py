@@ -8,16 +8,17 @@ import logging
 import time
 from typing import Annotated, Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field, field_validator
 
-from app.auth.user_context import AccessDeniedError, UserContext, get_current_user
+from app.auth.user_context import AccessDeniedError, UserContext, get_current_user, require_admin
 from app.contracts.rag_ask import RagAskRequest
 from app.dependencies import (
     get_grounded_rag_service,
     get_hybrid_retriever,
     get_repository,
 )
+from app.indexing.models import SyncStateRecord
 from app.indexing.repository import KnowledgeRepository
 from app.rag.service import GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
@@ -138,6 +139,20 @@ class AuditEventResponse(BaseModel):
     details: Optional[Dict[str, Any]] = None
     ipAddress: Optional[str] = None
     timestamp: Optional[str] = None
+
+
+class SyncResetRequest(BaseModel):
+    sourceType: str = Field(
+        default="ALL",
+        description="Connector source type to reset: GITHUB, SLACK, EMAIL, or ALL",
+    )
+
+
+class SyncResetResponse(BaseModel):
+    sourceType: str
+    status: str = "RESET"
+    message: str
+    resetSources: List[str]
 
 
 # ---------------------------------------------------------------------------
@@ -406,3 +421,57 @@ def get_audit_events(
     )
 
     return [AuditEventResponse(**e) for e in raw_events]
+
+
+@router.post("/admin/sync/reset", response_model=SyncResetResponse)
+def reset_sync_state(
+    request: SyncResetRequest,
+    req: Request,
+    user: Annotated[UserContext, Depends(require_admin)],
+    repo: Annotated[KnowledgeRepository, Depends(get_repository)],
+) -> SyncResetResponse:
+    """Reset connector sync state and clear stale leases (requires ADMIN role)."""
+    target = request.sourceType.strip().upper()
+    valid_sources = ["GITHUB", "SLACK", "EMAIL"]
+    if target == "ALL":
+        to_reset = valid_sources
+    elif target in valid_sources:
+        to_reset = [target]
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid sourceType '{request.sourceType}'. Must be one of: ALL, GITHUB, SLACK, EMAIL",
+        )
+
+    client_ip = req.client.host if req.client else None
+    _record_audit_safe(
+        repo=repo,
+        user_id=user.user_id,
+        action="SYNC_RESET",
+        resource=f"sync_state:{target}",
+        details={"sourceType": target, "resetSources": to_reset},
+        ip_address=client_ip,
+    )
+
+    for src in to_reset:
+        existing = repo.get_sync_state(src)
+        cursor = existing.cursor_value if existing else None
+        repo.update_sync_state(
+            SyncStateRecord(
+                source_type=src,
+                cursor_value=cursor,
+                status="IDLE",
+                last_sync_started_at=None,
+                last_sync_completed_at=None,
+                records_synced_last_run=0,
+                error_message=None,
+            )
+        )
+
+    logger.info("sync_state_reset user_id=%s sources=%s", user.user_id, to_reset)
+    return SyncResetResponse(
+        sourceType=target,
+        status="RESET",
+        message=f"Sync state reset to IDLE for {', '.join(to_reset)}",
+        resetSources=to_reset,
+    )
