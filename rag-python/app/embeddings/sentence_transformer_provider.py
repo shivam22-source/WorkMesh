@@ -1,7 +1,8 @@
 """SentenceTransformer embedding provider using local Hugging Face models."""
 
+from collections import OrderedDict
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -17,6 +18,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self,
         model_name: str = "all-MiniLM-L6-v2",
         dimension: Optional[int] = None,
+        cache_size: int = 1024,
     ):
         from sentence_transformers import SentenceTransformer
 
@@ -33,6 +35,24 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         # If dimension is specified (e.g. 1536 for pgvector schema compatibility),
         # pad or truncate embeddings to match the expected schema dimension.
         self._dimension = dimension if dimension is not None else base_dim
+        self._cache_size = cache_size
+        self._query_cache: OrderedDict[str, List[float]] = OrderedDict()
+        self._cache_hits = 0
+        self._cache_misses = 0
+
+    @property
+    def cache_stats(self) -> Dict[str, int]:
+        return {
+            "hits": self._cache_hits,
+            "misses": self._cache_misses,
+            "size": len(self._query_cache),
+            "max_size": self._cache_size,
+        }
+
+    def clear_cache(self) -> None:
+        self._query_cache.clear()
+        self._cache_hits = 0
+        self._cache_misses = 0
 
     @property
     def dimension(self) -> int:
@@ -65,7 +85,20 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         return [self._adjust_dimension(emb) for emb in embeddings]
 
     def embed_query(self, query: str) -> List[float]:
+        if self._cache_size > 0 and query in self._query_cache:
+            self._cache_hits += 1
+            self._query_cache.move_to_end(query)
+            return self._query_cache[query]
+
+        self._cache_misses += 1
         embedding = self.model.encode(query, normalize_embeddings=True)
         if isinstance(embedding, list):
             embedding = np.array(embedding)
-        return self._adjust_dimension(embedding)
+        result = self._adjust_dimension(embedding)
+
+        if self._cache_size > 0:
+            if len(self._query_cache) >= self._cache_size:
+                self._query_cache.popitem(last=False)
+            self._query_cache[query] = result
+
+        return result
