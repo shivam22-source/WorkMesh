@@ -30,8 +30,8 @@ logger = logging.getLogger("cli.scale_benchmark")
 
 # Default connection candidates
 CANDIDATE_URLS = [
-    "postgresql://knowledge:local_dev_only_change_me@172.19.63.124:5432/knowledge",
     "postgresql://knowledge:local_dev_only_change_me@localhost:5432/knowledge",
+    "postgresql://knowledge:local_dev_only_change_me@127.0.0.1:5432/knowledge",
 ]
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
@@ -43,7 +43,9 @@ def resolve_postgres_url(custom_url: Optional[str] = None) -> str:
     """Resolve reachable live PostgreSQL database URL."""
     if custom_url:
         return custom_url
-    for url in CANDIDATE_URLS:
+    settings = get_settings()
+    candidates = [settings.database_url] + CANDIDATE_URLS
+    for url in candidates:
         try:
             with psycopg.connect(url, connect_timeout=1) as conn:
                 with conn.cursor() as cur:
@@ -51,7 +53,6 @@ def resolve_postgres_url(custom_url: Optional[str] = None) -> str:
                     return url
         except Exception:
             continue
-    settings = get_settings()
     return settings.database_url
 
 

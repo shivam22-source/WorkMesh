@@ -26,14 +26,19 @@ from app.indexing.repository import (
 from app.normalization.models import CanonicalDocument
 
 
-CANDIDATE_URLS = [
-    "postgresql://knowledge:local_dev_only_change_me@172.19.63.124:5432/test_knowledge",
-    "postgresql://knowledge:local_dev_only_change_me@localhost:5432/test_knowledge",
-]
-
-
 def detect_live_postgres_url() -> str:
-    for url in CANDIDATE_URLS:
+    from app.common.config import get_settings
+    settings = get_settings()
+    custom_test_url = (
+        f"postgresql://{settings.postgres_user}:{settings.postgres_password}@"
+        f"{settings.postgres_host}:{settings.postgres_port}/test_knowledge"
+    )
+    candidates = [
+        custom_test_url,
+        "postgresql://knowledge:local_dev_only_change_me@localhost:5432/test_knowledge",
+        "postgresql://knowledge:local_dev_only_change_me@127.0.0.1:5432/test_knowledge",
+    ]
+    for url in candidates:
         try:
             with psycopg.connect(url, connect_timeout=1) as conn:
                 with conn.cursor() as cur:

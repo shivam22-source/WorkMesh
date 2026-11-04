@@ -74,7 +74,7 @@ class Settings(BaseSettings):
         return self
 
     # PostgreSQL / pgvector settings
-    postgres_host: str = "172.19.63.124"
+    postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_db: str = "knowledge"
     postgres_user: str = "knowledge"
