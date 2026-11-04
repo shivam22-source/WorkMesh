@@ -55,10 +55,10 @@ A single consolidated FastAPI application interfacing directly with PostgreSQL 1
 
 ```mermaid
 flowchart TD
-    U[Employee / Web Client] -->|HTTP :8000| A[WorkMesh API (FastAPI)<br/>Auth, RBAC, Search, Q&A, Audit]
-    G[External Sources<br/>GitHub, Slack, Email] -->|CLI / Sync Workers| A
-    A --> L[Grounded LLM<br/>Evidence synthesis & citations]
-    A --> D[(PostgreSQL 16 + pgvector<br/>Lexical + Dense Embeddings + ACLs + Audit)]
+    U["Employee / Web Client"] -->|"HTTP :8000"| A["WorkMesh API (FastAPI)<br/>Auth, RBAC, Search, Q&A, Audit"]
+    G["External Sources<br/>GitHub, Slack, Email"] -->|"CLI / Sync Workers"| A
+    A --> L["Grounded LLM<br/>Evidence synthesis & citations"]
+    A --> D[("PostgreSQL 16 + pgvector<br/>Lexical + Dense Embeddings + ACLs + Audit")]
 ```
 
 ---

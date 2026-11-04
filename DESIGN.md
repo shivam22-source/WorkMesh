@@ -66,11 +66,11 @@ discussion → PR → commit — with permission-aware citations.
 
 ```mermaid
 flowchart TD
-    U[User / simple UI] --> J[Spring Boot API<br/>JWT, permissions, audit]
-    J --> P[FastAPI RAG service<br/>chunk, embed, hybrid search]
-    G[GitHub API<br/>commits, PRs] --> P
-    P --> L[LLM API<br/>writes answer]
-    P --> D[(PostgreSQL + pgvector<br/>users, metadata, vectors)]
+    U["User / simple UI"] --> J["Spring Boot API<br/>JWT, permissions, audit"]
+    J --> P["FastAPI RAG service<br/>chunk, embed, hybrid search"]
+    G["GitHub API<br/>commits, PRs"] --> P
+    P --> L["LLM API<br/>writes answer"]
+    P --> D[("PostgreSQL + pgvector<br/>users, metadata, vectors")]
     J --> D
 ```
 
