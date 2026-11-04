@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     postgres_password: str = "local_dev_only_change_me"
 
     # Embedding settings
-    embedding_provider: str = "mock"  # "mock" | "openai"
+    embedding_provider: str = "sentence-transformers"  # local sentence-transformers only
     embedding_dimension: int = 1536
     openai_api_key: Optional[str] = None
 

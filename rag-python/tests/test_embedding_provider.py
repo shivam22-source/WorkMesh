@@ -26,9 +26,15 @@ def test_mock_embeddings_are_unit_normalized():
     assert abs(norm - 1.0) < 1e-5
 
 
-def test_factory_returns_mock_by_default():
+def test_factory_returns_mock_when_explicitly_requested():
     provider = get_embedding_provider("mock")
     assert isinstance(provider, MockEmbeddingProvider)
+    assert provider.dimension == 1536
+
+
+def test_factory_returns_sentence_transformers_by_default():
+    provider = get_embedding_provider()
+    assert isinstance(provider, SentenceTransformerEmbeddingProvider)
     assert provider.dimension == 1536
 
 

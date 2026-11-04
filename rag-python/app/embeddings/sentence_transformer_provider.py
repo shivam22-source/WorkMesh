@@ -21,7 +21,10 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         from sentence_transformers import SentenceTransformer
 
         self.model_name = model_name
-        self.model = SentenceTransformer(model_name)
+        try:
+            self.model = SentenceTransformer(model_name, local_files_only=True)
+        except Exception:
+            self.model = SentenceTransformer(model_name)
         if hasattr(self.model, "get_embedding_dimension"):
             base_dim = self.model.get_embedding_dimension()
         else:
