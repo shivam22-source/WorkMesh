@@ -78,8 +78,9 @@ TEST_QUESTIONS = [
 ]
 
 JWT_LOADTEST_SECRET = os.environ.get(
-    "JWT_SECRET", "production_loadtest_strong_secret_key_at_least_32_characters_12345"
+    "JWT_SECRET", "super_strong_production_loadtest_secret_key_at_least_32_characters_12345"
 )
+LOADTEST_USER_ID = os.environ.get("LOADTEST_USER_ID", "employee_42")
 
 
 class WorkMeshUser(HttpUser):
@@ -88,10 +89,11 @@ class WorkMeshUser(HttpUser):
     wait_time = between(0.05, 0.2)
 
     def on_start(self):
+        groups = [] if LOADTEST_USER_ID == "test_user_1" else ["group_engineering", "group_backend"]
         self.token = create_jwt_token(
-            user_id="employee_42",
+            user_id=LOADTEST_USER_ID,
             role="ENGINEER",
-            groups=["group_engineering", "group_backend"],
+            groups=groups,
             secret=JWT_LOADTEST_SECRET,
             algorithm="HS256",
         )
