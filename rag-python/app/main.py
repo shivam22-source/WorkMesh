@@ -85,7 +85,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         settings = get_settings()
     configure_logging(settings.log_level)
 
-    if settings.auth_mode.lower().strip() == "dev":
+    if settings.is_dev:
         logging.getLogger(__name__).warning(
             "SECURITY WARNING: AUTH_MODE is set to 'dev'. Header-based identity spoofing is enabled. Dev mode is NOT safe for production!"
         )

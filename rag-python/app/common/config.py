@@ -29,14 +29,28 @@ class Settings(BaseSettings):
     contract_version: str = "v1"
 
     # Auth settings
-    auth_mode: str = "prod"  # "prod" or "dev"
+    auth_mode: str = "prod"  # strictly "prod" or "dev"
     jwt_secret: Optional[str] = None
     jwt_algorithm: str = "HS256"
 
+    @property
+    def is_prod(self) -> bool:
+        return self.auth_mode == "prod"
+
+    @property
+    def is_dev(self) -> bool:
+        return self.auth_mode == "dev"
+
     @model_validator(mode="after")
     def validate_auth_settings(self) -> "Settings":
-        mode = (self.auth_mode or "prod").strip().lower()
-        if mode == "dev":
+        raw_mode = (self.auth_mode or "").strip().lower()
+        if raw_mode not in ("prod", "dev"):
+            raise ValueError(
+                f"Invalid AUTH_MODE '{self.auth_mode}'. Must be strictly 'prod' or 'dev'."
+            )
+        self.auth_mode = raw_mode
+
+        if self.is_dev:
             if not self.jwt_secret:
                 self.jwt_secret = DEFAULT_DEV_JWT_SECRET
             if self.jwt_secret == DEFAULT_DEV_JWT_SECRET:

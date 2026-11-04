@@ -103,9 +103,7 @@ def get_current_user(
     if settings is None:
         settings = get_settings()
 
-    mode = (settings.auth_mode or "prod").strip().lower()
-
-    if mode == "prod":
+    if settings.is_prod:
         # In prod mode, completely reject any X-User-* simulation headers
         has_sim_headers = bool(
             (x_user_id and x_user_id.strip())

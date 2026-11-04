@@ -244,3 +244,47 @@ def test_dev_mode_default_secret_starts_with_warning(monkeypatch, caplog):
         app = create_app()
         assert app is not None
         assert any("default JWT secret in dev mode" in record.message for record in caplog.records)
+
+
+@pytest.mark.parametrize("invalid_mode", ["production", "staging", "", "devv"])
+def test_invalid_auth_mode_fails_to_start(monkeypatch, invalid_mode):
+    """Any AUTH_MODE other than 'prod' or 'dev' must fail startup."""
+    monkeypatch.setenv("AUTH_MODE", invalid_mode)
+    monkeypatch.setenv("JWT_SECRET", STRONG_PROD_SECRET)
+    get_settings.cache_clear()
+    with pytest.raises(ValueError, match="Invalid AUTH_MODE"):
+        create_app()
+
+
+def test_auth_mode_whitespace_prod_accepted_and_rejects_forged_header(monkeypatch, repo, retriever):
+    """' Prod ' is accepted after normalizing, and rejects forged headers."""
+    monkeypatch.setenv("AUTH_MODE", " Prod ")
+    monkeypatch.setenv("JWT_SECRET", STRONG_PROD_SECRET)
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.auth_mode == "prod"
+    assert settings.is_prod is True
+
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: settings
+    app.dependency_overrides[get_repository] = lambda: repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: retriever
+    client = TestClient(app)
+
+    resp = client.get(
+        "/api/v1/admin/sync/status",
+        headers={"X-User-Role": "ADMIN", "X-User-Id": "forged_admin"},
+    )
+    assert resp.status_code == 401
+    assert "forbidden in production mode" in resp.json()["message"]
+
+
+def test_auth_mode_uppercase_dev_accepted_and_normalizes(monkeypatch):
+    """'DEV' is accepted after normalizing."""
+    monkeypatch.setenv("AUTH_MODE", "DEV")
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.auth_mode == "dev"
+    assert settings.is_dev is True
+    assert settings.is_prod is False
