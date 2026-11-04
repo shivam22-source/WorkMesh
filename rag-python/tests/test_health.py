@@ -2,6 +2,8 @@
 
 from fastapi.testclient import TestClient
 
+from app.dependencies import get_repository
+from app.indexing.repository import DatabaseUnavailableError, InMemoryKnowledgeRepository
 from app.main import create_app
 
 
@@ -14,8 +16,23 @@ def test_health_reports_ok() -> None:
 
 
 def test_ready_reports_ok() -> None:
-    with TestClient(create_app()) as client:
+    app = create_app()
+    app.dependency_overrides[get_repository] = lambda: InMemoryKnowledgeRepository()
+    with TestClient(app) as client:
         response = client.get("/ready")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "rag-python"}
+
+
+def test_ready_reports_503_when_database_is_unavailable() -> None:
+    class FailingRepo(InMemoryKnowledgeRepository):
+        def check_health(self) -> bool:
+            raise DatabaseUnavailableError("connection failed")
+
+    app = create_app()
+    app.dependency_overrides[get_repository] = lambda: FailingRepo()
+    with TestClient(app) as client:
+        response = client.get("/ready")
+
+    assert response.status_code == 503

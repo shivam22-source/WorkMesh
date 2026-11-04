@@ -23,11 +23,11 @@ services:
     networks:
       - mesh-network
 
-  rag-python:
+  workmesh-api:
     build:
       context: .
       dockerfile: rag-python/Dockerfile
-    container_name: ekr-rag-python-demo
+    container_name: workmesh-api-demo
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-knowledge}:${POSTGRES_PASSWORD:-local_dev_only_change_me}@postgres:5432/${POSTGRES_DB:-knowledge}
@@ -37,29 +37,15 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-knowledge}
       ENVIRONMENT: production
+    ports:
+      - "8000:8000"
+      - "8080:8000"
     volumes:
       - ./data:/app/data:ro
+      - ./demo-ui:/app/demo-ui:ro
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - mesh-network
-
-  backend-java:
-    build:
-      context: ./backend-java
-      dockerfile: Dockerfile
-    container_name: ekr-backend-java-demo
-    restart: unless-stopped
-    environment:
-      PORT: 8080
-      RAG_BASE_URL: http://rag-python:8000
-      RAG_CONNECT_TIMEOUT: 5s
-      RAG_READ_TIMEOUT: 15s
-    ports:
-      - "8080:8080"
-    depends_on:
-      - rag-python
     networks:
       - mesh-network
 

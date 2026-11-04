@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir -e /app/rag-python
 
 COPY rag-python /app/rag-python
 COPY data /app/data
+COPY demo-ui /app/demo-ui
 
 WORKDIR /app/rag-python
 

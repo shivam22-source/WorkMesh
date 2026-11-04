@@ -10,15 +10,14 @@ Built as a 6-phase learning and implementation journey. This repository is at **
 
 | Component | Capabilities & Implementation |
 |---|---|
-| **`backend-java`** (Spring Boot 3.5, Java 21) | Public REST API gateway (`/api/v1/search`, `/api/v1/ask`, `/api/v1/admin/sync/status`, `/api/v1/admin/audit/events`). Deterministic role-based identity provider (`employee_42`, `employee_admin`). Upfront request validation, admin authorization enforcement, durable PostgreSQL audit logging with fail-safe fallback, robust HTTP RAG client. |
-| **`rag-python`** (FastAPI, Python 3.12) | Internal contract API (`/internal/v1/rag/*`). Multi-source connectors (GitHub, Slack, Email), canonical normalizers, source-aware chunkers, mock unit-normalized embeddings, pgvector indexing, pushdown ACL enforcement, relational entity extraction, deterministic reranker, evidence builder, mock extractive LLM, citation extractor. |
+| **WorkMesh API** (FastAPI, Python 3.12) | Unified REST API (`/api/v1/search`, `/api/v1/ask`, `/api/v1/sync/status`, `/api/v1/admin/audit/events`). Deterministic role-based identity provider (`employee_42`, `employee_admin`), upfront validation, admin RBAC checks, durable PostgreSQL audit logging with fail-safe fallback, multi-source connectors (GitHub, Slack, Email), canonical normalizers, dense embeddings (`sentence-transformers`), pgvector indexing, pushdown ACL enforcement, relational entity extraction, deterministic reranker, evidence builder, grounded LLM synthesis, and citation extractor. |
 | **PostgreSQL 16 + pgvector** | Canonical relational schema (`V001__canonical_schema.sql`): users, groups, source_records, documents, chunks, acl_references, sync_state, audit_events, entities, relationships. HNSW vector indexing + GiST/GIN lexical full-text indexing. |
 | **Connectors & Ingestion** | GitHub (PRs, commits, comments), Slack (channels, parent messages, replies), Email (mailboxes, threads, attachments, shared folders). Cursor checkpointing, atomic sync leases, scoped replay reconciliation, retry with exponential backoff. |
 | **Hybrid Retrieval & Reranker** | Query classifier (identifier vs semantic), parallel lexical (`tsvector`) + vector (`pgvector`) retrieval with Reciprocal Rank Fusion (RRF), pushdown SQL ACL filtering, candidate-grounded graph entity boost, diversity discounting. |
-| **Grounded RAG & Citations** | Structured evidence builder (max 5 items, max 400 chars, no raw graph metadata), offline extractive mock LLM, bracketed citation extraction `[1]`, URL mapping to authoritative source permalinks. |
+| **Grounded RAG & Citations** | Structured evidence builder (max 5 items, max 400 chars, no raw graph metadata), extractive grounded LLM synthesis, bracketed citation extraction `[1]`, URL mapping to authoritative source permalinks. |
 | **Evaluation Benchmark** | Automated evaluation suite measuring Recall@1, Recall@3, Recall@5, MRR, permission isolation leak rate, citation validity rate, and retrieval latency across 10 curated test queries (`data/evaluation/benchmark_queries.json`). |
 | **Observability & Metrics** | Structured timing breakdown across retrieval, rerank, evidence, and LLM stages (`latency_breakdown_ms`). JSON-formatted operational logging and durable audit log trail. |
-| **Containerized Demo** | Multi-container Docker Compose demo (`docker-compose.demo.yml`) orchestrating `postgres`, `rag-python`, and `backend-java` with network perimeter isolation. |
+| **Containerized Demo** | Multi-container Docker Compose demo (`docker-compose.demo.yml`) orchestrating `postgres` and `workmesh-api`. |
 
 Answers are synthesized strictly from permission-filtered retrieved evidence with bracketed citations. Prompt-based access control is never trusted, and ungrounded speculation is prevented by declining to answer (`INSUFFICIENT_EVIDENCE`) when evidence is missing or unauthorized.
 
@@ -65,49 +64,42 @@ To preserve engineering integrity, the current benchmark methodology recognizes 
 
 ## Architecture Overview
 
-Two deployable services, one unified PostgreSQL datastore. See [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md) and [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md).
+Consolidated single application service on a unified PostgreSQL + pgvector datastore. See [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md) and [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md).
 
 ```mermaid
 flowchart TD
-    U[Employee / Client] -->|HTTP :8080| J[Spring Boot Gateway<br/>Auth, Role RBAC, Audit]
-    J -->|HTTP :8000 /internal/v1| P[FastAPI RAG Engine<br/>Connectors, Hybrid Retrieval, Citations]
-    G[External Sources<br/>GitHub, Slack, Email] -->|CLI / Sync| P
-    P --> L[Grounded LLM<br/>Evidence-only synthesis]
-    P --> D[(PostgreSQL + pgvector<br/>Lexical + Dense Embeddings + ACLs)]
-    J --> D
+    U[Employee / Client] -->|HTTP :8000| A[WorkMesh API (FastAPI)<br/>Auth, Role RBAC, Audit, Search, Q&A]
+    G[External Sources<br/>GitHub, Slack, Email] -->|CLI / Sync Workers| A
+    A --> L[Grounded LLM<br/>Evidence-only synthesis & bracketed citations]
+    A --> D[(PostgreSQL 16 + pgvector<br/>Lexical + Dense Embeddings + ACLs + Audit)]
 ```
 
 ---
 
 ## Quick Start (Local Run)
 
-Prerequisites: JDK 21+, Python 3.12+, Docker Desktop.
+Prerequisites: Python 3.12+, Docker Desktop.
 
 ```bash
 # 1. Start PostgreSQL + pgvector
 docker compose up -d postgres
 
-# 2. Start rag-python (Terminal 1)
+# 2. Setup and run WorkMesh API
 cd rag-python
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -e ".[dev]"
 .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
-# 3. Start backend-java (Terminal 2)
-cd backend-java
-./mvnw spring-boot:run
-
-# 4. Ingest multi-source synthetic fixtures
-cd rag-python
+# 3. Ingest multi-source synthetic fixtures
 .venv/Scripts/python.exe -m app.cli.ingest --source all
 
-# 5. Run evaluation benchmark (curated 10 queries)
+# 4. Run evaluation benchmark (curated 10 queries)
 .venv/Scripts/python.exe -m app.cli.benchmark
 
-# 6. Run 10,000-chunk multi-tenant scale benchmark & ablation study
+# 5. Run 10,000-chunk multi-tenant scale benchmark & ablation study
 .venv/Scripts/python.exe -m app.cli.scale_benchmark --skip-seed --ablation
 
-# 7. Live GitHub REST API connector (fetch real PRs & commits)
+# 6. Live GitHub REST API connector (fetch real PRs & commits)
 .venv/Scripts/python.exe -m app.cli.sync_real_github --repo "pallets/flask"
 ```
 
@@ -115,23 +107,23 @@ cd rag-python
 
 ## Full End-to-End Docker Compose Demo
 
-To spin up the entire platform (PostgreSQL, RAG Python engine, and Java API gateway) inside Docker:
+To spin up the entire platform (PostgreSQL and WorkMesh API service) inside Docker:
 
 ```bash
-# Start all three services
+# Start all services
 docker compose -f docker-compose.demo.yml up --build -d
 
-# Verify gateway health
-curl http://localhost:8080/actuator/health
+# Verify readiness (checks live PostgreSQL connectivity)
+curl http://localhost:8000/ready
 
 # Perform grounded engineering search
-curl -s -X POST http://localhost:8080/api/v1/search \
+curl -s -X POST http://localhost:8000/api/v1/search \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"query": "DC-8692"}'
 
 # Perform grounded question answering
-curl -s -X POST http://localhost:8080/api/v1/ask \
+curl -s -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"question": "Why did we change the validation flow?"}'
@@ -139,9 +131,9 @@ curl -s -X POST http://localhost:8080/api/v1/ask \
 
 ### Interactive Demo Console UI
 
-Once `backend-java` or the Docker demo stack is running, open the interactive demo console:
-- **Live Gateway UI**: [`http://localhost:8080/`](http://localhost:8080/) (served directly from Spring Boot static resources).
-- **Standalone Offline UI**: Open [`demo-ui/index.html`](demo-ui/index.html) directly in any web browser. Includes an Offline Simulation toggle for reliable presentations without container dependencies, side-by-side ACL leakage audit, Ask AI with grounded citations, and scale/ablation metrics.
+Once the platform or Docker demo stack is running, open the interactive demo console:
+- **Live Platform UI**: [`http://localhost:8000/`](http://localhost:8000/) (served directly from FastAPI static handler).
+- **Standalone Offline UI**: Open [`demo-ui/index.html`](demo-ui/index.html) directly in any web browser. Includes an Offline Simulation toggle for presentations without container dependencies, side-by-side ACL leakage audit, Ask AI with grounded citations, and scale/ablation metrics.
 
 See [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md) for the complete 8–12 minute live demonstration walkthrough.
 
@@ -152,13 +144,8 @@ See [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md) f
 All tests run self-contained and offline:
 
 ```bash
-# Run Java backend JUnit test suite (58 tests)
-cd backend-java && ./mvnw test
-
-# Run Python RAG pytest suite (259 tests)
+# Run pytest test suite (278 tests)
 cd rag-python && .venv/Scripts/pytest.exe tests
-
-# Total Automated Tests: 317 passed, 0 failures
 ```
 
 ---

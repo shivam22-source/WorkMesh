@@ -16,30 +16,17 @@ from app.common.config import get_settings
 from app.contracts.rag_ask import RagAskRequest, RagAskResponse
 from app.contracts.rag_health import RagHealthRequest, RagHealthResponse
 from app.contracts.rag_search import RagSearchRequest, RagSearchResponse
+from app.dependencies import (
+    get_grounded_rag_service,
+    get_hybrid_retriever,
+    get_repository,
+)
 from app.indexing.repository import KnowledgeRepository, PostgresKnowledgeRepository
 from app.rag.service import GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/internal/v1", tags=["internal"])
-
-
-@lru_cache(maxsize=1)
-def get_repository() -> KnowledgeRepository:
-    settings = get_settings()
-    return PostgresKnowledgeRepository(connection_url=settings.database_url)
-
-
-@lru_cache(maxsize=1)
-def get_hybrid_retriever() -> HybridRetriever:
-    repo = get_repository()
-    return HybridRetriever(repository=repo)
-
-
-@lru_cache(maxsize=1)
-def get_grounded_rag_service() -> GroundedRagService:
-    retriever = get_hybrid_retriever()
-    return GroundedRagService(retriever=retriever)
 
 
 @router.post("/rag/health", response_model=RagHealthResponse)

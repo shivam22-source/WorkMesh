@@ -1,20 +1,18 @@
-"""Liveness and readiness for rag-python.
+"""Liveness and readiness probes for WorkMesh API service.
 
-Phase 0 distinction:
-  - /health is liveness: the process is up and can serve requests.
-  - /ready is readiness: the process is able to do real work.
-
-In Phase 0 there is no database connection, so /ready reports ok without
-checking anything. Phase 1 must make /ready actually verify Postgres, and that
-change is called out in docs/api/java-python-contract.md.
+- /health is liveness: the process is running.
+- /ready is readiness: verifies PostgreSQL connectivity.
 """
 
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.common.config import get_settings
 from app.contracts.rag_health import ServiceHealth
+from app.dependencies import get_repository
+from app.indexing.repository import KnowledgeRepository
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["health"])
@@ -27,9 +25,24 @@ def health() -> ServiceHealth:
     return ServiceHealth(status="ok", service=settings.app_name)
 
 
+@router.get("/actuator/health")
+def actuator_health() -> dict[str, str]:
+    """Compatibility endpoint for standard health checks."""
+    return {"status": "UP"}
+
+
 @router.get("/ready", response_model=ServiceHealth)
-def ready() -> ServiceHealth:
-    """Readiness probe. Phase 0: no dependency check yet, see module docstring."""
+def ready(
+    repo: Annotated[KnowledgeRepository, Depends(get_repository)],
+) -> ServiceHealth:
+    """Readiness probe. Verifies PostgreSQL connectivity."""
     settings = get_settings()
-    logger.debug("readiness_check dependencies=none phase=0")
+    try:
+        repo.check_health()
+    except Exception as exc:
+        logger.error("readiness_check_failed err=%s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="database service is unavailable",
+        ) from exc
     return ServiceHealth(status="ok", service=settings.app_name)

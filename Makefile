@@ -1,4 +1,4 @@
-.PHONY: help preflight up down logs ps test test-backend test-rag run-backend run-rag pg-ext-check ingest-fixtures
+.PHONY: help preflight up down logs ps test test-rag run-api pg-ext-check ingest-fixtures
 
 help:
 	@echo "preflight       Show local toolchain versions"
@@ -7,12 +7,9 @@ help:
 	@echo "ps              Show container status"
 	@echo "logs            Follow container logs"
 	@echo "pg-ext-check    Verify the vector extension exists"
-	@echo "test            Run all tests"
-	@echo "test-backend    Run backend-java tests"
-	@echo "test-rag        Run rag-python tests"
-	@echo "run-backend     Run backend-java on :8080"
-	@echo "run-rag         Run rag-python on :8000"
-	@echo "ingest-fixtures Ingest GitHub synthetic fixtures into knowledge index"
+	@echo "test            Run pytest suite"
+	@echo "run-api         Run WorkMesh API on :8000"
+	@echo "ingest-fixtures Ingest synthetic fixtures into knowledge index"
 
 preflight:
 	@powershell -ExecutionPolicy Bypass -File scripts/preflight-check.ps1
@@ -32,18 +29,12 @@ logs:
 pg-ext-check:
 	docker exec ekr-postgres psql -U knowledge -d knowledge -t -c "SELECT extname, extversion FROM pg_extension WHERE extname='vector';"
 
-test: test-backend test-rag
-
-test-backend:
-	cd backend-java && ./mvnw -B test
+test: test-rag
 
 test-rag:
 	cd rag-python && .venv/Scripts/python.exe -m pytest
 
-run-backend:
-	cd backend-java && ./mvnw spring-boot:run
-
-run-rag:
+run-api:
 	cd rag-python && .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 ingest-fixtures:

@@ -229,6 +229,11 @@ class KnowledgeRepository(ABC):
         """Retrieve recent audit events ordered by timestamp descending."""
         ...
 
+    @abstractmethod
+    def check_health(self) -> bool:
+        """Verify repository health / database connectivity."""
+        ...
+
 
 class InMemoryKnowledgeRepository(KnowledgeRepository):
     """In-memory repository used for fast, isolated unit and pipeline testing."""
@@ -244,6 +249,9 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         self.relationships: Dict[Tuple[str, str, str], Relationship] = {}
         self.relationship_owners: Dict[Tuple[str, str, str], Set[str]] = {}
         self.audit_events: List[Dict[str, Any]] = []
+
+    def check_health(self) -> bool:
+        return True
 
     def get_sync_state(self, source_type: str) -> Optional[SyncStateRecord]:
         state = self.sync_states.get(source_type)
@@ -974,6 +982,13 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         except (psycopg.OperationalError, psycopg.DatabaseError, ConnectionError, OSError) as e:
             logger.error("postgres_connection_failed url=%s err=%s", self.connection_url, e)
             raise DatabaseUnavailableError(f"Database connection failed: {e}") from e
+
+    def check_health(self) -> bool:
+        with self._get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1;")
+                cur.fetchone()
+        return True
 
     def get_sync_state(self, source_type: str) -> Optional[SyncStateRecord]:
         query = """
