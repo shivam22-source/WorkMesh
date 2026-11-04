@@ -13,9 +13,8 @@ This runbook guides an end-to-end live demonstration of WorkMesh: the enterprise
 ## 2. Architecture & Security Boundary (60–90 sec)
 
 Highlight the core architectural principles:
-- **Dual-Service Separation:**
-  - `backend-java` (Spring Boot 3.5, Java 21) acts as the secure API gateway, user identity provider, and audit controller.
-  - `rag-python` (FastAPI, Python 3.12) powers connectors, hybrid retrieval, deterministic reranking, and citation synthesis.
+- **Unified Service Architecture:**
+  - The WorkMesh FastAPI service acts as the secure API gateway, user identity provider, hybrid search engine, and audit controller.
 - **Security & Authorization Model:**
   - 100% pre-LLM pushdown ACL filtering at the database layer (0% leak rate). The LLM never sees unauthorized chunks.
   - LLM is strictly used for evidence explanation and synthesis, not source access.
@@ -44,7 +43,7 @@ Expected output:
 Demonstrate exact identifier retrieval linking tickets across systems:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/search \
+curl -s -X POST http://localhost:8000/api/v1/search \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"query": "DC-8692", "limit": 5}' | jq .
@@ -62,7 +61,7 @@ Key points to highlight:
 Demonstrate grounded RAG answering an engineering rationale question:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/ask \
+curl -s -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"question": "Why did we change the validation flow?"}' | jq .
@@ -81,7 +80,7 @@ Demonstrate that confidential evidence is strictly isolated pre-LLM:
 
 ### 4A. Authorized Lead Query (Alex Engineer)
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/ask \
+curl -s -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"question": "What is the design brief for Project Phoenix?"}' | jq .
@@ -90,7 +89,7 @@ curl -s -X POST http://localhost:8080/api/v1/ask \
 
 ### 4B. Unauthorized Employee Query (Unprivileged User)
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/ask \
+curl -s -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_intern" \
   -d '{"question": "What is the design brief for Project Phoenix?"}' | jq .
@@ -106,7 +105,7 @@ curl -s -X POST http://localhost:8080/api/v1/ask \
 Demonstrate how canonical entities connect engineering assets across platforms:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/search \
+curl -s -X POST http://localhost:8000/api/v1/search \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"query": "PaymentValidationService", "limit": 5}' | jq .
@@ -127,15 +126,15 @@ Demonstrate administrative observability and role-based access control:
 
 ```bash
 # Check admin sync status as ADMIN
-curl -s -X GET http://localhost:8080/api/v1/admin/sync/status \
+curl -s -X GET http://localhost:8000/api/v1/admin/sync/status \
   -H "X-User-Id: employee_admin" | jq .
 
 # Verify unprivileged user is rejected (HTTP 403 Forbidden)
-curl -s -X GET http://localhost:8080/api/v1/admin/sync/status \
+curl -s -X GET http://localhost:8000/api/v1/admin/sync/status \
   -H "X-User-Id: employee_42" | jq .
 
 # Inspect durable audit event log as ADMIN
-curl -s -X GET http://localhost:8080/api/v1/admin/audit/events \
+curl -s -X GET http://localhost:8000/api/v1/admin/audit/events \
   -H "X-User-Id: employee_admin" | jq .
 ```
 

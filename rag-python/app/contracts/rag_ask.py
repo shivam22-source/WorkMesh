@@ -1,6 +1,6 @@
 """Wire contract for internal Grounded RAG ask between backend-java and rag-python.
 
-Contract documentation: docs/api/java-python-contract.md
+Contract documentation: docs/api/api-contract.md
 Java DTOs: com.company.knowledge.search.dto (AskRequest, AskResponse, CitationItem)
 """
 

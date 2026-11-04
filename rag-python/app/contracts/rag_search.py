@@ -3,7 +3,7 @@
 This module defines the Python side of the search contract stub for Phase 1.
 Java side: com.company.knowledge.orchestrator.ragclient.dto (RagSearchRequest, RagSearchResponse, RagSearchResultItem).
 
-Contract documentation: docs/api/java-python-contract.md
+Contract documentation: docs/api/api-contract.md
 """
 
 from typing import List, Literal, Optional

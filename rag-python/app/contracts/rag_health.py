@@ -13,7 +13,7 @@ with 422 — which is exactly what the contract test caught during Phase 0.
 
 Both sides serialise by alias, so the wire format is camelCase everywhere.
 
-Contract documentation: docs/api/java-python-contract.md
+Contract documentation: docs/api/api-contract.md
 """
 
 from datetime import datetime

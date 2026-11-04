@@ -1,20 +1,20 @@
 # Public REST API Specification (v1)
 
-Phase 1 introduces the base REST API served by `backend-java`.
+The WorkMesh REST API is served by the consolidated FastAPI service (`rag-python`).
 
 All endpoints are rooted under `/api/v1/`.
 
 ## Authentication Context
 
-In Phase 1, requests resolve a deterministic local identity:
-- **Default user:** `employee_42` (`Alex Engineer`, role: `ENGINEER`, groups: `group_engineering`, `group_backend`)
-- **Simulating identities:** pass the `X-User-Id` header (e.g. `X-User-Id: employee_admin`).
+WorkMesh operates in one of two modes controlled by `AUTH_MODE`:
+- **Production Mode (`AUTH_MODE=prod`, default)**: Requests require an `Authorization: Bearer <signed-jwt>` header. Identity, role, and group memberships are extracted from cryptographically verified claims. Simulation headers are rejected.
+- **Development Mode (`AUTH_MODE=dev`)**: Resolves identity from simulation headers (`X-User-Id`, `X-User-Role`, `X-User-Groups`), defaulting to `employee_42` (`Alex Engineer`, role: `ENGINEER`, groups: `group_engineering`, `group_backend`).
 
 ---
 
 ## 1. POST /api/v1/search
 
-Searches the knowledge base with permission constraints derived from the user's groups.
+Searches the knowledge base with permission constraints derived from the user's groups using hybrid retrieval (tsvector + pgvector RRF).
 
 ### Request Body
 
@@ -37,10 +37,21 @@ Searches the knowledge base with permission constraints derived from the user's 
 ```json
 {
   "query": "why did we change the validation flow?",
-  "totalResults": 0,
-  "results": [],
-  "searchTimeMs": 12,
-  "status": "STUB"
+  "totalResults": 1,
+  "results": [
+    {
+      "chunkId": "chunk:github:1",
+      "documentId": "doc:github:pr:101",
+      "sourceType": "GITHUB",
+      "title": "Fix validation flow",
+      "snippet": "Updated validation logic in PR #101...",
+      "sourceUrl": "https://github.com/company/repo/pull/101",
+      "author": "engineer_alice",
+      "score": 0.0328
+    }
+  ],
+  "searchTimeMs": 14,
+  "status": "SUCCESS"
 }
 ```
 
@@ -48,7 +59,7 @@ Searches the knowledge base with permission constraints derived from the user's 
 
 ## 2. POST /api/v1/ask
 
-Asks a question and receives an explanation synthesized from permission-filtered evidence.
+Asks a question and receives an explanation synthesized strictly from permission-filtered evidence chunks with bracketed citations.
 
 ### Request Body
 
@@ -69,16 +80,16 @@ Asks a question and receives an explanation synthesized from permission-filtered
 ```json
 {
   "question": "why did we change the validation flow?",
-  "answer": "We changed the validation flow to enforce strict profile fail-closed checks on startup and validate all citation attributes.",
+  "answer": "According to the available evidence: empty verification payloads were throwing NullPointerException during checkout, so PaymentValidationService was updated to validate card tokens defensively [1].",
   "citations": [
     {
       "sourceType": "GITHUB",
-      "title": "PR #104: Enforce strict auth profile checks",
-      "url": "https://github.com/company/repo/pull/104",
-      "snippet": "Enforces strict fail-closed auth provider registration when prod profile is active."
+      "title": "Fix null verification in payment card validation (DC-8692)",
+      "url": "https://github.com/company/repo/pull/101",
+      "snippet": "Resolves ticket DC-8692: empty verification payloads were throwing NullPointerException..."
     }
   ],
-  "confidence": "MEDIUM",
+  "confidence": "HIGH",
   "status": "ANSWERED"
 }
 ```
@@ -90,7 +101,7 @@ When no permitted evidence or high-relevance chunks are retrieved, the grounded 
 ```json
 {
   "question": "what is the secret roadmap for 2030?",
-  "answer": "I do not have sufficient information in the permitted documents to answer this question.",
+  "answer": "I cannot answer this question based on the authorized documents available to you.",
   "citations": [],
   "confidence": "LOW",
   "status": "INSUFFICIENT_EVIDENCE"
@@ -101,7 +112,7 @@ When no permitted evidence or high-relevance chunks are retrieved, the grounded 
 
 ## 3. GET /api/v1/sync/status
 
-Reports the synchronization status and cursor progress across all configured connectors.
+Reports the synchronization status and cursor progress across all configured connectors. Requires `ADMIN` role.
 
 ### Response `200 OK`
 
@@ -112,28 +123,28 @@ Reports the synchronization status and cursor progress across all configured con
     {
       "sourceType": "GITHUB",
       "status": "IDLE",
-      "cursor": null,
-      "lastSyncStartedAt": null,
-      "lastSyncCompletedAt": null,
-      "recordsSyncedLastRun": 0,
+      "cursor": "cursor_gh_123",
+      "lastSyncStartedAt": "2026-11-04T12:00:00Z",
+      "lastSyncCompletedAt": "2026-11-04T12:00:05Z",
+      "recordsSyncedLastRun": 25,
       "errorMessage": null
     },
     {
       "sourceType": "SLACK",
       "status": "IDLE",
-      "cursor": null,
-      "lastSyncStartedAt": null,
-      "lastSyncCompletedAt": null,
-      "recordsSyncedLastRun": 0,
+      "cursor": "cursor_sl_456",
+      "lastSyncStartedAt": "2026-11-04T12:00:00Z",
+      "lastSyncCompletedAt": "2026-11-04T12:00:03Z",
+      "recordsSyncedLastRun": 12,
       "errorMessage": null
     },
     {
       "sourceType": "EMAIL",
       "status": "IDLE",
-      "cursor": null,
-      "lastSyncStartedAt": null,
-      "lastSyncCompletedAt": null,
-      "recordsSyncedLastRun": 0,
+      "cursor": "cursor_em_789",
+      "lastSyncStartedAt": "2026-11-04T12:00:00Z",
+      "lastSyncCompletedAt": "2026-11-04T12:00:02Z",
+      "recordsSyncedLastRun": 8,
       "errorMessage": null
     }
   ]
@@ -144,15 +155,15 @@ Reports the synchronization status and cursor progress across all configured con
 
 ## Error Handling
 
-Validation failures (e.g. blank `query` or `question`) return `400 Bad Request` with the unified `ApiError` body:
+Validation failures (e.g. blank `query` or `question`) return `400 Bad Request` with the unified `ApiError` body and populated `traceId`:
 
 ```json
 {
-  "timestamp": "2026-10-30T18:15:00Z",
+  "timestamp": "2026-11-04T19:40:00Z",
   "status": 400,
   "error": "Bad Request",
   "message": "query must not be blank",
   "path": "/api/v1/search",
-  "traceId": null
+  "traceId": "d748f21e5b"
 }
 ```

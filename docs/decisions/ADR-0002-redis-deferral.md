@@ -35,6 +35,6 @@ Explicitly defer introducing Redis for the WorkMesh MVP. Continue to rely on Pos
 
 ## Consequences
 
-- The architecture remains strictly two application services (`backend-java` and `rag-python`) and one datastore (`PostgreSQL + pgvector`), preserving the operational boundaries defined in ADR-0001.
+- The architecture maintains a single datastore (`PostgreSQL + pgvector`), avoiding distributed cache invalidation and keeping operations simple.
 - Query caching is omitted in favor of consistent, permission-enforced PostgreSQL queries.
 - Future re-evaluation: Redis may be revisited post-MVP if measured production profiling demonstrates a concrete bottleneck that cannot be resolved within PostgreSQL, or if cross-node distributed event broadcast becomes necessary.
