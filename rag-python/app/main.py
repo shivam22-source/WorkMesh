@@ -14,6 +14,7 @@ import uuid
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.api import health, internal_rag, metrics, public_v1
@@ -66,6 +67,18 @@ def create_app() -> FastAPI:
         title="WorkMesh Platform API",
         version="1.0.0",
         description="Unified Enterprise Knowledge & Context Platform API.",
+    )
+
+    # -----------------------------------------------------------------------
+    # CORS Configuration
+    # -----------------------------------------------------------------------
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Trace-Id"],
     )
 
     # -----------------------------------------------------------------------
