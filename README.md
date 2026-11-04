@@ -65,6 +65,13 @@ flowchart TD
 
 ## Quick Start
 
+### Authentication Modes
+
+WorkMesh supports two runtime authentication modes controlled by `AUTH_MODE`:
+
+- **Production Mode (`AUTH_MODE=prod`, default)**: Strict fail-closed JWT authentication. Every request must supply a valid `Authorization: Bearer <token>` signed with `JWT_SECRET`. Identity, role, and group memberships are extracted exclusively from verified claims (`sub`, `role`, `groups`). Simulation headers (`X-User-Id`, `X-User-Role`, `X-User-Groups`) are rejected with `401 Unauthorized`.
+- **Development Mode (`AUTH_MODE=dev`)**: Allows header-based identity simulation for testing and local demos. A warning is logged on startup. **Dev mode is not safe for production.**
+
 ### 1. Run with Docker Compose
 
 ```bash

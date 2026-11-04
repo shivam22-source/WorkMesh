@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from app.api import health, internal_rag, metrics, public_v1
 from app.api.metrics import record_request_metric
-from app.auth.user_context import AccessDeniedError
+from app.auth.user_context import AccessDeniedError, AuthenticationRequiredError
 from app.common.config import get_settings
 from app.indexing.repository import DatabaseUnavailableError
 
@@ -82,6 +82,11 @@ TAGS_METADATA = [
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.log_level)
+
+    if settings.auth_mode.lower().strip() == "dev":
+        logging.getLogger(__name__).warning(
+            "SECURITY WARNING: AUTH_MODE is set to 'dev'. Header-based identity spoofing is enabled. Dev mode is NOT safe for production!"
+        )
 
     application = FastAPI(
         title="WorkMesh Platform API",
@@ -153,6 +158,25 @@ def create_app() -> FastAPI:
     # -----------------------------------------------------------------------
     # Exception Handlers (Uniform ApiError shape with populated traceId)
     # -----------------------------------------------------------------------
+    @application.exception_handler(AuthenticationRequiredError)
+    async def authentication_required_handler(
+        request: Request, exc: AuthenticationRequiredError
+    ) -> JSONResponse:
+        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
+        logging.getLogger(__name__).warning(
+            "authentication_required path=%s msg=%s trace_id=%s",
+            request.url.path,
+            exc.message,
+            trace_id,
+        )
+        return _build_api_error(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            error_phrase="Unauthorized",
+            message=exc.message,
+            path=request.url.path,
+            trace_id=trace_id,
+        )
+
     @application.exception_handler(AccessDeniedError)
     async def access_denied_handler(
         request: Request, exc: AccessDeniedError

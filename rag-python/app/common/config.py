@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     contract_version: str = "v1"
 
+    # Auth settings
+    auth_mode: str = "prod"  # "prod" or "dev"
+    jwt_secret: str = "workmesh_jwt_secret_dev_key_only_change_in_prod"
+    jwt_algorithm: str = "HS256"
+
     # PostgreSQL / pgvector settings
     postgres_host: str = "localhost"
     postgres_port: int = 5432
