@@ -42,14 +42,19 @@ Evaluated over 10,000 multi-tenant synthetic chunks (2,500 documents across GitH
 
 ### 1. Scale & Security Benchmark
 
+Evaluated over 100 queries (50 exact identifier tickets + 50 semantic rationale queries) using the first-stage RRF baseline (`reranker disabled`):
+
 | Metric | Measured Result | Target | Status |
 |---|---|---|---|
 | **Recall@1** | **64.0%** | >= 50.0% | PASS |
+| **Recall@3** | **68.0%** | — | Measured |
 | **Recall@5** | **70.0%** | >= 55.0% | PASS |
 | **Recall@10** | **74.0%** | >= 60.0% | PASS |
 | **Mean Reciprocal Rank (MRR)** | **0.6655** | >= 0.5000 | PASS |
 | **Cross-Tenant Permission Leak Rate** | **0.0%** (0 leaks / 500 adversarial queries) | 0.0% | PASS |
 | **Adversarial Security Throughput** | **125.09 ms / query** (500 adversarial queries) | < 200 ms | PASS |
+
+**Retrieval Latency Percentiles (100 Scale Benchmark Queries):** `p50 = 86.24 ms` | `p90 = 1,007.85 ms` | `p95 = 1,017.29 ms` | `p99 = 1,801.26 ms` | `mean = 229.67 ms`.
 
 Raw results: [`data/evaluation/results/scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json).
 
