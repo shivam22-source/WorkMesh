@@ -7,6 +7,7 @@ from fastapi import Depends
 
 from app.common.config import get_settings
 from app.indexing.repository import KnowledgeRepository, PostgresKnowledgeRepository
+from app.rag.cross_encoder_reranker import CrossEncoderReranker
 from app.rag.service import GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
 
@@ -21,9 +22,18 @@ def get_repository() -> KnowledgeRepository:
 def get_hybrid_retriever() -> HybridRetriever:
     repo = get_repository()
     settings = get_settings()
+    cross_encoder = (
+        CrossEncoderReranker(
+            model_name=settings.reranker_model,
+            top_k=settings.reranker_top_k,
+        )
+        if settings.reranker == "cross_encoder"
+        else None
+    )
     return HybridRetriever(
         repository=repo,
         enable_query_routing=settings.enable_query_routing,
+        cross_encoder_reranker=cross_encoder,
     )
 
 

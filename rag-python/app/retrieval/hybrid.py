@@ -69,6 +69,7 @@ class HybridRetriever:
         candidate_pool_size: Optional[int] = None,
         enable_query_routing: bool = True,
         routing_weights: Optional[Dict[str, Tuple[float, float]]] = None,
+        cross_encoder_reranker: Optional[Any] = None,
     ):
         self.default_user_id = default_user_id
         self.default_group_ids = default_group_ids
@@ -97,6 +98,7 @@ class HybridRetriever:
         self.vector_weight = vector_weight
         self.candidate_pool_size = candidate_pool_size
         self.enable_query_routing = enable_query_routing
+        self.cross_encoder_reranker = cross_encoder_reranker
         self.routing_weights = routing_weights or {
             "identifier": (1.6, 0.4),
             "semantic": (0.4, 1.6),
@@ -107,6 +109,7 @@ class HybridRetriever:
             "vectorMs": 0.0,
             "fuseMs": 0.0,
             "graphMs": 0.0,
+            "rerankMs": 0.0,
         }
 
     @staticmethod
@@ -153,7 +156,13 @@ class HybridRetriever:
             Note: RagSearchResultItem.score represents the RRF score, not a raw similarity or lexical score.
         """
         if not query or not query.strip():
-            self.last_stage_timings = {"lexicalMs": 0.0, "vectorMs": 0.0, "fuseMs": 0.0, "graphMs": 0.0}
+            self.last_stage_timings = {
+                "lexicalMs": 0.0,
+                "vectorMs": 0.0,
+                "fuseMs": 0.0,
+                "graphMs": 0.0,
+                "rerankMs": 0.0,
+            }
             return []
 
         effective_user_id = user_id if user_id is not None else self.default_user_id
@@ -172,7 +181,8 @@ class HybridRetriever:
         )
 
         # Candidate pool size: retrieve a wider pool from each source to allow RRF overlap
-        candidate_pool_limit = max(limit * 2, self.candidate_pool_size or 20)
+        rerank_top_k = self.cross_encoder_reranker.top_k if self.cross_encoder_reranker is not None else 0
+        candidate_pool_limit = max(limit * 2, self.candidate_pool_size or 20, rerank_top_k)
         lex_weight, vec_weight = self._resolve_weights(cleaned_query, classification)
 
         # Execute both retrievers with pushdown metadata & ACL filtering
@@ -196,27 +206,39 @@ class HybridRetriever:
         )
         vector_ms = round((time.perf_counter() - t_vec0) * 1000.0, 2)
 
-        # Fuse and deduplicate results
+        # Fuse and deduplicate ACL-filtered results
         t_fuse0 = time.perf_counter()
+        fusion_limit = max(limit, rerank_top_k) if self.cross_encoder_reranker is not None else limit
         fused = self._fuse_results(
             lexical_results=lexical_candidates,
             vector_results=vector_candidates,
-            limit=limit,
+            limit=fusion_limit,
             lexical_weight=lex_weight,
             vector_weight=vec_weight,
         )
         fuse_ms = round((time.perf_counter() - t_fuse0) * 1000.0, 2)
 
-        # Apply safety metadata filter in case an underlying source did not filter
+        # Apply safety metadata filter before optional cross-encoder rerank
         if source_types:
             normalized_types = {st.upper() for st in source_types}
             fused = [item for item in fused if item.source_type.upper() in normalized_types]
+
+        rerank_ms = 0.0
+        if self.cross_encoder_reranker is not None and fused:
+            t_rerank0 = time.perf_counter()
+            fused = self.cross_encoder_reranker.rerank(
+                query=cleaned_query,
+                candidates=fused,
+                limit=limit,
+            )
+            rerank_ms = round((time.perf_counter() - t_rerank0) * 1000.0, 2)
 
         self.last_stage_timings = {
             "lexicalMs": lexical_ms,
             "vectorMs": vector_ms,
             "fuseMs": fuse_ms,
             "graphMs": 0.0,
+            "rerankMs": rerank_ms,
         }
 
         return fused

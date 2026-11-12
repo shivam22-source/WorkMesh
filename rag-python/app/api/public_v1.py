@@ -73,6 +73,7 @@ class StageTimings(BaseModel):
     vectorMs: float = 0.0
     fuseMs: float = 0.0
     graphMs: float = 0.0
+    rerankMs: float = 0.0
 
 
 class SearchResponse(BaseModel):

@@ -53,3 +53,27 @@ Raw JSON: [`data/evaluation/results/sweep_v2_results.json`](../data/evaluation/r
 
 6. **Lexical `OR` fallback (`replace(plainto_tsquery, '&', '|')`) did NOT survive cost-benefit:**
    - Appending disjunctive `OR` matches edged Multi-Source R@5 up slightly (`72.5% -> 75.0%`), but noisy 1-token matches from the 10k background chunks dropped Semantic R@5 (`50.0% -> 45.0%`) and exploded latency **10x–20x** (`p50 = 1,730.9 ms`, `p95 = 3,929.6 ms`). Rejected (`lexical_or_fallback = False` kept disabled).
+
+
+---
+
+## Step 4 & Step 5: Neural Cross-Encoder Reranking & Graph Boost Verification (`queries_v2`)
+
+Evaluated after Step 3 defaults (`hnsw.ef_search = 200`, `enable_query_routing = True`) via `python -m app.cli.eval_v2 --include-cross-encoder`. Raw JSON: [`data/evaluation/results/reranker_v2_results.json`](../data/evaluation/results/reranker_v2_results.json).
+
+| Strategy | Overall R@1 | Overall R@3 | Overall R@5 [95% CI] | Overall MRR [95% CI] | Overall nDCG@10 [95% CI] | ID R@5 | Sem R@5 | Multi R@5 | p50 / p95 ms |
+|---|---:|---:|---|---|---|---|---|---|---:|
+| `lexical_only` | 25.4% | 31.2% | 33.3% [21.7%, 45.0%] | 0.3333 [0.2167, 0.4667] | 0.3306 [0.2167, 0.4473] | 100.0% | 0.0% | 0.0% | 39.2 / 62.2 |
+| `vector_only` (`limit=10`, `ef=200`) | 25.0% | 27.1% | 30.0% [20.0%, 41.2%] | 0.3375 [0.2208, 0.4542] | 0.2978 [0.1950, 0.4029] | 50.0% | 20.0% | 20.0% | 91.1 / 141.3 |
+| `hybrid_rrf` (`RERANKER=off`) | **52.1%** | 70.4% | 74.2% [62.5%, 84.2%] | 0.7450 [0.6283, 0.8500] | 0.7306 [0.6251, 0.8320] | 100.0% | 50.0% | 72.5% | **180.1 / 203.4** |
+| `hybrid_plus_graph` *(Experimental)* | 52.1% | 70.4% | 74.2% [62.5%, 84.2%] | 0.7474 [0.6307, 0.8524] | 0.7340 [0.6306, 0.8336] | 100.0% | 50.0% | 72.5% | 206.7 / 251.2 |
+| `hybrid_cross_encoder` (`RERANKER=cross_encoder`, top-50 ACL pool) | 51.2% | **73.8%** | **75.8%** [64.2%, 85.8%] | **0.7583** [0.6417, 0.8583] | **0.7408** [0.6405, 0.8399] | 100.0% | 50.0% | **77.5%** | 735.9 / 870.9 |
+
+### Key Conclusions
+
+- **Cross-Encoder Reranker (`cross-encoder/ms-marco-MiniLM-L-6-v2`):**
+  - Strictly runs AFTER PostgreSQL ACL filtering over the top 50 fused candidates (`CrossEncoderReranker`).
+  - Lifts Multi-Source R@5 from `72.5% -> 77.5%` (`+5.00 pp`, 95% CI `[+0.00, +12.50]`) and overall R@3/R@5/MRR/nDCG@10 slightly (`70.4% -> 73.8%`, `74.2% -> 75.8%`, `0.7450 -> 0.7583`, `0.7306 -> 0.7408`).
+  - However, scoring 50 query-passage pairs sequentially on CPU adds **`+555.8 ms` p50 (`180.1 -> 735.9 ms`)** and **`+667.5 ms` p95 (`203.4 -> 870.9 ms`, 4.3x regression)** without achieving statistical significance (`sig=False`). Kept **`RERANKER=off` by default**.
+- **Graph Boost (`DeterministicReranker`):**
+  - Across both initial (`ablation_v2_results.json`) and tuned (`reranker_v2_results.json`) paired bootstrap evaluations on the exact same candidate pool, graph boost yielded **0.00 pp Recall@5 delta** on `multi_source` queries (`95% CI [+0.00, +0.00]`, `nDCG@10` delta `+0.0102 [0.0000, +0.0307]`, `sig=False`) while adding `+26.6 ms p50` / `+47.8 ms p95` latency (`180.1/203.4 ms -> 206.7/251.2 ms`). Marked **experimental**.

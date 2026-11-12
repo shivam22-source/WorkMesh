@@ -71,6 +71,13 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"JWT_SECRET is too short ({len(self.jwt_secret)} characters). Must be at least 32 characters in production mode. App startup aborted."
                 )
+
+        raw_reranker = (self.reranker or "off").strip().lower()
+        if raw_reranker not in ("off", "cross_encoder"):
+            raise ValueError(
+                f"Invalid RERANKER '{self.reranker}'. Must be strictly 'off' or 'cross_encoder'."
+            )
+        self.reranker = raw_reranker
         return self
 
     # PostgreSQL / pgvector settings
@@ -93,6 +100,9 @@ class Settings(BaseSettings):
     # Retrieval tuning & reranking
     hnsw_ef_search: int = 200
     enable_query_routing: bool = True
+    reranker: str = "off"  # strictly "off" or "cross_encoder"
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_top_k: int = 50
 
     # Backpressure & concurrency limits
     search_concurrency_limit: int = 15

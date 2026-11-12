@@ -26,6 +26,7 @@ from app.evaluation.metrics import (
     paired_bootstrap_delta_ci,
 )
 from app.indexing.repository import PostgresKnowledgeRepository
+from app.rag.cross_encoder_reranker import CrossEncoderReranker
 from app.rag.reranker import DeterministicReranker
 from app.retrieval.hybrid import HybridRetriever
 
@@ -77,17 +78,31 @@ def evaluate_queries_v2(
     *,
     limit: int = 10,
     graph_candidate_pool: int = 20,
+    include_cross_encoder: bool = False,
     n_resamples: int = 2000,
     seed: int = 42,
 ) -> Dict[str, Any]:
-    """Run lexical, vector, hybrid, and hybrid+graph over queries_v2."""
+    """Run lexical, vector, hybrid, hybrid+graph, and optional cross-encoder over queries_v2."""
     repo = PostgresKnowledgeRepository(connection_url=db_url)
     embedder = get_embedding_provider()
     embedder.embed_texts(["warmup query"])
     retriever = HybridRetriever(repository=repo, embedding_provider=embedder)
     reranker = DeterministicReranker(repository=repo)
 
-    strat_keys = ("lexical_only", "vector_only", "hybrid_rrf", "hybrid_plus_graph")
+    ce_retriever: Optional[HybridRetriever] = None
+    if include_cross_encoder:
+        ce_reranker = CrossEncoderReranker(top_k=50)
+        # Warm up CrossEncoder weights once before per-query latency measurement
+        ce_reranker._get_model().predict([("warmup query", "warmup passage")])
+        ce_retriever = HybridRetriever(
+            repository=repo,
+            embedding_provider=embedder,
+            cross_encoder_reranker=ce_reranker,
+        )
+
+    strat_keys = ["lexical_only", "vector_only", "hybrid_rrf", "hybrid_plus_graph"]
+    if include_cross_encoder:
+        strat_keys.append("hybrid_cross_encoder")
     per_strategy_rows: Dict[str, List[Dict[str, Any]]] = {k: [] for k in strat_keys}
     categories = ("exact_identifier", "semantic", "multi_source")
     per_strategy_by_cat: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
@@ -138,6 +153,15 @@ def evaluate_queries_v2(
             "hybrid_rrf": (hyb_hits, hyb_ms),
             "hybrid_plus_graph": (graph_hits, graph_ms),
         }
+
+        if ce_retriever is not None:
+            t0 = time.perf_counter()
+            ce_hits = ce_retriever.search(
+                query=query_text, limit=limit, user_id=user_id, group_ids=group_ids
+            )
+            ce_ms = (time.perf_counter() - t0) * 1000.0
+            runs["hybrid_cross_encoder"] = (ce_hits, ce_ms)
+
         for key, (items, ms) in runs.items():
             row = evaluate_query_ranking([c.chunk_id for c in items], qrels, latency_ms=ms)
             row["id"] = q["id"]
@@ -165,25 +189,30 @@ def evaluate_queries_v2(
             "by_category": by_cat,
         }
 
-    # Paired bootstrap check: Hybrid+Graph vs Hybrid baseline (overall + multi_source)
-    for scope_name, cat_filter in (("overall", None), ("multi_source", "multi_source")):
-        base_rows = [
-            r for r in per_strategy_rows["hybrid_rrf"] if cat_filter is None or r["category"] == cat_filter
-        ]
-        graph_rows = [
-            r
-            for r in per_strategy_rows["hybrid_plus_graph"]
-            if cat_filter is None or r["category"] == cat_filter
-        ]
-        results["paired_comparisons"][f"hybrid_plus_graph_vs_hybrid_{scope_name}"] = {
-            metric: paired_bootstrap_delta_ci(
-                [r[metric] for r in base_rows],
-                [r[metric] for r in graph_rows],
-                n_resamples=n_resamples,
-                seed=seed,
-            )
-            for metric in ("recall_at_5", "recall_at_10", "mrr", "ndcg_at_10")
-        }
+    # Paired bootstrap checks
+    comparisons = [
+        ("hybrid_plus_graph", "hybrid_plus_graph_vs_hybrid"),
+    ]
+    if include_cross_encoder:
+        comparisons.append(("hybrid_cross_encoder", "hybrid_cross_encoder_vs_hybrid"))
+
+    for cand_key, prefix in comparisons:
+        for scope_name, cat_filter in (("overall", None), ("multi_source", "multi_source"), ("semantic", "semantic")):
+            base_rows = [
+                r for r in per_strategy_rows["hybrid_rrf"] if cat_filter is None or r["category"] == cat_filter
+            ]
+            cand_rows = [
+                r for r in per_strategy_rows[cand_key] if cat_filter is None or r["category"] == cat_filter
+            ]
+            results["paired_comparisons"][f"{prefix}_{scope_name}"] = {
+                metric: paired_bootstrap_delta_ci(
+                    [r[metric] for r in base_rows],
+                    [r[metric] for r in cand_rows],
+                    n_resamples=n_resamples,
+                    seed=seed,
+                )
+                for metric in ("recall_at_5", "recall_at_10", "mrr", "ndcg_at_10")
+            }
 
     return results
 
@@ -235,6 +264,7 @@ def main() -> int:
     parser.add_argument("--queries", type=Path, default=DEFAULT_QUERIES_PATH)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_PATH)
     parser.add_argument("--reseed", action="store_true")
+    parser.add_argument("--include-cross-encoder", action="store_true")
     parser.add_argument("--bootstrap-resamples", type=int, default=2000)
     args = parser.parse_args()
 
@@ -244,6 +274,7 @@ def main() -> int:
     results = evaluate_queries_v2(
         db_url,
         queries,
+        include_cross_encoder=args.include_cross_encoder,
         n_resamples=args.bootstrap_resamples,
     )
 
