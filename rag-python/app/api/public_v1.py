@@ -1,7 +1,6 @@
 """Public REST API v1 for WorkMesh Enterprise Knowledge & Context Platform.
 
-Consolidates search, ask, and administrative endpoints previously split between
-backend-java and rag-python into a unified, high-performance FastAPI service.
+Provides search, grounded Q&A, and administrative endpoints in a unified FastAPI service.
 """
 
 import logging

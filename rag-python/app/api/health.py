@@ -25,12 +25,6 @@ def health() -> ServiceHealth:
     return ServiceHealth(status="ok", service=settings.app_name)
 
 
-@router.get("/actuator/health")
-def actuator_health() -> dict[str, str]:
-    """Compatibility endpoint for standard health checks."""
-    return {"status": "UP"}
-
-
 @router.get("/ready", response_model=ServiceHealth)
 def ready(
     repo: Annotated[KnowledgeRepository, Depends(get_repository)],

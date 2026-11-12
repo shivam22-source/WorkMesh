@@ -1,4 +1,4 @@
-"""Tests porting all backend-java functionality into rag-python FastAPI service.
+"""Tests for consolidated WorkMesh public API v1 endpoints in rag-python FastAPI service.
 
 Validates:
 - POST /api/v1/search (real hybrid results, searchTimeMs, status='SUCCESS', audit logging)
@@ -6,7 +6,7 @@ Validates:
 - GET /api/v1/sync/status & GET /api/v1/admin/sync/status (admin role enforcement, audit logging)
 - GET /api/v1/admin/audit/events (admin role enforcement, filtering)
 - Deterministic user context resolution via X-User-Id header
-- Uniform ApiError responses with populated traceId
+- Uniform error responses with populated traceId
 - /ready verification of PostgreSQL
 - Audit fail-open resilience
 """
@@ -117,7 +117,7 @@ def client(mock_repo, mock_retriever, mock_rag_service):
 
 
 # ---------------------------------------------------------------------------
-# Search Tests (SearchControllerTest.java port)
+# Search Tests
 # ---------------------------------------------------------------------------
 
 def test_search_returns_results_with_success_status_and_time(client, mock_repo, mock_retriever):
@@ -165,7 +165,7 @@ def test_search_blank_query_returns_bad_request_with_apierror_shape(client):
 
 
 # ---------------------------------------------------------------------------
-# Ask Tests (SearchControllerTest.java port)
+# Ask Tests
 # ---------------------------------------------------------------------------
 
 def test_ask_returns_grounded_answer_and_citations(client, mock_repo):
@@ -225,7 +225,7 @@ def test_ask_blank_question_returns_bad_request(client):
 
 
 # ---------------------------------------------------------------------------
-# Sync Status Tests (SyncControllerTest.java port)
+# Sync Status Tests
 # ---------------------------------------------------------------------------
 
 def test_sync_status_forbidden_for_non_admin(client):
@@ -274,7 +274,7 @@ def test_admin_sync_status_reports_sources_for_admin(client):
 
 
 # ---------------------------------------------------------------------------
-# Audit Events Tests (AuditControllerTest.java port)
+# Audit Events Tests
 # ---------------------------------------------------------------------------
 
 def test_admin_audit_events_forbidden_for_non_admin(client):
@@ -320,18 +320,14 @@ def test_audit_safe_fail_open_resilience(client, mock_repo, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Readiness & Health Tests (HealthEndpointTest.java port + DB check)
+# Readiness & Health Tests
 # ---------------------------------------------------------------------------
 
-def test_health_liveness_and_actuator_compatibility(client):
-    """/health and /actuator/health report UP."""
+def test_health_liveness(client):
+    """/health reports ok."""
     res = client.get("/health")
     assert res.status_code == 200
     assert res.json()["status"] == "ok"
-
-    res_actuator = client.get("/actuator/health")
-    assert res_actuator.status_code == 200
-    assert res_actuator.json()["status"] == "UP"
 
 
 def test_ready_reports_ok_when_database_is_healthy(client):
@@ -361,11 +357,11 @@ def test_ready_reports_503_when_database_is_unavailable(mock_repo):
 
 
 # ---------------------------------------------------------------------------
-# Ported Java Error & Resilience Tests (SearchControllerTest / SearchServiceImplTest port)
+# Error & Resilience Tests
 # ---------------------------------------------------------------------------
 
 def test_ask_when_rag_service_unavailable_returns_503(mock_repo, mock_retriever):
-    """Port of Java askWhenRagServiceUnavailableReturns503: database failure returns 503."""
+    """Database failure during /ask returns 503."""
     class FailingRagService:
         def ask(self, request):
             raise DatabaseUnavailableError("PostgreSQL connection refused")
@@ -390,7 +386,7 @@ def test_ask_when_rag_service_unavailable_returns_503(mock_repo, mock_retriever)
 
 
 def test_ask_when_internal_error_returns_500(mock_repo, mock_retriever):
-    """Port of Java askWhenRagClientErrorReturns500: unhandled exception returns 500."""
+    """Unhandled exception during /ask returns 500."""
     class CrashingRagService:
         def ask(self, request):
             raise RuntimeError("Unexpected pipeline crash")
@@ -414,7 +410,7 @@ def test_ask_when_internal_error_returns_500(mock_repo, mock_retriever):
 
 
 def test_ask_audit_remains_recorded_when_rag_client_throws_exception(mock_repo, mock_retriever):
-    """Port of Java askAuditRemainsRecordedWhenRagClientThrowsException: audit event logged even on RAG failure."""
+    """Audit event remains logged even when RAG processing throws an exception."""
     class FailingRagService:
         def ask(self, request):
             raise RuntimeError("RAG processing failed")
@@ -439,7 +435,7 @@ def test_ask_audit_remains_recorded_when_rag_client_throws_exception(mock_repo, 
 
 
 def test_ask_handles_insufficient_evidence_with_empty_citations(client, mock_rag_service):
-    """Port of Java askHandlesInsufficientEvidenceWithEmptyCitations: returns INSUFFICIENT_EVIDENCE with empty citations."""
+    """Returns INSUFFICIENT_EVIDENCE with empty citations when no evidence matches."""
     mock_rag_service.response = RagAskResponse(
         question="What is the quantum encryption secret?",
         answer="I cannot answer this question based on the authorized documents available to you.",

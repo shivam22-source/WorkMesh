@@ -8,7 +8,7 @@ This guide covers operational procedures, deployment patterns, configuration opt
 
 WorkMesh operates as a single, consolidated FastAPI application (`rag-python`) backed by PostgreSQL with the `pgvector` extension:
 
-- **Unified API Gateway**: Merged Java backend into FastAPI, exposing public search (`/api/v1/search`), grounded RAG (`/api/v1/ask`), sync monitoring (`/api/v1/admin/sync/status`), sync lease management (`/api/v1/admin/sync/reset`), and audit logging (`/api/v1/admin/audit/events`).
+- **Unified API Service**: Consolidated FastAPI service exposing public search (`/api/v1/search`), grounded RAG (`/api/v1/ask`), sync monitoring (`/api/v1/admin/sync/status`), sync lease management (`/api/v1/admin/sync/reset`), and audit logging (`/api/v1/admin/audit/events`).
 - **Offline Sentence Transformers**: Local embedding generation via `sentence-transformers/all-MiniLM-L6-v2` with LRU vector caching and offline model loading (`local_files_only=True`).
 - **Multi-Tenant ACL Security**: Fail-closed access control enforced at both lexical and vector retrieval stages, supporting deterministic user and group resolution.
 

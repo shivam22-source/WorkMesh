@@ -22,7 +22,6 @@ WorkMesh supports two runtime authentication modes:
 |---|---|---|---|
 | GET | `/health` | Liveness check. Returns `{"status": "ok"}`. | None |
 | GET | `/ready` | Readiness check. Verifies live PostgreSQL connection. | None |
-| GET | `/actuator/health` | Health compatibility endpoint. Returns `{"status": "UP"}`. | None |
 | POST | `/api/v1/search` | Permission-aware hybrid search (lexical + dense vector RRF). | User JWT / dev header |
 | POST | `/api/v1/ask` | Grounded question answering with verifiable citations. | User JWT / dev header |
 | GET | `/api/v1/sync/status` | Read connector sync status and source sync state. | ADMIN role required |

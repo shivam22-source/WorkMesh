@@ -1,8 +1,6 @@
-"""Internal endpoints called by backend-java.
+"""Internal endpoints for RAG service contracts.
 
-This module provides internal service-to-service endpoints under /internal/v1.
-In Phase 1, search is a contract stub that echoes identity and query metadata.
-Actual lexical and vector retrieval is implemented in Phase 3.
+This module provides internal service endpoints under /internal/v1.
 """
 
 from functools import lru_cache
@@ -31,7 +29,7 @@ router = APIRouter(prefix="/internal/v1", tags=["internal"])
 
 @router.post("/rag/health", response_model=RagHealthResponse)
 def rag_health(request: RagHealthRequest) -> RagHealthResponse:
-    """Echo a contract health check back to backend-java."""
+    """Echo an internal contract health check."""
     settings = get_settings()
     logger.info("rag_health_contract_call requested_by=%s", request.requested_by)
     return RagHealthResponse(
@@ -47,10 +45,10 @@ def rag_search(
     request: RagSearchRequest,
     retriever: Annotated[HybridRetriever, Depends(get_hybrid_retriever)],
 ) -> RagSearchResponse:
-    """Internal search called by backend-java.
+    """Internal search endpoint.
 
     Executes hybrid retrieval across indexed knowledge.
-    User context (userId, groupIds) is preserved and logged for Phase 4 ACL enforcement.
+    User context (userId, groupIds) is preserved and logged for ACL enforcement.
     """
     logger.info(
         "rag_search_call user_id=%s group_ids=%s query=%s limit=%s source_types=%s",
@@ -80,7 +78,7 @@ def rag_ask(
     request: RagAskRequest,
     rag_service: Annotated[GroundedRagService, Depends(get_grounded_rag_service)],
 ) -> RagAskResponse:
-    """Internal Grounded RAG ask endpoint called by backend-java.
+    """Internal Grounded RAG ask endpoint.
 
     Executes permission-filtered retrieval, deterministic reranking, evidence assembly,
     grounded LLM synthesis, and citation mapping.

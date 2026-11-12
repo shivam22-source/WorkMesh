@@ -1,17 +1,7 @@
-"""Wire contract between backend-java and rag-python.
+"""Wire contract for internal health checks in rag-python.
 
-This module is the Python side of the contract. The Java side is
-`com.company.knowledge.orchestrator.ragclient.dto`:
-
-    RagHealthRequest  <-> RagHealthRequest
-    RagHealthResponse <-> RagHealthResponse
-
-Naming note: Java records serialise to camelCase by default, while Pydantic
-defaults to snake_case. Every multi-word field therefore carries an explicit
-alias. Without this, Java sends `requestedBy` and Pydantic rejects the body
-with 422 — which is exactly what the contract test caught during Phase 0.
-
-Both sides serialise by alias, so the wire format is camelCase everywhere.
+Every multi-word field carries an explicit camelCase alias so wire payloads remain
+consistent across all endpoints.
 
 Contract documentation: docs/api/api-contract.md
 """
@@ -31,7 +21,7 @@ class RagHealthRequest(BaseModel):
         validation_alias=AliasChoices("requestedBy", "requested_by"),
         serialization_alias="requestedBy",
         min_length=1,
-        description="Calling service name. Only 'backend-java' is valid today.",
+        description="Calling service or internal client identifier.",
     )
     requested_at: datetime = Field(
         validation_alias=AliasChoices("requestedAt", "requested_at"),

@@ -133,7 +133,7 @@ def test_auxiliary_question_starters(classifier: QueryClassifier):
 
 
 def test_long_descriptive_natural_language_phrase(classifier: QueryClassifier):
-    res = classifier.classify("best practices for configuring connection pooling and timeout settings in spring boot")
+    res = classifier.classify("best practices for configuring connection pooling and timeout settings in FastAPI and psycopg")
     assert res.query_type == QueryType.SEMANTIC
 
 

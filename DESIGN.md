@@ -52,7 +52,7 @@ flowchart TD
 
 ### Why a Single Consolidated Service
 
-Initially designed as a two-service split (historical record in [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md)), the architecture was unified into a single FastAPI service:
+Initially planned as a split gateway and retrieval architecture, the system was unified into a single FastAPI service (see [`docs/decisions/ADR-0001-single-service-consolidation.md`](docs/decisions/ADR-0001-single-service-consolidation.md) and [`docs/decisions/ADR-0003-gateway-merge.md`](docs/decisions/ADR-0003-gateway-merge.md)):
 1. **Zero RPC Overhead:** Unifying auth, orchestration, and retrieval in Python eliminates inter-service HTTP hops and serialization overhead.
 2. **Atomic Data & ACL Management:** Pushdown permission enforcement executes inside PostgreSQL queries alongside hybrid ranking.
 3. **Simplified Deployment:** A single container footprint simplifies operations, monitoring, and local development.
@@ -125,6 +125,7 @@ The LLM never sees an unauthorized document — not even in a filtered-out form.
 | **DESIGN.md** (this file) | System architecture and design invariants |
 | [`docs/architecture/overview.md`](docs/architecture/overview.md) | Component architecture and data models |
 | [`docs/api/api-contract.md`](docs/api/api-contract.md) | Public and internal API contract specification |
-| [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md) | Historical record of the two-service architecture (superseded) |
+| [`docs/decisions/ADR-0001-single-service-consolidation.md`](docs/decisions/ADR-0001-single-service-consolidation.md) | Consolidated single-service FastAPI architecture |
 | [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md) | Datastore simplicity and Redis deferral rationale |
+| [`docs/decisions/ADR-0003-gateway-merge.md`](docs/decisions/ADR-0003-gateway-merge.md) | Rationale for merging the API gateway into `rag-python` |
 | [`docs/runbooks/operations-guide.md`](docs/runbooks/operations-guide.md) | Operations, deployment, and runbook procedures |

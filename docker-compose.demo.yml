@@ -39,7 +39,6 @@ services:
       ENVIRONMENT: production
     ports:
       - "8000:8000"
-      - "8080:8000"
     volumes:
       - ./data:/app/data:ro
       - ./demo-ui:/app/demo-ui:ro

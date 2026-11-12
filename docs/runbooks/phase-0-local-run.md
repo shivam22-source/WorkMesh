@@ -50,9 +50,6 @@ curl http://127.0.0.1:8000/health
 
 # Readiness (checks live PostgreSQL connectivity)
 curl http://127.0.0.1:8000/ready
-
-# Actuator compatibility endpoint
-curl http://127.0.0.1:8000/actuator/health
 ```
 
 ## Step 4 — Run Ingestion

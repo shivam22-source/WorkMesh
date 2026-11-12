@@ -1,8 +1,6 @@
 """Contract tests for internal RAG endpoints.
 
-These are the Python-side guard against drift. They assert the exact wire
-shape that backend-java's records expect, so a rename on one side fails
-a test on the other side instead of failing at runtime.
+These tests assert the exact camelCase wire shape expected by internal callers.
 """
 
 from datetime import datetime, timezone
@@ -24,7 +22,7 @@ def _post_contract(client: TestClient) -> dict:
     response = client.post(
         "/internal/v1/rag/health",
         json={
-            "requestedBy": "backend-java",
+            "requestedBy": "internal-client",
             "requestedAt": datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat(),
         },
     )
@@ -32,7 +30,7 @@ def _post_contract(client: TestClient) -> dict:
     return response.json()
 
 
-def test_contract_response_matches_java_record() -> None:
+def test_contract_response_matches_wire_contract() -> None:
     with TestClient(create_app()) as client:
         body = _post_contract(client)
 
@@ -45,7 +43,7 @@ def test_contract_response_matches_java_record() -> None:
 
 def test_missing_required_field_is_rejected() -> None:
     with TestClient(create_app()) as client:
-        response = client.post("/internal/v1/rag/health", json={"requestedBy": "backend-java"})
+        response = client.post("/internal/v1/rag/health", json={"requestedBy": "internal-client"})
 
     assert response.status_code == 422
 
@@ -56,7 +54,7 @@ def test_unknown_field_is_rejected() -> None:
         response = client.post(
             "/internal/v1/rag/health",
             json={
-                "requestedBy": "backend-java",
+                "requestedBy": "internal-client",
                 "requestedAt": datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat(),
                 "unexpected": "value",
             },
@@ -65,7 +63,7 @@ def test_unknown_field_is_rejected() -> None:
     assert response.status_code == 422
 
 
-def test_search_contract_response_matches_java_record() -> None:
+def test_search_contract_response_matches_wire_contract() -> None:
     app = create_app()
     app.dependency_overrides[get_hybrid_retriever] = lambda: HybridRetriever(InMemoryKnowledgeRepository())
     with TestClient(app) as client:
@@ -114,7 +112,7 @@ def test_search_unknown_field_is_rejected() -> None:
     assert response.status_code == 422
 
 
-def test_ask_contract_response_matches_java_record() -> None:
+def test_ask_contract_response_matches_wire_contract() -> None:
     from app.api.internal_rag import get_grounded_rag_service
     from app.rag.service import GroundedRagService
 
