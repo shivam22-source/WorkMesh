@@ -77,6 +77,35 @@ The benchmark dataset consists of 10 curated test cases across 4 distinct catego
 
 ---
 
+## 3.1 Graded Multi-Source & Paraphrase Benchmark (`data/evaluation/queries_v2.jsonl`)
+
+While `scale_benchmark.py` exercises 10,000 chunks across 5 recurring template categories, repeated templates cannot isolate semantic paraphrase understanding or cross-source synthesis. To provide an honest, harder retrieval benchmark on top of the 10,000-chunk background corpus, `data/evaluation/queries_v2.jsonl` defines **60 queries** split evenly into 3 categories (`20` each) with **graded relevance (`0–2`)**:
+
+1. **Corpus & Seeding (`app/evaluation/corpus_v2.py`):**
+   - Retains all 10,000 synthetic `scale:*` chunks in PostgreSQL as realistic distractor noise and tenant ACL boundaries.
+   - Adds 75 distinct domain documents (`77` chunks) across `GITHUB`, `SLACK`, and `EMAIL` covering non-overlapping engineering, security, database, networking, and finance topics, with entity-graph links (`TICKET -> SLACK / PR / COMMIT`) and user/group ACLs.
+2. **Graded Relevance (`qrels` on scale `0–2`):**
+   - `2`: Primary gold chunk directly answering the query (or for multi-source queries, each of the two primary source chunks required for a complete answer).
+   - `1`: Secondary supporting chunk within the same document or follow-up message.
+   - `0` (omitted): Non-relevant background chunks.
+3. **Query Construction Across 3 Categories (`20 + 20 + 20 = 60`):**
+   - **Exact-Identifier (`qv2-id-01` .. `qv2-id-20`)**: 5 unique `DC-10XX` tickets across distinct tenant tiers (`group_engineering`, `group_finance`, `group_security`, user-private `employee_10`) plus 15 unique technical identifiers (commit SHAs, error codes, RPC/class names, Prometheus metrics, CVEs, RFCs, HTTP headers, index names).
+   - **Semantic Paraphrases (`qv2-sem-01` .. `qv2-sem-20`)**: Natural-language problem descriptions written deliberately using conceptual synonyms so each query shares **at most 1 content word** (after stopword removal) with any of its gold chunks. Enforced automatically by `scripts/check_overlap.py`.
+   - **Multi-Source (`qv2-multi-01` .. `qv2-multi-20`)**: Questions requiring evidence from **two distinct source systems** (e.g., Slack rationale + GitHub PR implementation, or Email approval + Terraform/GitHub change), where both primary source chunks are labeled grade `2`.
+4. **User Identities:** Each JSONL record specifies explicit `user_id` and `group_ids` (`employee_42`, `employee_01`, `employee_04`, `employee_05`, `employee_06`, `employee_10`) so ACL pushdown runs realistically per query.
+5. **Metrics & Statistical Uncertainty:**
+   - **Recall@k** (`k = 1, 3, 5, 10`): Mean per-query fraction of relevant chunks (`grade >= 1`) retrieved in the top `k`.
+   - **MRR**: Mean reciprocal rank of the first retrieved chunk with `grade >= 1`.
+   - **nDCG@10**: Normalized Discounted Cumulative Gain at cutoff 10 using exponential gains `(2^rel - 1) / log2(rank + 1)` over graded qrels (`0–2`).
+   - **Bootstrap 95% CIs**: 2,000 paired query-level bootstrap resamples (`seed=42`) estimating `[2.5%, 97.5%]` confidence intervals for every metric and paired configuration delta.
+
+```bash
+# Verify <= 1 content-word overlap on semantic queries (live DB or --offline)
+python scripts/check_overlap.py --offline
+```
+
+---
+
 ## 4. Latency Breakdown & Observability
 
 Every Grounded RAG request (`/api/v1/ask` and `/internal/v1/rag/ask`) records structured timing breakdown metrics:
