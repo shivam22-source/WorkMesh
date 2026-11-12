@@ -49,11 +49,11 @@ Evaluated over 10,000 multi-tenant synthetic chunks (2,500 documents across GitH
 | **Recall@10** | **74.0%** | >= 60.0% | PASS |
 | **Mean Reciprocal Rank (MRR)** | **0.6655** | >= 0.5000 | PASS |
 | **Cross-Tenant Permission Leak Rate** | **0.0%** (0 leaks / 500 adversarial queries) | 0.0% | PASS |
-| **Adversarial Security Throughput** | **121.0 ms / query** (500 queries in 60.5s) | < 200 ms | PASS |
+| **Adversarial Security Throughput** | **125.09 ms / query** (500 adversarial queries) | < 200 ms | PASS |
 
 Raw results: [`data/evaluation/results/scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json).
 
-> *Target note:* In earlier benchmarks using deterministic hash mock embeddings (`52 ms / query`), the adversarial throughput target was `< 100 ms`. When real local CPU inference (`sentence-transformers/all-MiniLM-L6-v2`) replaced hash mocks in commit `9803bf46` (`147.2 ms / query` initially; `121.0 ms / query` after native 384-dim HNSW indexing), the target was relaxed to `< 200 ms` to reflect CPU embedding compute cost.
+> *Target note:* In earlier benchmarks using deterministic hash mock embeddings (`52 ms / query`), the adversarial throughput target was `< 100 ms`. When real local CPU inference (`sentence-transformers/all-MiniLM-L6-v2`) replaced hash mocks in commit `9803bf46` (`147.2 ms / query` initially; `125.09 ms / query` after native 384-dim HNSW indexing), the target was relaxed to `< 200 ms` to reflect CPU embedding compute cost.
 
 ### 2. Retrieval Ablation Study
 
@@ -254,7 +254,7 @@ cd rag-python && .venv/bin/pytest tests
 cd rag-python; .venv\Scripts\pytest.exe tests
 ```
 
-331 passed with model weights cached; 327 passed and 4 skipped without them (achieved by pointing `HF_HOME` and `SENTENCE_TRANSFORMERS_HOME` to an empty temporary directory so tests marked `@pytest.mark.real_model` are safely skipped). Covers hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
+350 passed with model weights cached; 346 passed and 4 skipped without them (achieved by pointing `HF_HOME` and `SENTENCE_TRANSFORMERS_HOME` to an empty temporary directory so tests marked `@pytest.mark.real_model` are safely skipped). Covers hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
 
 ---
 
