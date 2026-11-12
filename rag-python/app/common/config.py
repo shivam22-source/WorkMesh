@@ -5,12 +5,18 @@ Every value is environment-driven so nothing host-specific is committed.
 
 from functools import lru_cache
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_DEV_JWT_SECRET = "workmesh_jwt_secret_dev_key_only_change_in_prod"
+KNOWN_DEFAULT_JWT_SECRETS = {
+    DEFAULT_DEV_JWT_SECRET,
+    "replace_with_a_secure_random_key_of_at_least_32_characters_for_prod",
+    "changeme",
+    "secret",
+}
 
 
 class Settings(BaseSettings):
@@ -32,6 +38,13 @@ class Settings(BaseSettings):
     auth_mode: str = "prod"  # strictly "prod" or "dev"
     jwt_secret: Optional[str] = None
     jwt_algorithm: str = "HS256"
+    jwt_algorithms: Optional[str] = None  # optional comma-separated explicit allowlist
+    jwt_max_ttl_seconds: int = 86400
+
+    @property
+    def allowed_jwt_algorithms(self) -> List[str]:
+        raw = self.jwt_algorithms or self.jwt_algorithm
+        return [a.strip() for a in raw.split(",") if a.strip()]
 
     @property
     def is_prod(self) -> bool:
@@ -50,6 +63,15 @@ class Settings(BaseSettings):
             )
         self.auth_mode = raw_mode
 
+        if self.jwt_max_ttl_seconds <= 0:
+            raise ValueError("JWT_MAX_TTL_SECONDS must be a positive integer")
+
+        algos = self.allowed_jwt_algorithms
+        if not algos or any(a.lower() == "none" for a in algos):
+            raise ValueError(
+                "Invalid JWT algorithm configuration: empty list or 'none' algorithm is forbidden."
+            )
+
         if self.is_dev:
             if not self.jwt_secret:
                 self.jwt_secret = DEFAULT_DEV_JWT_SECRET
@@ -63,7 +85,7 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "JWT_SECRET is required in production mode (AUTH_MODE=prod). App startup aborted."
                 )
-            if self.jwt_secret == DEFAULT_DEV_JWT_SECRET:
+            if self.jwt_secret in KNOWN_DEFAULT_JWT_SECRETS:
                 raise ValueError(
                     "JWT_SECRET cannot use the known dev default in production mode. App startup aborted."
                 )

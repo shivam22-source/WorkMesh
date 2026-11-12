@@ -289,3 +289,162 @@ def test_auth_mode_uppercase_dev_accepted_and_normalizes(monkeypatch):
     assert settings.auth_mode == "dev"
     assert settings.is_dev is True
     assert settings.is_prod is False
+
+
+def test_prod_mode_rejects_alg_none_token(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
+    """Unsigned tokens claiming alg=none must always be rejected with 401."""
+    import base64
+    import json
+
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: prod_settings
+    app.dependency_overrides[get_repository] = lambda: repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: retriever
+    client = TestClient(app)
+
+    def _b64(obj: dict) -> str:
+        raw = json.dumps(obj, separators=(",", ":")).encode("utf-8")
+        return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+    now = int(time.time())
+    header = _b64({"alg": "none", "typ": "JWT"})
+    payload = _b64({"sub": "attacker", "role": "ADMIN", "groups": ["group_finance"], "iat": now, "exp": now + 300})
+    forged_none_token = f"{header}.{payload}."
+
+    resp = client.post(
+        "/api/v1/search",
+        json={"query": "test"},
+        headers={"Authorization": f"Bearer {forged_none_token}"},
+    )
+    assert resp.status_code == 401
+    assert "algorithm" in resp.json()["message"].lower()
+
+
+def test_config_rejects_alg_none_in_allowlist(monkeypatch):
+    """Settings validation rejects 'none' in JWT_ALGORITHM / JWT_ALGORITHMS."""
+    monkeypatch.setenv("AUTH_MODE", "prod")
+    monkeypatch.setenv("JWT_SECRET", STRONG_PROD_SECRET)
+    monkeypatch.setenv("JWT_ALGORITHMS", "HS256,none")
+    get_settings.cache_clear()
+    with pytest.raises(ValueError, match="forbidden"):
+        create_app()
+
+
+def test_prod_mode_rejects_missing_exp_and_missing_sub(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
+    """Tokens missing 'exp' or 'sub' claims must be rejected with 401."""
+    import jwt as pyjwt
+
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: prod_settings
+    app.dependency_overrides[get_repository] = lambda: repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: retriever
+    client = TestClient(app)
+
+    now = int(time.time())
+    no_exp = pyjwt.encode({"sub": "alice", "iat": now, "groups": []}, STRONG_PROD_SECRET, algorithm="HS256")
+    resp_no_exp = client.post("/api/v1/search", json={"query": "test"}, headers={"Authorization": f"Bearer {no_exp}"})
+    assert resp_no_exp.status_code == 401
+
+    no_sub = pyjwt.encode({"role": "ENGINEER", "iat": now, "exp": now + 300, "groups": []}, STRONG_PROD_SECRET, algorithm="HS256")
+    resp_no_sub = client.post("/api/v1/search", json={"query": "test"}, headers={"Authorization": f"Bearer {no_sub}"})
+    assert resp_no_sub.status_code == 401
+
+
+def test_prod_mode_rejects_tampered_groups_payload(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
+    """Modifying the groups claim in a signed JWT without re-signing fails signature verification with 401."""
+    import base64
+    import json
+
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: prod_settings
+    app.dependency_overrides[get_repository] = lambda: repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: retriever
+    client = TestClient(app)
+
+    valid_token = create_jwt_token(
+        user_id="bob_eng",
+        role="ENGINEER",
+        groups=["group_engineering"],
+        secret=STRONG_PROD_SECRET,
+        expires_in_seconds=600,
+    )
+    h_b64, p_b64, s_b64 = valid_token.split(".")
+    padded = p_b64 + "=" * (-len(p_b64) % 4)
+    claims = json.loads(base64.urlsafe_b64decode(padded))
+    claims["groups"] = ["group_engineering", "group_finance", "group_security"]
+    tampered_payload = base64.urlsafe_b64encode(json.dumps(claims).encode("utf-8")).rstrip(b"=").decode("ascii")
+    tampered_token = f"{h_b64}.{tampered_payload}.{s_b64}"
+
+    resp = client.post(
+        "/api/v1/search",
+        json={"query": "budget"},
+        headers={"Authorization": f"Bearer {tampered_token}"},
+    )
+    assert resp.status_code == 401
+    assert "signature" in resp.json()["message"].lower()
+
+
+@pytest.mark.parametrize("bad_groups", ["group_engineering", 123, {"group": "eng"}, ["valid", 99]])
+def test_prod_mode_rejects_non_list_groups_claim(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever, bad_groups):
+    """Tokens with non-list or non-string-list 'groups' claims must be rejected with 401."""
+    import jwt as pyjwt
+
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET)
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: prod_settings
+    app.dependency_overrides[get_repository] = lambda: repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: retriever
+    client = TestClient(app)
+
+    now = int(time.time())
+    token = pyjwt.encode(
+        {"sub": "alice", "role": "ENGINEER", "groups": bad_groups, "iat": now, "exp": now + 600},
+        STRONG_PROD_SECRET,
+        algorithm="HS256",
+    )
+    resp = client.post("/api/v1/search", json={"query": "test"}, headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 401
+    assert "groups" in resp.json()["message"].lower()
+
+
+def test_prod_mode_enforces_jwt_max_ttl_seconds(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
+    """Tokens with (exp - iat) exceeding JWT_MAX_TTL_SECONDS are rejected with 401."""
+    prod_settings = Settings(auth_mode="prod", jwt_secret=STRONG_PROD_SECRET, jwt_max_ttl_seconds=3600)
+    app = create_app()
+    app.dependency_overrides[get_settings] = lambda: prod_settings
+    app.dependency_overrides[get_repository] = lambda: repo
+    app.dependency_overrides[get_hybrid_retriever] = lambda: retriever
+    client = TestClient(app)
+
+    too_long = create_jwt_token(
+        user_id="alice",
+        role="ENGINEER",
+        groups=["group_engineering"],
+        secret=STRONG_PROD_SECRET,
+        expires_in_seconds=7200,
+    )
+    resp_reject = client.post("/api/v1/search", json={"query": "test"}, headers={"Authorization": f"Bearer {too_long}"})
+    assert resp_reject.status_code == 401
+    assert "JWT_MAX_TTL_SECONDS" in resp_reject.json()["message"]
+
+    within_limit = create_jwt_token(
+        user_id="alice",
+        role="ENGINEER",
+        groups=["group_engineering"],
+        secret=STRONG_PROD_SECRET,
+        expires_in_seconds=1800,
+    )
+    resp_ok = client.post("/api/v1/search", json={"query": "test"}, headers={"Authorization": f"Bearer {within_limit}"})
+    assert resp_ok.status_code == 200
+
+
+def test_prod_mode_rejects_env_example_placeholder_secret(monkeypatch):
+    """Known placeholder secret from .env.example fails startup in prod mode."""
+    monkeypatch.setenv("AUTH_MODE", "prod")
+    monkeypatch.setenv("JWT_SECRET", "replace_with_a_secure_random_key_of_at_least_32_characters_for_prod")
+    get_settings.cache_clear()
+    with pytest.raises(ValueError, match="known dev default"):
+        create_app()

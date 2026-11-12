@@ -93,6 +93,8 @@ The query execution path:
 
 The LLM never sees an unauthorized document — not even in a filtered-out form. Access control is enforced in SQL before the evidence set is built. Prompt instructions are a defense-in-depth measure against hallucination, not the access control mechanism.
 
+**Stateless Token Claims Trade-off:** In `AUTH_MODE=prod`, identity (`sub`), role, and `groups` are extracted directly from the signed JWT (`HS256` / configured algorithm allowlist) and bounded by `JWT_MAX_TTL_SECONDS`. Group membership changes upstream take effect only after the active JWT expires.
+
 ## 5. Ingestion Pipeline
 
 ```text

@@ -132,7 +132,9 @@ WorkMesh supports two runtime authentication modes controlled by `AUTH_MODE`:
 - **Production Mode (`AUTH_MODE=prod`, default)**: Strict fail-closed JWT authentication. Every request must supply a valid `Authorization: Bearer <token>` signed with `JWT_SECRET`. Identity, role, and group memberships are extracted exclusively from verified claims (`sub`, `role`, `groups`). Simulation headers (`X-User-Id`, `X-User-Role`, `X-User-Groups`) are rejected with `401 Unauthorized`.
 - **Development Mode (`AUTH_MODE=dev`)**: Allows header-based identity simulation for testing and local demos. A warning is logged on startup. **Dev mode is not safe for production.**
 
-Tokens are issued outside this service; WorkMesh expects and validates the claims `sub` (user ID), `role` (user role), `groups` (authorized group list), and `exp` (token expiration).
+Tokens are issued outside this service; WorkMesh expects and validates the claims `sub` (user ID), `role` (user role), `groups` (JSON list of strings), and `exp` (token expiration), and rejects tokens whose `(exp - iat)` lifetime exceeds `JWT_MAX_TTL_SECONDS` (default: 86400s).
+
+> **Claim Staleness Trade-off:** Because WorkMesh authorizes queries statelessly from verified JWT claims rather than re-querying group memberships on every HTTP request, group additions or revocations only take effect once the caller's existing token expires. Keep `JWT_MAX_TTL_SECONDS` short in production to bound revocation lag.
 
 ### 1. Run with Docker Compose
 
