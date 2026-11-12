@@ -1,0 +1,3584 @@
+{
+  "experiments": [
+    {
+      "name": "baseline_k60_pool20_ef100",
+      "group": "baseline",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 20,
+        "hnsw_ef_search": 100,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.354167,
+          "ci_low": 0.254167,
+          "ci_high": 0.470833
+        },
+        "recall_at_3": {
+          "mean": 0.416667,
+          "ci_low": 0.3,
+          "ci_high": 0.525
+        },
+        "recall_at_5": {
+          "mean": 0.454167,
+          "ci_low": 0.3375,
+          "ci_high": 0.579167
+        },
+        "recall_at_10": {
+          "mean": 0.466667,
+          "ci_low": 0.341667,
+          "ci_high": 0.591667
+        },
+        "mrr": {
+          "mean": 0.4875,
+          "ci_low": 0.358333,
+          "ci_high": 0.616667
+        },
+        "ndcg_at_10": {
+          "mean": 0.453336,
+          "ci_low": 0.343489,
+          "ci_high": 0.563505
+        },
+        "latency_ms": {
+          "p50": 130.28,
+          "p95": 170.95,
+          "mean": 131.25
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9,
+            "ci_low": 0.8125,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.965844,
+            "ci_low": 0.930812,
+            "ci_high": 0.994455
+          },
+          "latency_ms": {
+            "p50": 120.92,
+            "p95": 141.74,
+            "mean": 114.89
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.15,
+            "ci_low": 0.0,
+            "ci_high": 0.3
+          },
+          "recall_at_3": {
+            "mean": 0.15,
+            "ci_low": 0.0,
+            "ci_high": 0.3
+          },
+          "recall_at_5": {
+            "mean": 0.2,
+            "ci_low": 0.05,
+            "ci_high": 0.35
+          },
+          "recall_at_10": {
+            "mean": 0.2,
+            "ci_low": 0.05,
+            "ci_high": 0.4
+          },
+          "mrr": {
+            "mean": 0.1625,
+            "ci_low": 0.0125,
+            "ci_high": 0.3125
+          },
+          "ndcg_at_10": {
+            "mean": 0.171534,
+            "ci_low": 0.043068,
+            "ci_high": 0.35
+          },
+          "latency_ms": {
+            "p50": 131.71,
+            "p95": 170.95,
+            "mean": 133.55
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.15,
+            "ci_low": 0.05,
+            "ci_high": 0.25
+          },
+          "recall_at_3": {
+            "mean": 0.2,
+            "ci_low": 0.05,
+            "ci_high": 0.35
+          },
+          "recall_at_5": {
+            "mean": 0.2,
+            "ci_low": 0.075,
+            "ci_high": 0.35
+          },
+          "recall_at_10": {
+            "mean": 0.2,
+            "ci_low": 0.075,
+            "ci_high": 0.35
+          },
+          "mrr": {
+            "mean": 0.3,
+            "ci_low": 0.1,
+            "ci_high": 0.5
+          },
+          "ndcg_at_10": {
+            "mean": 0.222629,
+            "ci_low": 0.080657,
+            "ci_high": 0.395259
+          },
+          "latency_ms": {
+            "p50": 137.31,
+            "p95": 195.33,
+            "mean": 145.32
+          }
+        }
+      }
+    },
+    {
+      "name": "pool_40_ef100",
+      "group": "candidate_pool",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 40,
+        "hnsw_ef_search": 100,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.691667,
+          "ci_low": 0.583333,
+          "ci_high": 0.795833
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726338,
+          "ci_low": 0.620206,
+          "ci_high": 0.820187
+        },
+        "latency_ms": {
+          "p50": 166.69,
+          "p95": 229.68,
+          "mean": 169.43
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9,
+            "ci_low": 0.8125,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.979247,
+            "ci_low": 0.947533,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 167.39,
+            "p95": 229.68,
+            "mean": 168.26
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 155.02,
+            "p95": 194.65,
+            "mean": 158.49
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 175.2,
+            "p95": 234.25,
+            "mean": 181.53
+          }
+        }
+      }
+    },
+    {
+      "name": "pool_80_ef100",
+      "group": "candidate_pool",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 80,
+        "hnsw_ef_search": 100,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.695833,
+          "ci_low": 0.583333,
+          "ci_high": 0.8
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726752,
+          "ci_low": 0.62044,
+          "ci_high": 0.8206
+        },
+        "latency_ms": {
+          "p50": 450.44,
+          "p95": 540.15,
+          "mean": 417.54
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9125,
+            "ci_low": 0.8375,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.980487,
+            "ci_low": 0.948947,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 411.94,
+            "p95": 512.92,
+            "mean": 368.35
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 464.09,
+            "p95": 544.76,
+            "mean": 441.72
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 469.02,
+            "p95": 505.02,
+            "mean": 442.54
+          }
+        }
+      }
+    },
+    {
+      "name": "pool_120_ef100",
+      "group": "candidate_pool",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 120,
+        "hnsw_ef_search": 100,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.695833,
+          "ci_low": 0.583333,
+          "ci_high": 0.8
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726752,
+          "ci_low": 0.62044,
+          "ci_high": 0.8206
+        },
+        "latency_ms": {
+          "p50": 614.86,
+          "p95": 724.81,
+          "mean": 608.76
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9125,
+            "ci_low": 0.8375,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.980487,
+            "ci_low": 0.948947,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 560.35,
+            "p95": 706.55,
+            "mean": 558.52
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 638.04,
+            "p95": 724.81,
+            "mean": 635.06
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 631.32,
+            "p95": 715.52,
+            "mean": 632.7
+          }
+        }
+      }
+    },
+    {
+      "name": "ef200_pool20",
+      "group": "hnsw_ef_search",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 20,
+        "hnsw_ef_search": 200,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.691667,
+          "ci_low": 0.583333,
+          "ci_high": 0.795833
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.72586,
+          "ci_low": 0.619358,
+          "ci_high": 0.819709
+        },
+        "latency_ms": {
+          "p50": 141.64,
+          "p95": 193.84,
+          "mean": 146.25
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9,
+            "ci_low": 0.8125,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.977812,
+            "ci_low": 0.944663,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 125.04,
+            "p95": 193.65,
+            "mean": 133.2
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 156.36,
+            "p95": 197.87,
+            "mean": 159.74
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 144.11,
+            "p95": 179.14,
+            "mean": 145.82
+          }
+        }
+      }
+    },
+    {
+      "name": "ef300_pool20",
+      "group": "hnsw_ef_search",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 20,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.691667,
+          "ci_low": 0.583333,
+          "ci_high": 0.795833
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.72586,
+          "ci_low": 0.619358,
+          "ci_high": 0.819709
+        },
+        "latency_ms": {
+          "p50": 147.13,
+          "p95": 196.93,
+          "mean": 153.45
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9,
+            "ci_low": 0.8125,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.977812,
+            "ci_low": 0.944663,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 152.14,
+            "p95": 188.6,
+            "mean": 151.82
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 156.19,
+            "p95": 200.98,
+            "mean": 158.88
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 142.35,
+            "p95": 188.7,
+            "mean": 149.65
+          }
+        }
+      }
+    },
+    {
+      "name": "ef400_pool50",
+      "group": "hnsw_ef_search",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 400,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.695833,
+          "ci_low": 0.583333,
+          "ci_high": 0.8
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726752,
+          "ci_low": 0.62044,
+          "ci_high": 0.8206
+        },
+        "latency_ms": {
+          "p50": 163.13,
+          "p95": 231.49,
+          "mean": 168.57
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9125,
+            "ci_low": 0.8375,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.980487,
+            "ci_low": 0.948947,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 161.41,
+            "p95": 212.46,
+            "mean": 160.52
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 162.49,
+            "p95": 218.08,
+            "mean": 170.55
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 169.59,
+            "p95": 252.34,
+            "mean": 174.63
+          }
+        }
+      }
+    },
+    {
+      "name": "rrf_k10_ef300_p50",
+      "group": "rrf_k",
+      "params": {
+        "rrf_k": 10,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.695833,
+          "ci_low": 0.583333,
+          "ci_high": 0.8
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726752,
+          "ci_low": 0.62044,
+          "ci_high": 0.8206
+        },
+        "latency_ms": {
+          "p50": 166.46,
+          "p95": 238.45,
+          "mean": 169.78
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9125,
+            "ci_low": 0.8375,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.980487,
+            "ci_low": 0.948947,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 157.87,
+            "p95": 238.45,
+            "mean": 167.14
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 167.13,
+            "p95": 245.45,
+            "mean": 174.31
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 170.52,
+            "p95": 198.17,
+            "mean": 167.88
+          }
+        }
+      }
+    },
+    {
+      "name": "rrf_k20_ef300_p50",
+      "group": "rrf_k",
+      "params": {
+        "rrf_k": 20,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.695833,
+          "ci_low": 0.583333,
+          "ci_high": 0.8
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726752,
+          "ci_low": 0.62044,
+          "ci_high": 0.8206
+        },
+        "latency_ms": {
+          "p50": 169.11,
+          "p95": 228.98,
+          "mean": 169.41
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9125,
+            "ci_low": 0.8375,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.980487,
+            "ci_low": 0.948947,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 159.53,
+            "p95": 193.29,
+            "mean": 154.66
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 187.44,
+            "p95": 208.17,
+            "mean": 185.06
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 158.44,
+            "p95": 240.7,
+            "mean": 168.52
+          }
+        }
+      }
+    },
+    {
+      "name": "rrf_k40_ef300_p50",
+      "group": "rrf_k",
+      "params": {
+        "rrf_k": 40,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.695833,
+          "ci_low": 0.583333,
+          "ci_high": 0.8
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726752,
+          "ci_low": 0.62044,
+          "ci_high": 0.8206
+        },
+        "latency_ms": {
+          "p50": 152.75,
+          "p95": 223.79,
+          "mean": 165.68
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9125,
+            "ci_low": 0.8375,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.980487,
+            "ci_low": 0.948947,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 148.53,
+            "p95": 208.36,
+            "mean": 157.59
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 159.27,
+            "p95": 269.74,
+            "mean": 175.24
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 151.49,
+            "p95": 208.35,
+            "mean": 164.21
+          }
+        }
+      }
+    },
+    {
+      "name": "rrf_k60_ef300_p50",
+      "group": "rrf_k",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.695833,
+          "ci_low": 0.583333,
+          "ci_high": 0.8
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726752,
+          "ci_low": 0.62044,
+          "ci_high": 0.8206
+        },
+        "latency_ms": {
+          "p50": 166.25,
+          "p95": 214.29,
+          "mean": 166.52
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9125,
+            "ci_low": 0.8375,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.980487,
+            "ci_low": 0.948947,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 151.89,
+            "p95": 191.42,
+            "mean": 153.81
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 171.56,
+            "p95": 219.6,
+            "mean": 174.9
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 173.09,
+            "p95": 201.6,
+            "mean": 170.86
+          }
+        }
+      }
+    },
+    {
+      "name": "rrf_k100_ef300_p50",
+      "group": "rrf_k",
+      "params": {
+        "rrf_k": 100,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.695833,
+          "ci_low": 0.583333,
+          "ci_high": 0.8
+        },
+        "recall_at_5": {
+          "mean": 0.729167,
+          "ci_low": 0.604167,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.726752,
+          "ci_low": 0.62044,
+          "ci_high": 0.8206
+        },
+        "latency_ms": {
+          "p50": 160.63,
+          "p95": 221.5,
+          "mean": 167.67
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9125,
+            "ci_low": 0.8375,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.9625,
+            "ci_low": 0.925,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.980487,
+            "ci_low": 0.948947,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 145.44,
+            "p95": 223.12,
+            "mean": 153.38
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 176.26,
+            "p95": 215.92,
+            "mean": 177.87
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 167.64,
+            "p95": 233.93,
+            "mean": 171.76
+          }
+        }
+      }
+    },
+    {
+      "name": "weights_lex1.5_vec0.5",
+      "group": "weights",
+      "params": {
+        "rrf_k": 20,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.5,
+        "vector_weight": 0.5,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.704167,
+          "ci_low": 0.591667,
+          "ci_high": 0.804167
+        },
+        "recall_at_5": {
+          "mean": 0.741667,
+          "ci_low": 0.616667,
+          "ci_high": 0.841667
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.730559,
+          "ci_low": 0.626096,
+          "ci_high": 0.825111
+        },
+        "latency_ms": {
+          "p50": 161.62,
+          "p95": 229.67,
+          "mean": 167.86
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9375,
+            "ci_low": 0.8875,
+            "ci_high": 0.9875
+          },
+          "recall_at_5": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.991909,
+            "ci_low": 0.975728,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 148.09,
+            "p95": 202.48,
+            "mean": 149.09
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 167.83,
+            "p95": 217.25,
+            "mean": 170.8
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 170.34,
+            "p95": 255.56,
+            "mean": 183.68
+          }
+        }
+      }
+    },
+    {
+      "name": "weights_lex0.5_vec1.5",
+      "group": "weights",
+      "params": {
+        "rrf_k": 20,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 0.5,
+        "vector_weight": 1.5,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.508333,
+          "ci_low": 0.408333,
+          "ci_high": 0.608333
+        },
+        "recall_at_3": {
+          "mean": 0.666667,
+          "ci_low": 0.558333,
+          "ci_high": 0.779167
+        },
+        "recall_at_5": {
+          "mean": 0.691667,
+          "ci_low": 0.566667,
+          "ci_high": 0.8
+        },
+        "recall_at_10": {
+          "mean": 0.704167,
+          "ci_low": 0.591667,
+          "ci_high": 0.816667
+        },
+        "mrr": {
+          "mean": 0.697083,
+          "ci_low": 0.570833,
+          "ci_high": 0.806667
+        },
+        "ndcg_at_10": {
+          "mean": 0.680629,
+          "ci_low": 0.565759,
+          "ci_high": 0.788037
+        },
+        "latency_ms": {
+          "p50": 173.23,
+          "p95": 233.0,
+          "mean": 177.53
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.725,
+            "ci_low": 0.5375,
+            "ci_high": 0.8875
+          },
+          "recall_at_3": {
+            "mean": 0.825,
+            "ci_low": 0.6625,
+            "ci_high": 0.95
+          },
+          "recall_at_5": {
+            "mean": 0.85,
+            "ci_low": 0.7,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 0.8625,
+            "ci_low": 0.7,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 0.85625,
+            "ci_low": 0.7,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.842118,
+            "ci_low": 0.692327,
+            "ci_high": 0.979671
+          },
+          "latency_ms": {
+            "p50": 172.28,
+            "p95": 230.83,
+            "mean": 173.26
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 178.4,
+            "p95": 231.19,
+            "mean": 178.1
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 178.03,
+            "p95": 234.41,
+            "mean": 181.23
+          }
+        }
+      }
+    },
+    {
+      "name": "weights_lex0.3_vec1.7",
+      "group": "weights",
+      "params": {
+        "rrf_k": 20,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 0.3,
+        "vector_weight": 1.7,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.508333,
+          "ci_low": 0.408333,
+          "ci_high": 0.608333
+        },
+        "recall_at_3": {
+          "mean": 0.666667,
+          "ci_low": 0.558333,
+          "ci_high": 0.779167
+        },
+        "recall_at_5": {
+          "mean": 0.6875,
+          "ci_low": 0.566667,
+          "ci_high": 0.795833
+        },
+        "recall_at_10": {
+          "mean": 0.7,
+          "ci_low": 0.583333,
+          "ci_high": 0.816667
+        },
+        "mrr": {
+          "mean": 0.695,
+          "ci_low": 0.57,
+          "ci_high": 0.806667
+        },
+        "ndcg_at_10": {
+          "mean": 0.676899,
+          "ci_low": 0.561492,
+          "ci_high": 0.78581
+        },
+        "latency_ms": {
+          "p50": 173.79,
+          "p95": 209.75,
+          "mean": 170.81
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.725,
+            "ci_low": 0.5375,
+            "ci_high": 0.8875
+          },
+          "recall_at_3": {
+            "mean": 0.825,
+            "ci_low": 0.6625,
+            "ci_high": 0.95
+          },
+          "recall_at_5": {
+            "mean": 0.8375,
+            "ci_low": 0.675,
+            "ci_high": 0.975
+          },
+          "recall_at_10": {
+            "mean": 0.85,
+            "ci_low": 0.65,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 0.85,
+            "ci_low": 0.7,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.830928,
+            "ci_low": 0.672838,
+            "ci_high": 0.977222
+          },
+          "latency_ms": {
+            "p50": 144.12,
+            "p95": 185.04,
+            "mean": 153.14
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 183.55,
+            "p95": 224.31,
+            "mean": 183.18
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 184.62,
+            "p95": 204.22,
+            "mean": 176.11
+          }
+        }
+      }
+    },
+    {
+      "name": "weights_lex0.0_vec1.0",
+      "group": "weights",
+      "params": {
+        "rrf_k": 20,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 0.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.491667,
+          "ci_low": 0.3875,
+          "ci_high": 0.595833
+        },
+        "recall_at_3": {
+          "mean": 0.6625,
+          "ci_low": 0.55,
+          "ci_high": 0.775
+        },
+        "recall_at_5": {
+          "mean": 0.683333,
+          "ci_low": 0.558333,
+          "ci_high": 0.791667
+        },
+        "recall_at_10": {
+          "mean": 0.695833,
+          "ci_low": 0.579167,
+          "ci_high": 0.808333
+        },
+        "mrr": {
+          "mean": 0.686667,
+          "ci_low": 0.561667,
+          "ci_high": 0.8
+        },
+        "ndcg_at_10": {
+          "mean": 0.668921,
+          "ci_low": 0.55545,
+          "ci_high": 0.777751
+        },
+        "latency_ms": {
+          "p50": 165.95,
+          "p95": 229.67,
+          "mean": 171.28
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.675,
+            "ci_low": 0.475,
+            "ci_high": 0.8375
+          },
+          "recall_at_3": {
+            "mean": 0.8125,
+            "ci_low": 0.6375,
+            "ci_high": 0.95
+          },
+          "recall_at_5": {
+            "mean": 0.825,
+            "ci_low": 0.65,
+            "ci_high": 0.95
+          },
+          "recall_at_10": {
+            "mean": 0.8375,
+            "ci_low": 0.65,
+            "ci_high": 0.9875
+          },
+          "mrr": {
+            "mean": 0.825,
+            "ci_low": 0.65,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.806994,
+            "ci_low": 0.642764,
+            "ci_high": 0.952546
+          },
+          "latency_ms": {
+            "p50": 151.79,
+            "p95": 203.1,
+            "mean": 160.23
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 174.49,
+            "p95": 225.1,
+            "mean": 176.27
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 183.34,
+            "p95": 229.8,
+            "mean": 177.36
+          }
+        }
+      }
+    },
+    {
+      "name": "routing_balanced_id1.6_sem1.6",
+      "group": "routing",
+      "params": {
+        "rrf_k": 20,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": true,
+        "routing_weights": {
+          "identifier": [
+            1.6,
+            0.4
+          ],
+          "semantic": [
+            0.4,
+            1.6
+          ],
+          "default": [
+            1.0,
+            1.0
+          ]
+        },
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.704167,
+          "ci_low": 0.591667,
+          "ci_high": 0.804167
+        },
+        "recall_at_5": {
+          "mean": 0.741667,
+          "ci_low": 0.616667,
+          "ci_high": 0.841667
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.730559,
+          "ci_low": 0.626096,
+          "ci_high": 0.825111
+        },
+        "latency_ms": {
+          "p50": 177.22,
+          "p95": 226.38,
+          "mean": 182.57
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9375,
+            "ci_low": 0.8875,
+            "ci_high": 0.9875
+          },
+          "recall_at_5": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.991909,
+            "ci_low": 0.975728,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 177.12,
+            "p95": 230.26,
+            "mean": 178.38
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 180.7,
+            "p95": 210.23,
+            "mean": 184.29
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 177.22,
+            "p95": 227.44,
+            "mean": 185.03
+          }
+        }
+      }
+    },
+    {
+      "name": "routing_strong_id1.8_sem1.8",
+      "group": "routing",
+      "params": {
+        "rrf_k": 20,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": true,
+        "routing_weights": {
+          "identifier": [
+            1.8,
+            0.2
+          ],
+          "semantic": [
+            0.2,
+            1.8
+          ],
+          "default": [
+            1.0,
+            1.0
+          ]
+        },
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.704167,
+          "ci_low": 0.591667,
+          "ci_high": 0.804167
+        },
+        "recall_at_5": {
+          "mean": 0.741667,
+          "ci_low": 0.616667,
+          "ci_high": 0.841667
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.730559,
+          "ci_low": 0.626096,
+          "ci_high": 0.825111
+        },
+        "latency_ms": {
+          "p50": 175.01,
+          "p95": 244.53,
+          "mean": 181.03
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9375,
+            "ci_low": 0.8875,
+            "ci_high": 0.9875
+          },
+          "recall_at_5": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.991909,
+            "ci_low": 0.975728,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 164.51,
+            "p95": 199.85,
+            "mean": 168.03
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 175.54,
+            "p95": 226.66,
+            "mean": 179.09
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 180.95,
+            "p95": 254.31,
+            "mean": 195.97
+          }
+        }
+      }
+    },
+    {
+      "name": "routing_id1.6_sem1.6_k60",
+      "group": "routing",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": true,
+        "routing_weights": {
+          "identifier": [
+            1.6,
+            0.4
+          ],
+          "semantic": [
+            0.4,
+            1.6
+          ],
+          "default": [
+            1.0,
+            1.0
+          ]
+        },
+        "lexical_or_fallback": false
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.420833,
+          "ci_high": 0.616667
+        },
+        "recall_at_3": {
+          "mean": 0.704167,
+          "ci_low": 0.591667,
+          "ci_high": 0.804167
+        },
+        "recall_at_5": {
+          "mean": 0.741667,
+          "ci_low": 0.616667,
+          "ci_high": 0.841667
+        },
+        "recall_at_10": {
+          "mean": 0.75,
+          "ci_low": 0.641667,
+          "ci_high": 0.85
+        },
+        "mrr": {
+          "mean": 0.745,
+          "ci_low": 0.623333,
+          "ci_high": 0.853333
+        },
+        "ndcg_at_10": {
+          "mean": 0.730559,
+          "ci_low": 0.626096,
+          "ci_high": 0.825111
+        },
+        "latency_ms": {
+          "p50": 174.31,
+          "p95": 224.01,
+          "mean": 175.65
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9375,
+            "ci_low": 0.8875,
+            "ci_high": 0.9875
+          },
+          "recall_at_5": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.991909,
+            "ci_low": 0.975728,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 166.04,
+            "p95": 210.42,
+            "mean": 165.52
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.435,
+            "ci_low": 0.235,
+            "ci_high": 0.635
+          },
+          "ndcg_at_10": {
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.663982
+          },
+          "latency_ms": {
+            "p50": 183.35,
+            "p95": 222.71,
+            "mean": 181.29
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.725,
+            "ci_low": 0.55,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.748878,
+            "ci_low": 0.568221,
+            "ci_high": 0.913813
+          },
+          "latency_ms": {
+            "p50": 186.39,
+            "p95": 249.2,
+            "mean": 180.15
+          }
+        }
+      }
+    },
+    {
+      "name": "or_fallback_ef300_p50_noroute",
+      "group": "lexical_or_fallback",
+      "params": {
+        "rrf_k": 60,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": false,
+        "routing_weights": null,
+        "lexical_or_fallback": true
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.4125,
+          "ci_low": 0.3125,
+          "ci_high": 0.516667
+        },
+        "recall_at_3": {
+          "mean": 0.670833,
+          "ci_low": 0.566667,
+          "ci_high": 0.779167
+        },
+        "recall_at_5": {
+          "mean": 0.708333,
+          "ci_low": 0.595833,
+          "ci_high": 0.8125
+        },
+        "recall_at_10": {
+          "mean": 0.766667,
+          "ci_low": 0.666667,
+          "ci_high": 0.866667
+        },
+        "mrr": {
+          "mean": 0.667288,
+          "ci_low": 0.546825,
+          "ci_high": 0.770503
+        },
+        "ndcg_at_10": {
+          "mean": 0.680189,
+          "ci_low": 0.581691,
+          "ci_high": 0.776154
+        },
+        "latency_ms": {
+          "p50": 1725.38,
+          "p95": 3862.1,
+          "mean": 1707.89
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7375,
+            "ci_low": 0.5625,
+            "ci_high": 0.8875
+          },
+          "recall_at_3": {
+            "mean": 0.8625,
+            "ci_low": 0.725,
+            "ci_high": 0.975
+          },
+          "recall_at_5": {
+            "mean": 0.925,
+            "ci_low": 0.825,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 0.926667,
+            "ci_low": 0.813333,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.946094,
+            "ci_low": 0.869247,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 188.87,
+            "p95": 4195.34,
+            "mean": 1167.03
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.15,
+            "ci_low": 0.0,
+            "ci_high": 0.35
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.307143,
+            "ci_low": 0.157143,
+            "ci_high": 0.457143
+          },
+          "ndcg_at_10": {
+            "mean": 0.355946,
+            "ci_low": 0.192853,
+            "ci_high": 0.535705
+          },
+          "latency_ms": {
+            "p50": 965.19,
+            "p95": 2288.01,
+            "mean": 973.82
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.35,
+            "ci_low": 0.25,
+            "ci_high": 0.45
+          },
+          "recall_at_3": {
+            "mean": 0.7,
+            "ci_low": 0.525,
+            "ci_high": 0.875
+          },
+          "recall_at_5": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.8,
+            "ci_low": 0.65,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.768056,
+            "ci_low": 0.598611,
+            "ci_high": 0.9125
+          },
+          "ndcg_at_10": {
+            "mean": 0.738528,
+            "ci_low": 0.586403,
+            "ci_high": 0.879102
+          },
+          "latency_ms": {
+            "p50": 2982.24,
+            "p95": 3838.66,
+            "mean": 2982.82
+          }
+        }
+      }
+    },
+    {
+      "name": "or_fallback_routing_id1.6_sem1.6",
+      "group": "lexical_or_fallback",
+      "params": {
+        "rrf_k": 20,
+        "candidate_pool_size": 50,
+        "hnsw_ef_search": 300,
+        "lexical_weight": 1.0,
+        "vector_weight": 1.0,
+        "enable_query_routing": true,
+        "routing_weights": {
+          "identifier": [
+            1.6,
+            0.4
+          ],
+          "semantic": [
+            0.4,
+            1.6
+          ],
+          "default": [
+            1.0,
+            1.0
+          ]
+        },
+        "lexical_or_fallback": true
+      },
+      "overall": {
+        "count": 60,
+        "recall_at_1": {
+          "mean": 0.520833,
+          "ci_low": 0.425,
+          "ci_high": 0.620833
+        },
+        "recall_at_3": {
+          "mean": 0.7125,
+          "ci_low": 0.604167,
+          "ci_high": 0.8125
+        },
+        "recall_at_5": {
+          "mean": 0.733333,
+          "ci_low": 0.616667,
+          "ci_high": 0.833333
+        },
+        "recall_at_10": {
+          "mean": 0.758333,
+          "ci_low": 0.658333,
+          "ci_high": 0.858333
+        },
+        "mrr": {
+          "mean": 0.75,
+          "ci_low": 0.627778,
+          "ci_high": 0.855556
+        },
+        "ndcg_at_10": {
+          "mean": 0.736496,
+          "ci_low": 0.63109,
+          "ci_high": 0.833552
+        },
+        "latency_ms": {
+          "p50": 1730.92,
+          "p95": 3929.59,
+          "mean": 1719.51
+        }
+      },
+      "by_category": {
+        "exact_identifier": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.7625,
+            "ci_low": 0.6,
+            "ci_high": 0.9
+          },
+          "recall_at_3": {
+            "mean": 0.9375,
+            "ci_low": 0.8875,
+            "ci_high": 0.9875
+          },
+          "recall_at_5": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall_at_10": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "mrr": {
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "ndcg_at_10": {
+            "mean": 0.991909,
+            "ci_low": 0.975728,
+            "ci_high": 1.0
+          },
+          "latency_ms": {
+            "p50": 185.6,
+            "p95": 4250.49,
+            "mean": 1172.71
+          }
+        },
+        "semantic": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.2,
+            "ci_high": 0.6
+          },
+          "recall_at_3": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_5": {
+            "mean": 0.45,
+            "ci_low": 0.25,
+            "ci_high": 0.7
+          },
+          "recall_at_10": {
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.75
+          },
+          "mrr": {
+            "mean": 0.433333,
+            "ci_low": 0.233333,
+            "ci_high": 0.633333
+          },
+          "ndcg_at_10": {
+            "mean": 0.449357,
+            "ci_low": 0.249357,
+            "ci_high": 0.653431
+          },
+          "latency_ms": {
+            "p50": 964.88,
+            "p95": 2315.38,
+            "mean": 962.78
+          }
+        },
+        "multi_source": {
+          "count": 20,
+          "recall_at_1": {
+            "mean": 0.4,
+            "ci_low": 0.3,
+            "ci_high": 0.475
+          },
+          "recall_at_3": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.9
+          },
+          "recall_at_5": {
+            "mean": 0.75,
+            "ci_low": 0.575,
+            "ci_high": 0.9
+          },
+          "recall_at_10": {
+            "mean": 0.775,
+            "ci_low": 0.6,
+            "ci_high": 0.925
+          },
+          "mrr": {
+            "mean": 0.816667,
+            "ci_low": 0.633333,
+            "ci_high": 0.95
+          },
+          "ndcg_at_10": {
+            "mean": 0.768221,
+            "ci_low": 0.598878,
+            "ci_high": 0.922235
+          },
+          "latency_ms": {
+            "p50": 3004.55,
+            "p95": 3904.45,
+            "mean": 3023.04
+          }
+        }
+      }
+    }
+  ]
+}

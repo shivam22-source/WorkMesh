@@ -90,6 +90,10 @@ class Settings(BaseSettings):
     github_token: Optional[str] = None
     github_repo: Optional[str] = None
 
+    # Retrieval tuning & reranking
+    hnsw_ef_search: int = 200
+    enable_query_routing: bool = True
+
     # Backpressure & concurrency limits
     search_concurrency_limit: int = 15
     search_retry_after_seconds: int = 1

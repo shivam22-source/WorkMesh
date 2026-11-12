@@ -5,13 +5,14 @@ deduplicated result list ranked by Reciprocal Rank Fusion (RRF).
 """
 
 import logging
+import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.contracts.rag_search import RagSearchResultItem
 from app.indexing.repository import KnowledgeRepository
 from app.retrieval.lexical import LexicalRetriever
-from app.retrieval.query_classifier import QueryClassifier
+from app.retrieval.query_classifier import ClassificationResult, QueryClassifier, QueryType
 from app.retrieval.vector import VectorRetriever
 
 logger = logging.getLogger(__name__)
@@ -24,18 +25,15 @@ def compute_rrf_score(
     lexical_rank: Optional[int],
     vector_rank: Optional[int],
     k: int = DEFAULT_RRF_K,
+    lexical_weight: float = 1.0,
+    vector_weight: float = 1.0,
 ) -> float:
-    """Compute Reciprocal Rank Fusion score from 1-based ranks.
-
-    Formula:
-        RRF(d) = sum(1 / (k + rank_m(d))) for each retrieval method m in which d appears.
-    If an item does not appear in a method's candidate list, that method contributes 0.0.
-    """
+    """Compute weighted Reciprocal Rank Fusion score from 1-based ranks."""
     score = 0.0
     if lexical_rank is not None and lexical_rank > 0:
-        score += 1.0 / (k + lexical_rank)
+        score += lexical_weight / (k + lexical_rank)
     if vector_rank is not None and vector_rank > 0:
-        score += 1.0 / (k + vector_rank)
+        score += vector_weight / (k + vector_rank)
     return score
 
 
@@ -66,6 +64,11 @@ class HybridRetriever:
         default_user_id: Optional[str] = None,
         default_group_ids: Optional[List[str]] = None,
         embedding_provider: Optional[Any] = None,
+        lexical_weight: float = 1.0,
+        vector_weight: float = 1.0,
+        candidate_pool_size: Optional[int] = None,
+        enable_query_routing: bool = True,
+        routing_weights: Optional[Dict[str, Tuple[float, float]]] = None,
     ):
         self.default_user_id = default_user_id
         self.default_group_ids = default_group_ids
@@ -90,12 +93,43 @@ class HybridRetriever:
 
         self.query_classifier = query_classifier or QueryClassifier()
         self.k = k
+        self.lexical_weight = lexical_weight
+        self.vector_weight = vector_weight
+        self.candidate_pool_size = candidate_pool_size
+        self.enable_query_routing = enable_query_routing
+        self.routing_weights = routing_weights or {
+            "identifier": (1.6, 0.4),
+            "semantic": (0.4, 1.6),
+            "default": (1.0, 1.0),
+        }
         self.last_stage_timings: Dict[str, float] = {
             "lexicalMs": 0.0,
             "vectorMs": 0.0,
             "fuseMs": 0.0,
             "graphMs": 0.0,
         }
+
+    @staticmethod
+    def _looks_like_identifier(query: str, classification: ClassificationResult) -> bool:
+        """Detect ticket/SHA identifiers and technical symbol tokens (snake_case, CamelCase, headers)."""
+        if classification.query_type == QueryType.IDENTIFIER:
+            return True
+        if classification.query_type == QueryType.KEYWORD:
+            tokens = query.strip().split()
+            if len(tokens) == 1:
+                tok = tokens[0]
+                if "_" in tok or "-" in tok or any(ch.isdigit() for ch in tok) or re.search(r"[a-z][A-Z]", tok):
+                    return True
+        return False
+
+    def _resolve_weights(self, query: str, classification: ClassificationResult) -> Tuple[float, float]:
+        if not self.enable_query_routing:
+            return self.lexical_weight, self.vector_weight
+        if self._looks_like_identifier(query, classification):
+            return self.routing_weights.get("identifier", (1.6, 0.4))
+        if classification.query_type == QueryType.SEMANTIC:
+            return self.routing_weights.get("semantic", (0.4, 1.6))
+        return self.routing_weights.get("default", (self.lexical_weight, self.vector_weight))
 
     def search(
         self,
@@ -138,7 +172,8 @@ class HybridRetriever:
         )
 
         # Candidate pool size: retrieve a wider pool from each source to allow RRF overlap
-        candidate_pool_limit = max(limit * 2, 20)
+        candidate_pool_limit = max(limit * 2, self.candidate_pool_size or 20)
+        lex_weight, vec_weight = self._resolve_weights(cleaned_query, classification)
 
         # Execute both retrievers with pushdown metadata & ACL filtering
         t_lex0 = time.perf_counter()
@@ -167,6 +202,8 @@ class HybridRetriever:
             lexical_results=lexical_candidates,
             vector_results=vector_candidates,
             limit=limit,
+            lexical_weight=lex_weight,
+            vector_weight=vec_weight,
         )
         fuse_ms = round((time.perf_counter() - t_fuse0) * 1000.0, 2)
 
@@ -189,6 +226,8 @@ class HybridRetriever:
         lexical_results: List[RagSearchResultItem],
         vector_results: List[RagSearchResultItem],
         limit: int,
+        lexical_weight: float = 1.0,
+        vector_weight: float = 1.0,
     ) -> List[RagSearchResultItem]:
         """Combine and deduplicate candidate lists using 1-based RRF."""
         if not lexical_results and not vector_results:
@@ -226,6 +265,8 @@ class HybridRetriever:
                 lexical_rank=cand["lexical_rank"],
                 vector_rank=cand["vector_rank"],
                 k=self.k,
+                lexical_weight=lexical_weight,
+                vector_weight=vector_weight,
             )
 
         # 4. Sort strictly by RRF score descending.

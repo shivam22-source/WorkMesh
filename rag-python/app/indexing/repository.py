@@ -969,8 +969,15 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
 class PostgresKnowledgeRepository(KnowledgeRepository):
     """PostgreSQL + pgvector implementation using psycopg."""
 
-    def __init__(self, connection_url: str):
+    def __init__(
+        self,
+        connection_url: str,
+        hnsw_ef_search: Optional[int] = None,
+        lexical_or_fallback: bool = False,
+    ):
         self.connection_url = connection_url
+        self.hnsw_ef_search = hnsw_ef_search
+        self.lexical_or_fallback = lexical_or_fallback
 
     def _get_connection(self):
         import psycopg
@@ -2045,8 +2052,10 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                 with conn.cursor() as cur:
                     cur.execute(sql, tuple(params))
                     rows = cur.fetchall()
+                    seen_ids = set()
                     for row in rows:
                         chunk_id, doc_id, src_type, title, content, url, author, score = row
+                        seen_ids.add(chunk_id)
                         snippet = content[:300].strip() + ("..." if len(content) > 300 else "")
                         results.append(
                             RagSearchResultItem(
@@ -2060,6 +2069,62 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                                 score=round(float(score), 4) if score is not None else 0.0,
                             )
                         )
+
+                    if self.lexical_or_fallback and len(results) < limit:
+                        remaining = limit - len(results)
+                        or_where = [
+                            "plainto_tsquery('english', %s)::text <> ''",
+                            "c.tsv @@ replace(plainto_tsquery('english', %s)::text, '&', '|')::tsquery",
+                            acl_clause,
+                        ]
+                        or_params: List[Any] = [
+                            cleaned_query,
+                            cleaned_query,
+                            cleaned_query,
+                        ]
+                        or_params.extend(acl_params)
+                        if source_types:
+                            or_where.append("d.source_type = ANY(%s)")
+                            or_params.append(source_types)
+                        if seen_ids:
+                            or_where.append("NOT (c.id = ANY(%s))")
+                            or_params.append(sorted(seen_ids))
+                        or_params.append(remaining)
+                        or_sql = f"""
+                            SELECT
+                                c.id,
+                                c.document_id,
+                                d.source_type,
+                                COALESCE(d.title, ''),
+                                c.content,
+                                COALESCE(d.url, ''),
+                                d.author,
+                                ts_rank_cd(
+                                    c.tsv,
+                                    replace(plainto_tsquery('english', %s)::text, '&', '|')::tsquery
+                                ) AS score
+                            FROM chunks c
+                            JOIN documents d ON c.document_id = d.id
+                            WHERE {" AND ".join(or_where)}
+                            ORDER BY score DESC, c.created_at DESC
+                            LIMIT %s;
+                        """
+                        cur.execute(or_sql, tuple(or_params))
+                        for row in cur.fetchall():
+                            chunk_id, doc_id, src_type, title, content, url, author, score = row
+                            snippet = content[:300].strip() + ("..." if len(content) > 300 else "")
+                            results.append(
+                                RagSearchResultItem(
+                                    chunk_id=chunk_id,
+                                    document_id=doc_id,
+                                    source_type=src_type,
+                                    title=title,
+                                    snippet=snippet,
+                                    source_url=url,
+                                    author=author,
+                                    score=round(float(score) * 0.5, 4) if score is not None else 0.0,
+                                )
+                            )
         except DatabaseUnavailableError:
             raise
         except Exception as e:
@@ -2165,7 +2230,13 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             with self._get_connection() as conn:
                 with conn.transaction():
                     with conn.cursor() as cur:
-                        cur.execute("SET LOCAL hnsw.ef_search = 100;")
+                        ef_search = int(
+                            self.hnsw_ef_search
+                            if self.hnsw_ef_search is not None
+                            else get_settings().hnsw_ef_search
+                        )
+                        ef_search = max(1, min(ef_search, 2000))
+                        cur.execute(f"SET LOCAL hnsw.ef_search = {ef_search};")
                         try:
                             cur.execute("SET LOCAL hnsw.iterative_scan = 'relaxed_order';")
                         except Exception:

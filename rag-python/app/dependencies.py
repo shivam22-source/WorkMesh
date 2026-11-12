@@ -20,7 +20,11 @@ def get_repository() -> KnowledgeRepository:
 @lru_cache(maxsize=1)
 def get_hybrid_retriever() -> HybridRetriever:
     repo = get_repository()
-    return HybridRetriever(repository=repo)
+    settings = get_settings()
+    return HybridRetriever(
+        repository=repo,
+        enable_query_routing=settings.enable_query_routing,
+    )
 
 
 @lru_cache(maxsize=1)
