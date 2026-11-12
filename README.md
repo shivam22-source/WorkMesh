@@ -51,6 +51,8 @@ Evaluated over 10,000 multi-tenant synthetic chunks (2,500 documents across GitH
 
 Raw results: [`data/evaluation/results/scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json).
 
+> *Target note:* In earlier benchmarks using deterministic hash mock embeddings (`52 ms / query`), the adversarial throughput target was `< 100 ms`. When real local CPU inference (`sentence-transformers/all-MiniLM-L6-v2`) replaced hash mocks in commit `9803bf46` (`147.2 ms / query` initially; `121.0 ms / query` after native 384-dim HNSW indexing), the target was relaxed to `< 200 ms` to reflect CPU embedding compute cost.
+
 ### 2. Retrieval Ablation Study
 
 Ablation evaluation across 100 queries (50 exact identifier tickets vs. 50 semantic queries) isolating the impact of each retrieval stage:
@@ -106,6 +108,17 @@ Load test executed via Locust (`loadtest/locustfile.py`) across 1 (baseline), 5,
 Before optimization, PostgreSQL vector queries bypassed the HNSW index due to correlated multi-table ACL pushdown joins, resulting in 52.48 million row nested-loop semi-joins taking ~3.9 seconds per query. By retrieving top nearest-neighbor candidate chunks directly via the HNSW index (`idx_chunks_embedding_hnsw` with `ef_search=100`) and evaluating pushdown ACLs on candidate chunks with iterative scan fallback when fewer candidates survive, vector search latency dropped from ~3,920 ms to ~28 ms.
 
 The application handles up to 15 concurrent users without backpressure shedding, processing up to 38.4 successful requests/second with p95 latency under 640 ms for standard users. Beyond 15 concurrent users, the concurrency limiter sheds excess traffic with immediate HTTP 503 responses (~20–300 ms), keeping database connections healthy while sustaining 29–36 successful req/sec. For low-access users (1% access), exact fallback with iterative scan preserves full Recall@5 (90.67%) with zero unauthorized chunk leakage, sustaining 9.97 successful req/sec at 25 concurrent users.
+
+---
+
+## Limitations
+
+- **Synthetic Same-Generator Corpus**: The 10,000-chunk evaluation dataset and query suite originate from the same synthetic generator; real enterprise traffic contains typos, ambiguous shorthand, and vocabulary mismatch not represented here.
+- **Binary Single-Target Relevance**: Retrieval accuracy (`Recall@k`, `MRR`) is scored as binary `0`/`1` against a single target document/permalink rather than graded relevance across multiple supporting threads.
+- **Fixture-Backed Connectors & Stubbed LLM**: GitHub, Slack, and Email ingestion adapters read local JSON fixtures instead of live SaaS APIs, and answer synthesis uses deterministic passage extraction (`MockLLMProvider`) rather than an external LLM.
+- **Token-Claim Staleness Until Expiry**: Group additions and revocations are carried in signed JWT `groups` claims and validated statelessly, so permission changes take effect only when the caller's existing token expires (`exp`).
+- **Single-Node Scope**: Runs as a single FastAPI service and single PostgreSQL node with process-local caching, concurrency limiting, and metrics—no distributed cache or multi-node coordination is built in.
+- **CPU Embeddings**: Local `sentence-transformers/all-MiniLM-L6-v2` inference runs on CPU, making per-request embedding time (~110–120 ms cold uncached) the dominant latency and throughput bound under concurrency.
 
 ---
 
