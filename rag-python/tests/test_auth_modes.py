@@ -40,7 +40,7 @@ def test_prod_mode_rejects_forged_role_header(repo: InMemoryKnowledgeRepository,
         headers={"X-User-Role": "ADMIN", "X-User-Id": "forged_admin"},
     )
     assert resp.status_code == 401
-    assert "forbidden in production mode" in resp.json()["message"]
+    assert "forbidden in production mode" in resp.json()["error"]["message"]
 
 
 def test_prod_mode_rejects_missing_jwt(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
@@ -57,7 +57,7 @@ def test_prod_mode_rejects_missing_jwt(repo: InMemoryKnowledgeRepository, retrie
         json={"query": "architecture overview"},
     )
     assert resp.status_code == 401
-    assert "Missing Authorization header" in resp.json()["message"]
+    assert "Missing Authorization header" in resp.json()["error"]["message"]
 
 
 def test_prod_mode_accepts_valid_jwt(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
@@ -109,7 +109,7 @@ def test_prod_mode_rejects_expired_jwt(repo: InMemoryKnowledgeRepository, retrie
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 401
-    assert "Token has expired" in resp.json()["message"]
+    assert "Token has expired" in resp.json()["error"]["message"]
 
 
 def test_prod_mode_rejects_tampered_jwt(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
@@ -135,7 +135,7 @@ def test_prod_mode_rejects_tampered_jwt(repo: InMemoryKnowledgeRepository, retri
         headers={"Authorization": f"Bearer {bad_token}"},
     )
     assert resp.status_code == 401
-    assert "Invalid token signature" in resp.json()["message"]
+    assert "Invalid token signature" in resp.json()["error"]["message"]
 
 
 def test_prod_mode_require_admin_role_enforcement(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
@@ -158,7 +158,7 @@ def test_prod_mode_require_admin_role_enforcement(repo: InMemoryKnowledgeReposit
         headers={"Authorization": f"Bearer {eng_token}"},
     )
     assert resp_forbidden.status_code == 403
-    assert "ADMIN role required" in resp_forbidden.json()["message"]
+    assert "ADMIN role required" in resp_forbidden.json()["error"]["message"]
 
     # 2. Admin token calling admin endpoint -> 200
     admin_token = create_jwt_token(
@@ -279,7 +279,7 @@ def test_auth_mode_whitespace_prod_accepted_and_rejects_forged_header(monkeypatc
         headers={"X-User-Role": "ADMIN", "X-User-Id": "forged_admin"},
     )
     assert resp.status_code == 401
-    assert "forbidden in production mode" in resp.json()["message"]
+    assert "forbidden in production mode" in resp.json()["error"]["message"]
 
 
 def test_auth_mode_uppercase_dev_accepted_and_normalizes(monkeypatch):
@@ -320,7 +320,7 @@ def test_prod_mode_rejects_alg_none_token(repo: InMemoryKnowledgeRepository, ret
         headers={"Authorization": f"Bearer {forged_none_token}"},
     )
     assert resp.status_code == 401
-    assert "algorithm" in resp.json()["message"].lower()
+    assert "algorithm" in resp.json()["error"]["message"].lower()
 
 
 def test_config_rejects_alg_none_in_allowlist(monkeypatch):
@@ -386,7 +386,7 @@ def test_prod_mode_rejects_tampered_groups_payload(repo: InMemoryKnowledgeReposi
         headers={"Authorization": f"Bearer {tampered_token}"},
     )
     assert resp.status_code == 401
-    assert "signature" in resp.json()["message"].lower()
+    assert "signature" in resp.json()["error"]["message"].lower()
 
 
 @pytest.mark.parametrize("bad_groups", ["group_engineering", 123, {"group": "eng"}, ["valid", 99]])
@@ -409,7 +409,7 @@ def test_prod_mode_rejects_non_list_groups_claim(repo: InMemoryKnowledgeReposito
     )
     resp = client.post("/api/v1/search", json={"query": "test"}, headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 401
-    assert "groups" in resp.json()["message"].lower()
+    assert "groups" in resp.json()["error"]["message"].lower()
 
 
 def test_prod_mode_enforces_jwt_max_ttl_seconds(repo: InMemoryKnowledgeRepository, retriever: HybridRetriever):
@@ -430,7 +430,7 @@ def test_prod_mode_enforces_jwt_max_ttl_seconds(repo: InMemoryKnowledgeRepositor
     )
     resp_reject = client.post("/api/v1/search", json={"query": "test"}, headers={"Authorization": f"Bearer {too_long}"})
     assert resp_reject.status_code == 401
-    assert "JWT_MAX_TTL_SECONDS" in resp_reject.json()["message"]
+    assert "JWT_MAX_TTL_SECONDS" in resp_reject.json()["error"]["message"]
 
     within_limit = create_jwt_token(
         user_id="alice",

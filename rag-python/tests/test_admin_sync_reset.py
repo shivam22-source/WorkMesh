@@ -31,7 +31,7 @@ def test_admin_sync_reset_requires_admin_role(client: TestClient):
         headers={"X-User-Id": "regular_eng"},
     )
     assert resp.status_code == 403
-    assert "ADMIN role required" in resp.json()["message"]
+    assert "ADMIN role required" in resp.json()["error"]["message"]
 
 
 def test_admin_sync_reset_single_source(client: TestClient, repo: InMemoryKnowledgeRepository):
@@ -112,4 +112,4 @@ def test_admin_sync_reset_invalid_source_rejected(client: TestClient):
         headers={"X-User-Id": "employee_admin"},
     )
     assert resp.status_code == 400
-    assert "Invalid sourceType" in resp.json()["message"]
+    assert "Invalid sourceType" in resp.json()["error"]["message"]

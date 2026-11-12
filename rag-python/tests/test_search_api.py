@@ -187,10 +187,10 @@ def test_search_api_database_unavailable_returns_503():
         )
 
     assert response.status_code == 503
-    body = response.json()
-    assert body["status"] == 503
-    assert body["error"] == "Service Unavailable"
-    assert body["message"] == "database service is unavailable"
+    err = response.json()["error"]
+    assert err["code"] == "SERVICE_UNAVAILABLE"
+    assert err["message"] == "database service is unavailable"
+    assert err["request_id"]
 
 
 # ---------------------------------------------------------------------------

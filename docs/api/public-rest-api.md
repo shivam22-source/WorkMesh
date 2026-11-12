@@ -155,15 +155,14 @@ Reports the synchronization status and cursor progress across all configured con
 
 ## Error Handling
 
-Validation failures (e.g. blank `query` or `question`) return `400 Bad Request` with the unified `ApiError` body and populated `traceId`:
+Validation failures (e.g. blank `query` or `question`) and all HTTP errors return a uniform JSON error envelope with `code`, `message`, and `request_id` (echoed in `X-Request-Id`):
 
 ```json
 {
-  "timestamp": "2026-11-04T19:40:00Z",
-  "status": 400,
-  "error": "Bad Request",
-  "message": "query must not be blank",
-  "path": "/api/v1/search",
-  "traceId": "d748f21e5b"
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "query must not be blank",
+    "request_id": "d748f21e5b"
+  }
 }
 ```

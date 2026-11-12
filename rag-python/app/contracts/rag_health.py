@@ -47,10 +47,19 @@ class RagHealthResponse(BaseModel):
 
 
 class ServiceHealth(BaseModel):
-    """Body of GET /health and GET /ready. Both fields are single words, so no
-    camelCase alias is needed."""
+    """Base health payload."""
 
     model_config = ConfigDict(extra="forbid")
 
-    status: str
-    service: str
+    status: str = Field(description="Health state ('ok' when healthy).")
+    service: str = Field(description="Responding service identifier.")
+
+
+class LivenessResponse(ServiceHealth):
+    """Body of GET /health (process liveness only, no downstream dependency checks)."""
+
+
+class ReadinessResponse(ServiceHealth):
+    """Body of GET /ready (process + database connectivity check)."""
+
+    database: Literal["ok"] = Field(description="PostgreSQL connectivity state ('ok' when reachable).")

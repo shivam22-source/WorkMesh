@@ -107,15 +107,14 @@ Synthesizes a grounded answer strictly from authorized evidence chunks, complete
 
 ## Error Envelope Shape
 
-All errors across public and admin endpoints return a uniform JSON error envelope with an active `traceId`:
+All errors across public and admin endpoints return a uniform JSON error envelope with an active `request_id` matching the `X-Request-Id` response header:
 
 ```json
 {
-  "timestamp": "2026-11-04T19:40:00Z",
-  "status": 401,
-  "error": "Unauthorized",
-  "message": "Authorization header missing or invalid",
-  "path": "/api/v1/search",
-  "traceId": "c8a41df2a1"
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authorization header missing or invalid",
+    "request_id": "c8a41df2a1"
+  }
 }
 ```
