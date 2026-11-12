@@ -1,4 +1,4 @@
-"""Deterministic reranker with query alignment, candidate-grounded graph boosting, and diversity discounting."""
+"""Deterministic reranker with query alignment, [EXPERIMENTAL] candidate-grounded graph boosting, and diversity discounting."""
 
 import logging
 import re
@@ -53,7 +53,15 @@ def map_document_id_to_entity_id(document_id: str) -> Optional[str]:
 
 
 class DeterministicReranker:
-    """Reranks retrieval candidate chunks using query alignment, authorized graph boosting, and diversity."""
+    """Reranks retrieval candidate chunks using query alignment, [EXPERIMENTAL] graph boosting, and diversity.
+
+    Note: The candidate-grounded graph relationship boost (+0.0020 max) is marked
+    experimental: controlled paired bootstrap evaluation on ``queries_v2`` found
+    +0.00pp multi-source Recall@5 delta and non-significant nDCG@10 delta
+    (+0.0102, 95% CI [0.0000, +0.0307], sig=False).
+    """
+
+    EXPERIMENTAL_GRAPH_BOOST = True
 
     def __init__(self, repository: Optional[KnowledgeRepository] = None):
         self.repository = repository
@@ -71,7 +79,7 @@ class DeterministicReranker:
         Guarantees:
         - Filters out candidates not matching source_types if provided.
         - Derives entity relationships strictly from candidate pool without unrestricted enumeration.
-        - Applies bounded relationship boost (+0.0020 max) and text match bonus (+0.0010 max).
+        - Applies [EXPERIMENTAL] bounded relationship boost (+0.0020 max) and text match bonus (+0.0010 max).
         - Applies deterministic diversity discounting (1.0, 0.80, 0.60) grouped by document_id.
         - Output ordering is invariant to candidate input order.
         """

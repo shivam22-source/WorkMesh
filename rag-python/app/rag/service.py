@@ -48,7 +48,7 @@ class GroundedRagService:
         1. Query validation.
         2. Permission-filtered hybrid retrieval (pushdown ACL + source_types).
         3. Zero-candidate short-circuit to INSUFFICIENT_EVIDENCE.
-        4. Deterministic reranking (text bonuses, candidate-grounded graph boost, diversity).
+        4. Deterministic reranking (text bonuses, [EXPERIMENTAL] candidate-grounded graph boost, diversity).
         5. Evidence context assembly (max 5 items, max 400 chars, no graph metadata).
         6. Mock LLM answer generation from evidence only.
         7. Citation extraction and mapping.

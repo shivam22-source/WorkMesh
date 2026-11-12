@@ -8,7 +8,7 @@ Powered by a single FastAPI service on PostgreSQL 16 with pgvector.
 ## What WorkMesh Does
 
 - **Hybrid Search**: Combines PostgreSQL full-text search (`tsvector`) with dense vector search (`all-MiniLM-L6-v2` via `pgvector`) using Reciprocal Rank Fusion (RRF).
-- **Graph Reranking**: Boosts relevant results based on entity relationships across GitHub pull requests, Slack messages, and internal emails.
+- **Graph Reranking (Experimental)**: Boosts relevant results based on entity relationships across GitHub pull requests, Slack messages, and internal emails (currently experimental; paired bootstrap testing showed no statistically significant gain on multi-source evaluation).
 - **Pushdown Access Control**: Enforces document-level permissions inside PostgreSQL queries so users never see content outside their authorized groups.
 - **Grounded Answers**: Extracts supporting citations `[1]` linked to original sources. Declines to answer when evidence is missing or unauthorized.
 - **Audit Logging & Admin**: Tracks search and question queries durably with fail-open resilience, plus role-protected connector sync status endpoints.
@@ -22,7 +22,9 @@ To ensure complete transparency regarding system capabilities and boundaries:
 | Component | Status | Details |
 |---|---|---|
 | **Embeddings & Vector Index** | **Real** | Local HuggingFace `sentence-transformers` (`all-MiniLM-L6-v2`, 384 dimensions) with PostgreSQL 16 `pgvector` HNSW index. No third-party API keys required. |
-| **Lexical Search & Hybrid Fusion** | **Real** | PostgreSQL `tsvector` with GIN indexing, fused with vector search using Reciprocal Rank Fusion ($k=60$) and graph relationship boosts. |
+| **Lexical Search & Hybrid Fusion** | **Real** | PostgreSQL `tsvector` with GIN indexing, fused with vector search using query-routed Reciprocal Rank Fusion ($k=60$, `hnsw.ef_search=200`). |
+| **Cross-Encoder Reranker** | **Optional (`off` by default)** | Optional `cross-encoder/ms-marco-MiniLM-L-6-v2` stage over the top-50 ACL-filtered candidates (`RERANKER=cross_encoder`). Kept off by default because CPU inference increases p95 latency 4.3x (`203.4 -> 870.9 ms`, `+667.5 ms`). |
+| **Graph Reranking** | **Experimental** | Candidate-grounded entity relationship boost (`+0.0020` max). Marked experimental because paired bootstrap evaluation on multi-source queries showed `+0.00 pp` Recall@5 and non-significant nDCG@10 (`+0.0102`, `sig=False`). |
 | **Pushdown Security & RBAC** | **Real** | SQL-level ACL filtering inside PostgreSQL queries. Production mode enforces signed PyJWT tokens (`sub`, `role`, `groups`) and rejects header simulation. |
 | **Concurrency Control & Metrics** | **Real** | Concurrency limiter guards against worker pool starvation, shedding excess load with HTTP 503 (`Retry-After: 1`). Per-stage timings and P95 latency exposed on `/metrics`. |
 | **Audit Logging** | **Real** | Transactional database logging with fail-open resilience to prevent user query blocking. |
@@ -65,6 +67,24 @@ Ablation evaluation across 100 queries (50 exact identifier tickets vs. 50 seman
 *Note: With an exact 50/50 query split, Overall Recall@5 is the exact arithmetic mean of Exact-ID and Semantic categories (e.g. \((100\% + 40\%) / 2 = 70.0\%\) for baseline RRF, and \((100\% + 42\%) / 2 = 71.0\%\) with graph reranking).*
 
 Raw results: [`data/evaluation/results/ablation_results.json`](data/evaluation/results/ablation_results.json).
+
+### 2b. Harder Graded Evaluation (`queries_v2`, 60 Queries with 95% CIs)
+
+To eliminate lexical keyword leakage, [`data/evaluation/queries_v2.jsonl`](data/evaluation/queries_v2.jsonl) evaluates 60 graded (`0-2`) queries — 20 exact-identifier, 20 low-overlap semantic paraphrases (`<= 1` shared content word with gold chunks, verified via [`scripts/check_overlap.py`](scripts/check_overlap.py)), and 20 multi-source queries — with 95% bootstrap confidence intervals alongside the 10,000-chunk noise corpus:
+
+| Strategy / Configuration | Overall R@5 [95% CI] | Overall MRR | Overall nDCG@10 | ID R@5 | Sem R@5 | Multi R@5 | p50 / p95 ms |
+|---|---|:---:|:---:|:---:|:---:|:---:|---:|
+| **Hybrid RRF (Before Tuning: `ef=100`, routing off)** | **45.4%** | 0.4875 | 0.4533 | 96.2% | 20.0% | 20.0% | 130.3 / 170.9 |
+| **Lexical Only (`tsvector` / GIN)** | 33.3% [21.7%, 45.0%] | 0.3333 | 0.3306 | 100.0% | 0.0% | 0.0% | 39.2 / 62.2 |
+| **Vector Only (`limit=10`, `ef=200`)** | 30.0% [20.0%, 41.2%] | 0.3375 | 0.2978 | 50.0% | 20.0% | 20.0% | 91.1 / 141.3 |
+| **Hybrid RRF (Tuned Default: `ef=200`, routing on, `RERANKER=off`)** | **74.2%** [62.5%, 84.2%] | **0.7450** | **0.7306** | **100.0%** | **50.0%** | **72.5%** | **180.1 / 203.4** |
+| **Hybrid + Graph *(Experimental)*** | 74.2% [62.5%, 84.2%] | 0.7474 | 0.7340 | 100.0% | 50.0% | 72.5% | 206.7 / 251.2 |
+| **Hybrid + Cross-Encoder (`RERANKER=cross_encoder`, top-50 ACL pool)** | **75.8%** [64.2%, 85.8%] | **0.7583** | **0.7408** | 100.0% | 50.0% | **77.5%** | 735.9 / 870.9 |
+
+- **Defaults & Latency Decision (`RERANKER=off`)**: Raising `hnsw.ef_search` from `100` to `200` and enabling query-type routing lifts `hybrid_rrf` Recall@5 from `45.4%` to `74.2%` (`+28.8 pp`) and nDCG@10 from `0.4533` to `0.7306`. Enabling `RERANKER=cross_encoder` (`cross-encoder/ms-marco-MiniLM-L-6-v2` over top-50 ACL-filtered candidates) adds `+1.67 pp` R@5 (`77.5%` on multi-source), but regresses CPU `p95` latency **4.3x** (`203.4 ms -> 870.9 ms`), so it stays **off by default**.
+- **Experimental Graph Boost**: Paired bootstrap tests across `ablation_v2_results.json` and `reranker_v2_results.json` confirm `+0.00 pp` multi-source Recall@5 delta (`sig=False`) and `+0.0102` nDCG@10 (`95% CI [0.0000, +0.0307]`, `sig=False`), so graph reranking is marked **experimental**.
+
+Raw results & experiment log: [`ablation_v2_results.json`](data/evaluation/results/ablation_v2_results.json), [`sweep_v2_results.json`](data/evaluation/results/sweep_v2_results.json), [`reranker_v2_results.json`](data/evaluation/results/reranker_v2_results.json), and [`docs/experiments.md`](docs/experiments.md).
 
 ### 3. Multi-Tenant ACL Recall Verification
 
@@ -191,7 +211,7 @@ cd rag-python
 .venv/Scripts/pytest.exe tests
 ```
 
-331 passed with model weights cached; 327 passed and 4 skipped without them (achieved by pointing `HF_HOME` and `SENTENCE_TRANSFORMERS_HOME` to an empty temporary directory so tests marked `@pytest.mark.real_model` are safely skipped). Covers hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
+344 passed with model weights cached (or 340 passed and 4 deselected with `-m "not real_model"` when skipping `@pytest.mark.real_model` tests without cached weights). Covers hybrid retrieval, query-type routing, optional Cross-Encoder reranking, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
 
 ---
 
@@ -200,5 +220,6 @@ cd rag-python
 - [`DESIGN.md`](DESIGN.md): System architecture, data model, and pushdown ACL invariant.
 - [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md): Live walkthrough script with example queries.
 - [`docs/runbooks/evaluation-and-metrics.md`](docs/runbooks/evaluation-and-metrics.md): Evaluation methodology and metrics definitions.
+- [`docs/experiments.md`](docs/experiments.md): Semantic weakness sweeps, Cross-Encoder latency/recall benchmarks, and experimental graph boost findings.
 - [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md): Consolidation rationale to single FastAPI service.
 - [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md): Datastore simplicity and Redis deferral rationale.
