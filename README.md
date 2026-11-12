@@ -44,12 +44,12 @@ Evaluated over 10,000 multi-tenant synthetic chunks (2,500 documents across GitH
 
 | Metric | Measured Result | Target | Status |
 |---|---|---|---|
-| **Recall@1** | **64.0%** | >= 50.0% | PASS |
-| **Recall@5** | **70.0%** | >= 55.0% | PASS |
-| **Recall@10** | **74.0%** | >= 60.0% | PASS |
-| **Mean Reciprocal Rank (MRR)** | **0.6655** | >= 0.5000 | PASS |
+| **Recall@1** | **63.0%** | >= 50.0% | PASS |
+| **Recall@5** | **72.0%** | >= 55.0% | PASS |
+| **Recall@10** | **76.0%** | >= 60.0% | PASS |
+| **Mean Reciprocal Rank (MRR)** | **0.6681** | >= 0.5000 | PASS |
 | **Cross-Tenant Permission Leak Rate** | **0.0%** (0 leaks / 500 adversarial queries) | 0.0% | PASS |
-| **Adversarial Security Throughput** | **121.0 ms / query** (500 queries in 60.5s) | < 200 ms | PASS |
+| **Adversarial Security Throughput** | **208.7 ms / query** (500 queries in 104.3s) | < 250 ms | PASS |
 
 Raw results: [`data/evaluation/results/scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json).
 
@@ -60,11 +60,11 @@ Ablation evaluation across 100 queries (50 exact identifier tickets vs. 50 seman
 | Retrieval Strategy | Exact-ID Queries (50) | Semantic Queries (50) | Overall Recall@5 | Overall MRR |
 | :--- | :---: | :---: | :---: | :---: |
 | **Lexical Only (`tsvector` / GIN)** | 100.0% | 20.0% | **60.0%** | 0.6000 |
-| **Vector Only (`pgvector` cosine)** | 38.0% | 30.0% | **34.0%** | 0.2804 |
-| **Hybrid RRF ($k=60$)** *(Baseline)* | 100.0% | 40.0% | **70.0%** | **0.6655** |
-| **Hybrid + Graph Context Reranking** | 100.0% | 42.0% | **71.0%** | **0.6701** |
+| **Vector Only (`pgvector` cosine)** | 42.0% | 34.0% | **38.0%** | 0.2995 |
+| **Hybrid RRF ($k=60$)** *(Baseline)* | 100.0% | 44.0% | **72.0%** | **0.6681** |
+| **Hybrid + Graph Context Reranking** | 100.0% | 50.0% | **75.0%** | **0.6753** |
 
-*Note: With an exact 50/50 query split, Overall Recall@5 is the exact arithmetic mean of Exact-ID and Semantic categories (e.g. \((100\% + 40\%) / 2 = 70.0\%\) for baseline RRF, and \((100\% + 42\%) / 2 = 71.0\%\) with graph reranking).*
+*Note: With an exact 50/50 query split, Overall Recall@5 is the exact arithmetic mean of Exact-ID and Semantic categories (e.g. \((100\% + 44\%) / 2 = 72.0\%\) for baseline RRF, and \((100\% + 50\%) / 2 = 75.0\%\) with graph reranking).*
 
 Raw results: [`data/evaluation/results/ablation_results.json`](data/evaluation/results/ablation_results.json).
 

@@ -14,24 +14,24 @@
   "retrieval_metrics": {
     "evaluated_queries": 100,
     "query_split": "50 exact identifier tickets + 50 semantic rationale queries",
-    "recall_at_1": 64.0,
+    "recall_at_1": 63.0,
     "recall_at_3": 68.0,
-    "recall_at_5": 70.0,
-    "recall_at_10": 74.0,
-    "mean_reciprocal_rank_mrr": 0.6655
+    "recall_at_5": 72.0,
+    "recall_at_10": 76.0,
+    "mean_reciprocal_rank_mrr": 0.6681
   },
   "security_metrics": {
     "adversarial_tests_evaluated": 500,
     "permission_leaks_detected": 0,
     "permission_leak_rate": 0.0,
-    "adversarial_query_throughput_ms": 120.96
+    "adversarial_query_throughput_ms": 208.66
   },
   "latency_percentiles_ms": {
-    "p50": 78.08,
-    "p90": 1028.3,
-    "p95": 1062.94,
-    "p99": 1871.33,
-    "mean": 227.76
+    "p50": 180.83,
+    "p90": 1128.9,
+    "p95": 1886.8,
+    "p99": 2040.13,
+    "mean": 352.92
   },
   "configuration": "First-stage RRF baseline (reranker disabled)"
 }
