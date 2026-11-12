@@ -7,9 +7,9 @@ Classifies queries into four core categories:
 4. MIXED: Identifiers combined with natural language semantic inquiries or descriptive keywords.
 """
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
-import re
 from typing import List, Set
 
 from app.normalization.common import extract_ticket_ids
@@ -172,7 +172,6 @@ class QueryClassifier:
 
         # 4. Tokenize and analyze query words
         tokens = [t.lower() for t in re.findall(r"\b[\w-]+\b", normalized)]
-        word_tokens = [t for t in tokens if not any(c.isdigit() for c in t)]
 
         # Check for interrogatives / question indicators
         has_question_word = any(t in QUESTION_INDICATORS for t in tokens)

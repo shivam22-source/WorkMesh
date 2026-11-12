@@ -1,4 +1,4 @@
-"""Tests porting all backend-java functionality into rag-python FastAPI service.
+"""Tests for consolidated WorkMesh public API v1 endpoints in rag-python FastAPI service.
 
 Validates:
 - POST /api/v1/search (real hybrid results, searchTimeMs, status='SUCCESS', audit logging)
@@ -6,17 +6,16 @@ Validates:
 - GET /api/v1/sync/status & GET /api/v1/admin/sync/status (admin role enforcement, audit logging)
 - GET /api/v1/admin/audit/events (admin role enforcement, filtering)
 - Deterministic user context resolution via X-User-Id header
-- Uniform ApiError responses with populated traceId
+- Uniform error responses with populated traceId
 - /ready verification of PostgreSQL
 - Audit fail-open resilience
 """
 
-import time
 from typing import Any, Dict, List, Optional
+
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth.user_context import UserContext, get_current_user
 from app.contracts.rag_ask import CitationItem, RagAskRequest, RagAskResponse
 from app.contracts.rag_search import RagSearchResultItem
 from app.dependencies import (
@@ -27,11 +26,8 @@ from app.dependencies import (
 from app.indexing.repository import (
     DatabaseUnavailableError,
     InMemoryKnowledgeRepository,
-    SyncStateRecord,
 )
 from app.main import create_app
-from app.rag.service import GroundedRagService
-from app.retrieval.hybrid import HybridRetriever
 
 
 class MockRetriever:
@@ -117,7 +113,7 @@ def client(mock_repo, mock_retriever, mock_rag_service):
 
 
 # ---------------------------------------------------------------------------
-# Search Tests (SearchControllerTest.java port)
+# Search Tests
 # ---------------------------------------------------------------------------
 
 def test_search_returns_results_with_success_status_and_time(client, mock_repo, mock_retriever):
@@ -147,25 +143,24 @@ def test_search_returns_results_with_success_status_and_time(client, mock_repo, 
 
 
 def test_search_blank_query_returns_bad_request_with_apierror_shape(client):
-    """POST /api/v1/search with blank query returns 400 Bad Request with ApiError shape and populated traceId."""
+    """POST /api/v1/search with blank query returns 400 Bad Request with uniform ErrorResponse and X-Request-Id."""
     response = client.post(
         "/api/v1/search",
         json={"query": "   "},
-        headers={"X-Trace-Id": "test-trace-123"},
+        headers={"X-Request-Id": "test-req-123"},
     )
     assert response.status_code == 400
+    assert response.headers["X-Request-Id"] == "test-req-123"
     data = response.json()
 
-    assert data["status"] == 400
-    assert data["error"] == "Bad Request"
-    assert "message" in data and len(data["message"]) > 0
-    assert data["path"] == "/api/v1/search"
-    assert data["traceId"] == "test-trace-123"
-    assert "timestamp" in data
+    err = data["error"]
+    assert err["code"] == "BAD_REQUEST"
+    assert len(err["message"]) > 0
+    assert err["request_id"] == "test-req-123"
 
 
 # ---------------------------------------------------------------------------
-# Ask Tests (SearchControllerTest.java port)
+# Ask Tests
 # ---------------------------------------------------------------------------
 
 def test_ask_returns_grounded_answer_and_citations(client, mock_repo):
@@ -218,34 +213,33 @@ def test_ask_blank_question_returns_bad_request(client):
         json={"question": ""},
     )
     assert response.status_code == 400
-    data = response.json()
-    assert data["status"] == 400
-    assert data["path"] == "/api/v1/ask"
-    assert data["traceId"] is not None
+    err = response.json()["error"]
+    assert err["code"] == "BAD_REQUEST"
+    assert err["request_id"]
+    assert response.headers["X-Request-Id"] == err["request_id"]
 
 
 # ---------------------------------------------------------------------------
-# Sync Status Tests (SyncControllerTest.java port)
+# Sync Status Tests
 # ---------------------------------------------------------------------------
 
 def test_sync_status_forbidden_for_non_admin(client):
     """GET /api/v1/sync/status returns 403 Forbidden for standard user."""
     response = client.get("/api/v1/sync/status", headers={"X-User-Id": "employee_42"})
     assert response.status_code == 403
-    data = response.json()
-    assert data["status"] == 403
-    assert data["error"] == "Forbidden"
-    assert "Access denied: ADMIN role required to view sync status" in data["message"]
-    assert data["traceId"] is not None
+    err = response.json()["error"]
+    assert err["code"] == "FORBIDDEN"
+    assert "Access denied: ADMIN role required to view sync status" in err["message"]
+    assert err["request_id"]
 
 
 def test_admin_sync_status_forbidden_for_non_admin(client):
     """GET /api/v1/admin/sync/status returns 403 Forbidden for standard user."""
     response = client.get("/api/v1/admin/sync/status", headers={"X-User-Id": "employee_42"})
     assert response.status_code == 403
-    data = response.json()
-    assert data["status"] == 403
-    assert data["error"] == "Forbidden"
+    err = response.json()["error"]
+    assert err["code"] == "FORBIDDEN"
+    assert err["request_id"]
 
 
 def test_sync_status_reports_sources_for_admin(client, mock_repo):
@@ -274,21 +268,21 @@ def test_admin_sync_status_reports_sources_for_admin(client):
 
 
 # ---------------------------------------------------------------------------
-# Audit Events Tests (AuditControllerTest.java port)
+# Audit Events Tests
 # ---------------------------------------------------------------------------
 
 def test_admin_audit_events_forbidden_for_non_admin(client):
     """GET /api/v1/admin/audit/events returns 403 Forbidden for non-admin user."""
     response = client.get("/api/v1/admin/audit/events", headers={"X-User-Id": "employee_42"})
     assert response.status_code == 403
-    data = response.json()
-    assert data["status"] == 403
-    assert data["error"] == "Forbidden"
-    assert "Access denied: ADMIN role required to view audit events" in data["message"]
+    err = response.json()["error"]
+    assert err["code"] == "FORBIDDEN"
+    assert "Access denied: ADMIN role required to view audit events" in err["message"]
+    assert err["request_id"]
 
 
 def test_admin_audit_events_returns_events_for_admin(client, mock_repo):
-    """GET /api/v1/admin/audit/events returns 200 OK and events for ADMIN user."""
+    """GET /api/v1/admin/audit/events returns paginated events for ADMIN user."""
     mock_repo.record_audit_event("employee_42", "SEARCH", "hybrid", {"q": "auth"}, "127.0.0.1")
     mock_repo.record_audit_event("employee_admin", "SYNC_STATUS", "sync_state", {}, "127.0.0.1")
 
@@ -299,9 +293,39 @@ def test_admin_audit_events_returns_events_for_admin(client, mock_repo):
     )
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["userId"] == "employee_42"
-    assert data[0]["action"] == "SEARCH"
+    assert data["total"] == 1
+    assert data["limit"] == 20
+    assert data["offset"] == 0
+    assert data["hasMore"] is False
+    assert len(data["items"]) == 1
+    assert data["items"][0]["userId"] == "employee_42"
+    assert data["items"][0]["action"] == "SEARCH"
+
+
+def test_admin_audit_events_pagination(client, mock_repo):
+    """GET /api/v1/admin/audit/events supports limit, offset, total, and hasMore."""
+    for i in range(5):
+        mock_repo.record_audit_event("employee_42", "SEARCH", "hybrid", {"seq": i}, "127.0.0.1")
+
+    page1 = client.get(
+        "/api/v1/admin/audit/events",
+        params={"limit": 2, "offset": 0},
+        headers={"X-User-Id": "employee_admin"},
+    ).json()
+    assert page1["total"] == 5
+    assert page1["limit"] == 2
+    assert page1["offset"] == 0
+    assert page1["hasMore"] is True
+    assert len(page1["items"]) == 2
+
+    page3 = client.get(
+        "/api/v1/admin/audit/events",
+        params={"limit": 2, "offset": 4},
+        headers={"X-User-Id": "employee_admin"},
+    ).json()
+    assert page3["total"] == 5
+    assert page3["hasMore"] is False
+    assert len(page3["items"]) == 1
 
 
 def test_audit_safe_fail_open_resilience(client, mock_repo, monkeypatch):
@@ -320,18 +344,14 @@ def test_audit_safe_fail_open_resilience(client, mock_repo, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Readiness & Health Tests (HealthEndpointTest.java port + DB check)
+# Readiness & Health Tests
 # ---------------------------------------------------------------------------
 
-def test_health_liveness_and_actuator_compatibility(client):
-    """/health and /actuator/health report UP."""
+def test_health_liveness(client):
+    """/health reports ok."""
     res = client.get("/health")
     assert res.status_code == 200
     assert res.json()["status"] == "ok"
-
-    res_actuator = client.get("/actuator/health")
-    assert res_actuator.status_code == 200
-    assert res_actuator.json()["status"] == "UP"
 
 
 def test_ready_reports_ok_when_database_is_healthy(client):
@@ -353,19 +373,18 @@ def test_ready_reports_503_when_database_is_unavailable(mock_repo):
 
     response = test_client.get("/ready")
     assert response.status_code == 503
-    data = response.json()
-    assert data["status"] == 503
-    assert data["error"] == "Service Unavailable"
-    assert "database service is unavailable" in data["message"]
-    assert data["traceId"] is not None
+    err = response.json()["error"]
+    assert err["code"] == "SERVICE_UNAVAILABLE"
+    assert "database service is unavailable" in err["message"]
+    assert err["request_id"]
 
 
 # ---------------------------------------------------------------------------
-# Ported Java Error & Resilience Tests (SearchControllerTest / SearchServiceImplTest port)
+# Error & Resilience Tests
 # ---------------------------------------------------------------------------
 
 def test_ask_when_rag_service_unavailable_returns_503(mock_repo, mock_retriever):
-    """Port of Java askWhenRagServiceUnavailableReturns503: database failure returns 503."""
+    """Database failure during /ask returns 503."""
     class FailingRagService:
         def ask(self, request):
             raise DatabaseUnavailableError("PostgreSQL connection refused")
@@ -382,15 +401,14 @@ def test_ask_when_rag_service_unavailable_returns_503(mock_repo, mock_retriever)
         headers={"X-User-Id": "employee_42"},
     )
     assert response.status_code == 503
-    data = response.json()
-    assert data["status"] == 503
-    assert data["error"] == "Service Unavailable"
-    assert "database service is unavailable" in data["message"]
-    assert data["traceId"] is not None
+    err = response.json()["error"]
+    assert err["code"] == "SERVICE_UNAVAILABLE"
+    assert "database service is unavailable" in err["message"]
+    assert err["request_id"]
 
 
 def test_ask_when_internal_error_returns_500(mock_repo, mock_retriever):
-    """Port of Java askWhenRagClientErrorReturns500: unhandled exception returns 500."""
+    """Unhandled exception during /ask returns 500."""
     class CrashingRagService:
         def ask(self, request):
             raise RuntimeError("Unexpected pipeline crash")
@@ -407,14 +425,13 @@ def test_ask_when_internal_error_returns_500(mock_repo, mock_retriever):
         headers={"X-User-Id": "employee_42"},
     )
     assert response.status_code == 500
-    data = response.json()
-    assert data["status"] == 500
-    assert data["error"] == "Internal Server Error"
-    assert data["traceId"] is not None
+    err = response.json()["error"]
+    assert err["code"] == "INTERNAL_ERROR"
+    assert err["request_id"]
 
 
 def test_ask_audit_remains_recorded_when_rag_client_throws_exception(mock_repo, mock_retriever):
-    """Port of Java askAuditRemainsRecordedWhenRagClientThrowsException: audit event logged even on RAG failure."""
+    """Audit event remains logged even when RAG processing throws an exception."""
     class FailingRagService:
         def ask(self, request):
             raise RuntimeError("RAG processing failed")
@@ -439,7 +456,7 @@ def test_ask_audit_remains_recorded_when_rag_client_throws_exception(mock_repo, 
 
 
 def test_ask_handles_insufficient_evidence_with_empty_citations(client, mock_rag_service):
-    """Port of Java askHandlesInsufficientEvidenceWithEmptyCitations: returns INSUFFICIENT_EVIDENCE with empty citations."""
+    """Returns INSUFFICIENT_EVIDENCE with empty citations when no evidence matches."""
     mock_rag_service.response = RagAskResponse(
         question="What is the quantum encryption secret?",
         answer="I cannot answer this question based on the authorized documents available to you.",
@@ -477,7 +494,35 @@ def test_search_when_retriever_fails_returns_503(mock_repo):
         headers={"X-User-Id": "employee_42"},
     )
     assert response.status_code == 503
-    data = response.json()
-    assert data["status"] == 503
-    assert data["error"] == "Service Unavailable"
-    assert data["traceId"] is not None
+    err = response.json()["error"]
+    assert err["code"] == "SERVICE_UNAVAILABLE"
+    assert err["request_id"]
+
+
+def test_structured_json_logging_includes_request_id():
+    """Structured JSON formatter emits parseable JSON with top-level request_id."""
+    import io
+    import json
+    import logging
+
+    from app.main import JsonLogFormatter
+
+    app = create_app()
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setFormatter(JsonLogFormatter())
+    http_logger = logging.getLogger("workmesh.http")
+    http_logger.addHandler(handler)
+    try:
+        client = TestClient(app)
+        resp = client.get("/health", headers={"X-Request-Id": "req-json-log-99"})
+        assert resp.status_code == 200
+        assert resp.headers["X-Request-Id"] == "req-json-log-99"
+
+        lines = [line for line in stream.getvalue().splitlines() if line.strip()]
+        assert lines
+        parsed = json.loads(lines[-1])
+        assert parsed["level"] == "INFO"
+        assert parsed["request_id"] == "req-json-log-99"
+    finally:
+        http_logger.removeHandler(handler)

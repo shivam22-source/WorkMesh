@@ -1,8 +1,9 @@
 """LLM provider abstraction and deterministic mock provider for Grounded RAG."""
 
-from abc import ABC, abstractmethod
 import re
-from typing import List, Optional
+from abc import ABC, abstractmethod
+from typing import List
+
 from pydantic import BaseModel
 
 

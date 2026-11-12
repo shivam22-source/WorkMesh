@@ -1,5 +1,7 @@
 # WorkMesh
 
+[![CI](https://github.com/shivam22-source/WorkMesh-Enterprise-Knowledge-Context-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/shivam22-source/WorkMesh-Enterprise-Knowledge-Context-Platform/actions/workflows/ci.yml)
+
 Permission-aware enterprise knowledge search and question answering with verifiable citations.
 Powered by a single FastAPI service on PostgreSQL 16 with pgvector.
 
@@ -40,16 +42,23 @@ Evaluated over 10,000 multi-tenant synthetic chunks (2,500 documents across GitH
 
 ### 1. Scale & Security Benchmark
 
+Evaluated over 100 queries (50 exact identifier tickets + 50 semantic rationale queries) using the first-stage RRF baseline (`reranker disabled`):
+
 | Metric | Measured Result | Target | Status |
 |---|---|---|---|
 | **Recall@1** | **64.0%** | >= 50.0% | PASS |
+| **Recall@3** | **68.0%** | — | Measured |
 | **Recall@5** | **70.0%** | >= 55.0% | PASS |
 | **Recall@10** | **74.0%** | >= 60.0% | PASS |
 | **Mean Reciprocal Rank (MRR)** | **0.6655** | >= 0.5000 | PASS |
 | **Cross-Tenant Permission Leak Rate** | **0.0%** (0 leaks / 500 adversarial queries) | 0.0% | PASS |
-| **Adversarial Security Throughput** | **121.0 ms / query** (500 queries in 60.5s) | < 200 ms | PASS |
+| **Adversarial Security Throughput** | **125.09 ms / query** (500 adversarial queries) | < 200 ms | PASS |
+
+**Retrieval Latency Percentiles (100 Scale Benchmark Queries):** `p50 = 86.24 ms` | `p90 = 1,007.85 ms` | `p95 = 1,017.29 ms` | `p99 = 1,801.26 ms` | `mean = 229.67 ms`.
 
 Raw results: [`data/evaluation/results/scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json).
+
+> *Target note:* In earlier benchmarks using deterministic hash mock embeddings (`52 ms / query`), the adversarial throughput target was `< 100 ms`. When real local CPU inference (`sentence-transformers/all-MiniLM-L6-v2`) replaced hash mocks in commit `9803bf46` (`147.2 ms / query` initially; `125.09 ms / query` after native 384-dim HNSW indexing), the target was relaxed to `< 200 ms` to reflect CPU embedding compute cost.
 
 ### 2. Retrieval Ablation Study
 
@@ -109,9 +118,20 @@ The application handles up to 15 concurrent users without backpressure shedding,
 
 ---
 
+## Limitations
+
+- **Synthetic Same-Generator Corpus**: The 10,000-chunk evaluation dataset and query suite originate from the same synthetic generator; real enterprise traffic contains typos, ambiguous shorthand, and vocabulary mismatch not represented here.
+- **Binary Single-Target Relevance**: Retrieval accuracy (`Recall@k`, `MRR`) is scored as binary `0`/`1` against a single target document/permalink rather than graded relevance across multiple supporting threads.
+- **Fixture-Backed Connectors & Stubbed LLM**: GitHub, Slack, and Email ingestion adapters read local JSON fixtures instead of live SaaS APIs, and answer synthesis uses deterministic passage extraction (`MockLLMProvider`) rather than an external LLM.
+- **Token-Claim Staleness Until Expiry**: Group additions and revocations are carried in signed JWT `groups` claims and validated statelessly, so permission changes take effect only when the caller's existing token expires (`exp`).
+- **Single-Node Scope**: Runs as a single FastAPI service and single PostgreSQL node with process-local caching, concurrency limiting, and metrics—no distributed cache or multi-node coordination is built in.
+- **CPU Embeddings**: Local `sentence-transformers/all-MiniLM-L6-v2` inference runs on CPU, making per-request embedding time (~110–120 ms cold uncached) the dominant latency and throughput bound under concurrency.
+
+---
+
 ## Architecture
 
-A single consolidated FastAPI application interfacing directly with PostgreSQL 16 + pgvector. See [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md).
+A single consolidated FastAPI application interfacing directly with PostgreSQL 16 + pgvector. See [`docs/decisions/ADR-0001-single-service-consolidation.md`](docs/decisions/ADR-0001-single-service-consolidation.md) and [`docs/decisions/ADR-0003-gateway-merge.md`](docs/decisions/ADR-0003-gateway-merge.md).
 
 ```mermaid
 flowchart TD
@@ -132,28 +152,58 @@ WorkMesh supports two runtime authentication modes controlled by `AUTH_MODE`:
 - **Production Mode (`AUTH_MODE=prod`, default)**: Strict fail-closed JWT authentication. Every request must supply a valid `Authorization: Bearer <token>` signed with `JWT_SECRET`. Identity, role, and group memberships are extracted exclusively from verified claims (`sub`, `role`, `groups`). Simulation headers (`X-User-Id`, `X-User-Role`, `X-User-Groups`) are rejected with `401 Unauthorized`.
 - **Development Mode (`AUTH_MODE=dev`)**: Allows header-based identity simulation for testing and local demos. A warning is logged on startup. **Dev mode is not safe for production.**
 
-Tokens are issued outside this service; WorkMesh expects and validates the claims `sub` (user ID), `role` (user role), `groups` (authorized group list), and `exp` (token expiration).
+Tokens are issued outside this service; WorkMesh expects and validates the claims `sub` (user ID), `role` (user role), `groups` (JSON list of strings), and `exp` (token expiration), and rejects tokens whose `(exp - iat)` lifetime exceeds `JWT_MAX_TTL_SECONDS` (default: 86400s).
+
+> **Claim Staleness Trade-off:** Because WorkMesh authorizes queries statelessly from verified JWT claims rather than re-querying group memberships on every HTTP request, group additions or revocations only take effect once the caller's existing token expires. Keep `JWT_MAX_TTL_SECONDS` short in production to bound revocation lag.
 
 ### 1. Run with Docker Compose
 
+> **Warning:** `docker-compose.demo.yml` sets `AUTH_MODE=dev` and auto-ingests synthetic fixtures so the demo curl commands below work immediately without minting tokens. Never deploy `AUTH_MODE=dev` to production.
+
 ```bash
-# Start PostgreSQL and the WorkMesh API
+# Start PostgreSQL, ingest synthetic fixtures, and start WorkMesh API
 docker compose -f docker-compose.demo.yml up --build -d
 
 # Verify readiness (checks live database connection)
 curl http://localhost:8000/ready
 
-# Search enterprise knowledge (dev mode)
+# Search enterprise knowledge (demo compose runs with AUTH_MODE=dev)
 curl -s -X POST http://localhost:8000/api/v1/search \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"query": "DC-8692"}'
 
-# Ask a grounded question (dev mode)
+# Ask a grounded question (demo compose runs with AUTH_MODE=dev)
 curl -s -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"question": "Why did we change the validation flow?"}'
+```
+
+#### Production-Mode Curl Example (`AUTH_MODE=prod`)
+
+When running with `AUTH_MODE=prod` and a 32+ character `JWT_SECRET`, generate a signed token with [`scripts/make_token.py`](scripts/make_token.py) and pass it as a Bearer header:
+
+```bash
+# Linux / macOS
+export JWT_SECRET="replace_with_a_secure_random_key_of_at_least_32_characters_for_prod"
+TOKEN=$(rag-python/.venv/bin/python scripts/make_token.py \
+  --user-id employee_42 --role ENGINEER --groups group_engineering,group_backend --ttl 3600)
+curl -s -X POST http://localhost:8000/api/v1/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"query": "DC-8692"}'
+```
+
+```powershell
+# Windows (PowerShell)
+$env:JWT_SECRET="replace_with_a_secure_random_key_of_at_least_32_characters_for_prod"
+$TOKEN = rag-python\.venv\Scripts\python.exe scripts\make_token.py `
+  --user-id employee_42 --role ENGINEER --groups group_engineering,group_backend --ttl 3600
+curl.exe -s -X POST http://localhost:8000/api/v1/search `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer $TOKEN" `
+  -d '{\"query\": \"DC-8692\"}'
 ```
 
 ### 2. Interactive Web UI
@@ -163,21 +213,36 @@ curl -s -X POST http://localhost:8000/api/v1/ask \
 
 ### 3. Local Development
 
+**Linux / macOS:**
+
 ```bash
-# Start database
+cp .env.example .env
 docker compose up -d postgres
 
-# Install Python dependencies and start API
 cd rag-python
-python -m venv .venv
-.venv/Scripts/python.exe -m pip install -e ".[dev]"
-.venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-
-# Ingest synthetic documents
-.venv/Scripts/python.exe -m app.cli.ingest --source all
+python3 -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]"
+.venv/bin/python -m app.cli.ingest --source all
+.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 # Run 10,000-chunk scale benchmark & ablation study
-.venv/Scripts/python.exe -m app.cli.scale_benchmark --skip-seed --ablation
+.venv/bin/python -m app.cli.scale_benchmark --skip-seed --ablation
+```
+
+**Windows (PowerShell):**
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d postgres
+
+cd rag-python
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.venv\Scripts\python.exe -m app.cli.ingest --source all
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Run 10,000-chunk scale benchmark & ablation study
+.venv\Scripts\python.exe -m app.cli.scale_benchmark --skip-seed --ablation
 ```
 
 ---
@@ -187,18 +252,23 @@ python -m venv .venv
 The test suite runs self-contained and offline:
 
 ```bash
-cd rag-python
-.venv/Scripts/pytest.exe tests
+# Linux / macOS
+cd rag-python && .venv/bin/pytest tests
+
+# Windows (PowerShell)
+cd rag-python; .venv\Scripts\pytest.exe tests
 ```
 
-331 passed with model weights cached; 327 passed and 4 skipped without them (achieved by pointing `HF_HOME` and `SENTENCE_TRANSFORMERS_HOME` to an empty temporary directory so tests marked `@pytest.mark.real_model` are safely skipped). Covers hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
+350 passed with model weights cached; 346 passed and 4 skipped without them (achieved by pointing `HF_HOME` and `SENTENCE_TRANSFORMERS_HOME` to an empty temporary directory so tests marked `@pytest.mark.real_model` are safely skipped). Covers hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
 
 ---
 
 ## Documentation
 
 - [`DESIGN.md`](DESIGN.md): System architecture, data model, and pushdown ACL invariant.
+- [`docs/performance.md`](docs/performance.md): Captured `EXPLAIN (ANALYZE, BUFFERS)` query plans across the 10k-chunk corpus.
 - [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md): Live walkthrough script with example queries.
 - [`docs/runbooks/evaluation-and-metrics.md`](docs/runbooks/evaluation-and-metrics.md): Evaluation methodology and metrics definitions.
-- [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md): Consolidation rationale to single FastAPI service.
+- [`docs/decisions/ADR-0001-single-service-consolidation.md`](docs/decisions/ADR-0001-single-service-consolidation.md): Consolidation rationale to single FastAPI service.
 - [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md): Datastore simplicity and Redis deferral rationale.
+- [`docs/decisions/ADR-0003-gateway-merge.md`](docs/decisions/ADR-0003-gateway-merge.md): Why the API gateway was merged next to the database.

@@ -1,12 +1,12 @@
 """Repository layer for persisting canonical knowledge, vectors, ACLs, and sync state."""
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 import json
 import logging
 import math
 import re
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.chunking.models import CanonicalChunk
@@ -226,8 +226,18 @@ class KnowledgeRepository(ABC):
         user_id: Optional[str] = None,
         action: Optional[str] = None,
         limit: int = 50,
+        offset: int = 0,
     ) -> List[Dict[str, Any]]:
         """Retrieve recent audit events ordered by timestamp descending."""
+        ...
+
+    @abstractmethod
+    def count_audit_events(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+    ) -> int:
+        """Count total audit events matching optional filters."""
         ...
 
     @abstractmethod
@@ -951,19 +961,35 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         }
         self.audit_events.append(event)
 
-    def get_audit_events(
+    def _filtered_audit_events(
         self,
         user_id: Optional[str] = None,
         action: Optional[str] = None,
-        limit: int = 50,
     ) -> List[Dict[str, Any]]:
         filtered = self.audit_events
         if user_id:
             filtered = [e for e in filtered if e.get("userId") == user_id]
         if action:
             filtered = [e for e in filtered if e.get("action") == action]
+        return filtered
+
+    def get_audit_events(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        filtered = self._filtered_audit_events(user_id=user_id, action=action)
         sorted_events = sorted(filtered, key=lambda e: e.get("timestamp", ""), reverse=True)
-        return sorted_events[:limit]
+        return sorted_events[offset : offset + limit]
+
+    def count_audit_events(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+    ) -> int:
+        return len(self._filtered_audit_events(user_id=user_id, action=action))
 
 
 class PostgresKnowledgeRepository(KnowledgeRepository):
@@ -1742,19 +1768,23 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                                 if rel.relationship_type == RelationshipType.IMPLEMENTED_BY.value:
                                     cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.target_entity_id,))
                                     r = cur.fetchone()
-                                    if r and r[0]: owners.add(r[0])
+                                    if r and r[0]:
+                                        owners.add(r[0])
                                 elif rel.relationship_type == RelationshipType.DISCUSSED_IN.value:
                                     cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.target_entity_id,))
                                     r = cur.fetchone()
-                                    if r and r[0]: owners.add(r[0])
+                                    if r and r[0]:
+                                        owners.add(r[0])
                                 elif rel.relationship_type == RelationshipType.AUTHORED_BY.value:
                                     cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.source_entity_id,))
                                     r = cur.fetchone()
-                                    if r and r[0]: owners.add(r[0])
+                                    if r and r[0]:
+                                        owners.add(r[0])
                                 elif rel.relationship_type == RelationshipType.CONTAINS.value:
                                     cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.source_entity_id,))
                                     r = cur.fetchone()
-                                    if r and r[0]: owners.add(r[0])
+                                    if r and r[0]:
+                                        owners.add(r[0])
 
                             for owner_id in owners:
                                 cur.execute("""
@@ -2230,12 +2260,11 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             logger.error("postgres_record_audit_event_failed user_id=%s action=%s err=%s", user_id, action, e)
             raise DatabaseUnavailableError(f"Database query failed: {e}") from e
 
-    def get_audit_events(
+    def _build_audit_where(
         self,
         user_id: Optional[str] = None,
         action: Optional[str] = None,
-        limit: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> tuple[str, List[Any]]:
         where_clauses = []
         params: List[Any] = []
         if user_id:
@@ -2244,16 +2273,25 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         if action:
             where_clauses.append("action = %s")
             params.append(action)
-
         where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+        return where_sql, params
+
+    def get_audit_events(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        where_sql, params = self._build_audit_where(user_id=user_id, action=action)
         query = f"""
             SELECT id, user_id, action, resource, details, ip_address, timestamp
             FROM audit_events
             {where_sql}
             ORDER BY timestamp DESC
-            LIMIT %s;
+            LIMIT %s OFFSET %s;
         """
-        params.append(limit)
+        params.extend([limit, offset])
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cur:
@@ -2276,5 +2314,24 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             raise
         except Exception as e:
             logger.error("postgres_get_audit_events_failed err=%s", e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def count_audit_events(
+        self,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+    ) -> int:
+        where_sql, params = self._build_audit_where(user_id=user_id, action=action)
+        query = f"SELECT COUNT(*) FROM audit_events {where_sql};"
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, tuple(params))
+                    row = cur.fetchone()
+                    return int(row[0]) if row else 0
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_count_audit_events_failed err=%s", e)
             raise DatabaseUnavailableError(f"Database query failed: {e}") from e
 

@@ -1,6 +1,7 @@
 """Focused unit tests for LexicalRetriever covering identifiers, keywords, ranking, and fallbacks."""
 
 from unittest.mock import MagicMock
+
 import pytest
 
 from app.connectors.github.fixture_adapter import GitHubFixtureAdapter

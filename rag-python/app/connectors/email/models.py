@@ -1,6 +1,7 @@
 """Models for email source items, attachments, and metadata."""
 
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 

@@ -33,9 +33,6 @@ Write-Output 'Phase 0 preflight'
 Write-Output "Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 Write-Output "OS: $((Get-CimInstance Win32_OperatingSystem).Caption)"
 
-Show-Tool -Label 'Java (expected 21+)' -Command @('java', '-version')
-Show-Tool -Label 'Javac (expected 21+)' -Command @('javac', '-version')
-Show-Tool -Label 'Maven (expected 3.9+)' -Command @('mvn', '-version')
 Show-Tool -Label 'Python (expected 3.12+)' -Command @('python', '--version')
 Show-Tool -Label 'Docker CLI' -Command @('docker', '--version')
 Show-Tool -Label 'Docker Compose' -Command @('docker', 'compose', 'version')

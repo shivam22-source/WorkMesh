@@ -3,7 +3,7 @@
 import logging
 import random
 import time
-from typing import Any, Callable, Optional, Set, Tuple, Type
+from typing import Any, Callable, Set, Tuple, Type
 
 logger = logging.getLogger(__name__)
 

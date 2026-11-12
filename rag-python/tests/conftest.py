@@ -1,6 +1,7 @@
 """Global test configuration and fixtures for pytest."""
 
 import os
+
 import pytest
 
 # Force mock embedding provider for offline test execution

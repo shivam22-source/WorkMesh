@@ -31,6 +31,13 @@ def test_openapi_schema_generation():
     assert "/ready" in paths
     assert "/metrics" in paths
 
+    # Verify polished API schemas exist
+    schemas = schema.get("components", {}).get("schemas", {})
+    assert "ErrorResponse" in schemas
+    assert "PaginatedAuditEventsResponse" in schemas
+    assert "LivenessResponse" in schemas
+    assert "ReadinessResponse" in schemas
+
 
 def test_swagger_and_redoc_endpoints():
     app = create_app()

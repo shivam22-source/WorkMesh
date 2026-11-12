@@ -1,6 +1,7 @@
 """Tests for EmailFixtureAdapter."""
 
 from pathlib import Path
+
 from app.connectors.common.models import SourceType
 from app.connectors.email.fixture_adapter import EmailFixtureAdapter
 

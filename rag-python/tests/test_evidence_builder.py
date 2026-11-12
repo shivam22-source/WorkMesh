@@ -1,7 +1,7 @@
 """Unit tests for EvidenceBuilder: numbering, budgeting, truncation, and metadata containment."""
 
 from app.contracts.rag_search import RagSearchResultItem
-from app.rag.evidence import EvidenceBuilder, MAX_EVIDENCE_ITEMS, MAX_SNIPPET_CHARS
+from app.rag.evidence import MAX_EVIDENCE_ITEMS, EvidenceBuilder
 
 
 def test_evidence_builder_numbers_items_sequentially():

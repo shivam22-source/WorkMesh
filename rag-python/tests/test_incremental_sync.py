@@ -1,6 +1,7 @@
 """Tests for compound cursor pagination, incremental sync, and strict UTC ISO parsing (Phase 5 Step 2)."""
 
 from datetime import datetime, timezone
+
 import pytest
 
 from app.connectors.common.base import SourceConnector

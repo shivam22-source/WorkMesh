@@ -1,17 +1,15 @@
-"""Wire contract for internal search between backend-java and rag-python.
-
-This module defines the Python side of the search contract stub for Phase 1.
-Java side: com.company.knowledge.orchestrator.ragclient.dto (RagSearchRequest, RagSearchResponse, RagSearchResultItem).
+"""Wire contract for internal search in rag-python.
 
 Contract documentation: docs/api/api-contract.md
 """
 
 from typing import List, Literal, Optional
+
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class RagSearchRequest(BaseModel):
-    """Request payload sent from backend-java to rag-python for permission-filtered search."""
+    """Request payload for permission-filtered search."""
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
@@ -23,13 +21,13 @@ class RagSearchRequest(BaseModel):
         validation_alias=AliasChoices("userId", "user_id"),
         serialization_alias="userId",
         min_length=1,
-        description="Authenticated employee identity resolved by backend-java.",
+        description="Authenticated employee identity.",
     )
     group_ids: List[str] = Field(
         default_factory=list,
         validation_alias=AliasChoices("groupIds", "group_ids"),
         serialization_alias="groupIds",
-        description="Team/group memberships resolved by backend-java.",
+        description="Team/group memberships resolved for the caller.",
     )
     limit: int = Field(
         default=10,
@@ -73,7 +71,7 @@ class RagSearchResultItem(BaseModel):
 
 
 class RagSearchResponse(BaseModel):
-    """Response payload returned from rag-python to backend-java."""
+    """Response payload returned from rag-python search."""
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 

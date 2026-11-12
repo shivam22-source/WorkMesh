@@ -1,14 +1,11 @@
 """Unit tests for DeterministicReranker: calibrated boosting, diversity discounting, and entity resolution."""
 
-import random
-import pytest
 
 from app.connectors.common.models import AclReference, PrincipalType
 from app.contracts.rag_search import RagSearchResultItem
 from app.graph.models import Entity, EntityType, Relationship, RelationshipType
 from app.indexing.repository import InMemoryKnowledgeRepository
 from app.rag.reranker import DeterministicReranker, map_document_id_to_entity_id
-
 
 # ---------------------------------------------------------------------------
 # 1. Verified Document ID to Entity ID Mapping

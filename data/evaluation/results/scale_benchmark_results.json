@@ -24,14 +24,14 @@
     "adversarial_tests_evaluated": 500,
     "permission_leaks_detected": 0,
     "permission_leak_rate": 0.0,
-    "adversarial_query_throughput_ms": 120.96
+    "adversarial_query_throughput_ms": 125.09
   },
   "latency_percentiles_ms": {
-    "p50": 78.08,
-    "p90": 1028.3,
-    "p95": 1062.94,
-    "p99": 1871.33,
-    "mean": 227.76
+    "p50": 86.24,
+    "p90": 1007.85,
+    "p95": 1017.29,
+    "p99": 1801.26,
+    "mean": 229.67
   },
   "configuration": "First-stage RRF baseline (reranker disabled)"
 }

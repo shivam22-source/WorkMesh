@@ -1,4 +1,4 @@
-"""Port of Java SearchServiceImplTest DTO validation tests to pytest.
+"""DTO validation tests for WorkMesh API request/response models.
 
 Validates that:
 - AskRequest rejects null/blank questions.
@@ -14,7 +14,7 @@ from app.api.public_v1 import AskRequest, AskResponse, CitationItem, SearchReque
 
 
 def test_ask_request_rejects_blank_question():
-    """Java port: askRejectsBlankQuestion."""
+    """AskRequest rejects blank question strings."""
     with pytest.raises(ValidationError):
         AskRequest(question="")
 
@@ -23,13 +23,13 @@ def test_ask_request_rejects_blank_question():
 
 
 def test_ask_request_rejects_none_question():
-    """Java port: askRejectsNullQuestion."""
+    """AskRequest rejects None question values."""
     with pytest.raises(ValidationError):
         AskRequest(question=None)  # type: ignore
 
 
 def test_search_request_rejects_blank_query():
-    """Java port: searchWithBlankQueryReturnsBadRequest."""
+    """SearchRequest rejects blank query strings."""
     with pytest.raises(ValidationError):
         SearchRequest(query="")
 
@@ -38,7 +38,7 @@ def test_search_request_rejects_blank_query():
 
 
 def test_citation_item_requires_all_fields():
-    """Java port: askRejectsCitationWithNullOrBlankSourceType/Title/Url/Snippet."""
+    """CitationItem requires sourceType, title, url, and snippet."""
     # Valid
     c = CitationItem(
         sourceType="GITHUB",
@@ -66,7 +66,7 @@ def test_citation_item_requires_all_fields():
 
 
 def test_ask_response_validates_required_fields():
-    """Java port: askRejectsNullAnswer/Confidence/Status."""
+    """AskResponse requires answer, confidence, and status."""
     # Valid
     resp = AskResponse(
         question="Why did flow change?",

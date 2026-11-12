@@ -1,7 +1,7 @@
 """Focused integration tests for internal RAG ask API (/internal/v1/rag/ask)."""
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from app.api.internal_rag import get_grounded_rag_service
 from app.connectors.github.fixture_adapter import GitHubFixtureAdapter

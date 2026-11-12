@@ -2,6 +2,7 @@
 
 import math
 from unittest.mock import MagicMock
+
 import pgvector
 import pytest
 
@@ -283,11 +284,12 @@ def test_postgres_search_vector_fallback_for_low_access_user():
 
 def test_low_access_user_gets_results_and_zero_acl_leakage(embedding_provider: MockEmbeddingProvider):
     """A low-access user (1% of corpus) retrieves their permitted chunks, never unauthorized ones."""
-    from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType
     from datetime import datetime, timezone
 
+    from app.connectors.common.models import AclReference, PrincipalType
+
     repo = InMemoryKnowledgeRepository()
-    
+
     # Ingest 100 documents (each with 1 chunk)
     # 99 docs restricted to 'group_finance'
     # 1 doc restricted to 'user_special' (1% access)
@@ -295,17 +297,7 @@ def test_low_access_user_gets_results_and_zero_acl_leakage(embedding_provider: M
         doc_id = f"doc_{i:03d}"
         source_id = f"raw_{doc_id}"
         is_special = (i == 42)
-        
-        raw_item = RawSourceItem(
-            id=source_id,
-            source_type=SourceType.GITHUB,
-            source_id=doc_id,
-            source_url=f"https://github.com/repo/{doc_id}",
-            title=f"Secret Doc {doc_id}",
-            raw_content=f"Content for {doc_id} with sensitive keyword search",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-        )
+
         doc = CanonicalDocument(
             id=doc_id,
             source_record_id=source_id,
@@ -329,7 +321,7 @@ def test_low_access_user_gets_results_and_zero_acl_leakage(embedding_provider: M
             embedding=vec,
             created_at=datetime.now(timezone.utc),
         )
-        
+
         if is_special:
             acls = [AclReference(
                 resource_type="DOCUMENT",
@@ -346,13 +338,11 @@ def test_low_access_user_gets_results_and_zero_acl_leakage(embedding_provider: M
                 principal_id="group_finance",
                 permission="READ",
             )]
-            
+
         repo.save_documents([doc])
         repo.save_chunks([chunk])
         repo.save_acls(acls)
 
-    retriever = VectorRetriever(repository=repo, embedding_provider=embedding_provider)
-    
     # 1. Low access user search
     query_vec = [0.01 * (42 % 50)] * 384
     results = repo.search_vector(query_vec, limit=5, user_id="user_special", group_ids=[])

@@ -3,14 +3,16 @@
 Consolidates API Gateway orchestration, permission-filtered retrieval, and grounded RAG synthesis.
 """
 
-from datetime import datetime, timezone
-from http import HTTPStatus
+import contextvars
+import json
 import logging
-from pathlib import Path
 import sys
 import time
-from typing import Any, Dict, Optional
 import uuid
+from datetime import datetime, timezone
+from http import HTTPStatus
+from pathlib import Path
+from typing import Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -22,41 +24,89 @@ from app.api.concurrency import ConcurrencyLimitExceededError
 from app.api.metrics import record_request_metric
 from app.auth.user_context import AccessDeniedError, AuthenticationRequiredError
 from app.common.config import DEFAULT_DEV_JWT_SECRET, Settings, get_settings
+from app.contracts.errors import ErrorDetail, ErrorResponse
 from app.indexing.repository import DatabaseUnavailableError
+
+_request_id_ctx: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "workmesh_request_id", default=None
+)
+
+_HTTP_STATUS_ERROR_CODES: Dict[int, str] = {
+    400: "BAD_REQUEST",
+    401: "UNAUTHORIZED",
+    403: "FORBIDDEN",
+    404: "NOT_FOUND",
+    409: "CONFLICT",
+    422: "VALIDATION_ERROR",
+    429: "TOO_MANY_REQUESTS",
+    500: "INTERNAL_ERROR",
+    503: "SERVICE_UNAVAILABLE",
+}
+
+
+class JsonLogFormatter(logging.Formatter):
+    """Serialize log records as valid single-line JSON with request correlation ID."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload: Dict[str, object] = {
+            "ts": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        request_id = _request_id_ctx.get()
+        if request_id:
+            payload["request_id"] = request_id
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, default=str)
 
 
 def configure_logging(level: str) -> None:
     """Emit one JSON object per log line for unified observability."""
     handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(
-        logging.Formatter(
-            fmt='{"ts":"%(asctime)s","level":"%(levelname)s",'
-            '"logger":"%(name)s","message":"%(message)s"}'
-        )
-    )
+    handler.setFormatter(JsonLogFormatter())
     root = logging.getLogger()
     root.handlers = [handler]
     root.setLevel(level.upper())
 
 
+def _status_to_error_code(status_code: int) -> str:
+    if status_code in _HTTP_STATUS_ERROR_CODES:
+        return _HTTP_STATUS_ERROR_CODES[status_code]
+    try:
+        return HTTPStatus(status_code).name
+    except ValueError:
+        return "HTTP_ERROR"
+
+
+def _get_request_id(request: Request) -> str:
+    return (
+        getattr(request.state, "request_id", None)
+        or getattr(request.state, "trace_id", None)
+        or uuid.uuid4().hex
+    )
+
+
 def _build_api_error(
     status_code: int,
-    error_phrase: str,
+    code: str,
     message: str,
-    path: str,
-    trace_id: str,
+    request_id: str,
+    headers: Optional[Dict[str, str]] = None,
 ) -> JSONResponse:
-    """Build uniform ApiError payload matching the enterprise API contract."""
+    """Build uniform ErrorResponse payload matching {"error": {"code", "message", "request_id"}}."""
+    body = ErrorResponse(
+        error=ErrorDetail(
+            code=code,
+            message=message,
+            request_id=request_id,
+        )
+    )
     return JSONResponse(
         status_code=status_code,
-        content={
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "status": status_code,
-            "error": error_phrase,
-            "message": message,
-            "path": path,
-            "traceId": trace_id,
-        },
+        headers=headers,
+        content=body.model_dump(),
     )
 
 
@@ -97,7 +147,11 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     application = FastAPI(
         title="WorkMesh Platform API",
         version="1.0.0",
-        description="Unified Enterprise Knowledge & Context Platform API with permission-aware search and grounded Q&A.",
+        summary="Permission-aware enterprise knowledge search and grounded Q&A API.",
+        description=(
+            "Unified Enterprise Knowledge & Context Platform API with pushdown ACL "
+            "filtering, hybrid lexical + pgvector retrieval, and grounded citations."
+        ),
         openapi_tags=TAGS_METADATA,
         docs_url="/docs",
         redoc_url="/redoc",
@@ -112,31 +166,43 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=["X-Trace-Id"],
+        expose_headers=["X-Request-Id", "X-Trace-Id"],
     )
 
     # -----------------------------------------------------------------------
-    # Middleware: Trace ID propagation and metrics recording
+    # Middleware: Request ID correlation, structured access logging & metrics
     # -----------------------------------------------------------------------
     @application.middleware("http")
-    async def trace_id_middleware(request: Request, call_next):
-        trace_id = (
-            request.headers.get("X-Trace-Id")
-            or request.headers.get("X-Request-Id")
+    async def request_id_middleware(request: Request, call_next):
+        request_id = (
+            request.headers.get("X-Request-Id")
+            or request.headers.get("X-Trace-Id")
             or uuid.uuid4().hex
         )
-        request.state.trace_id = trace_id
+        request.state.request_id = request_id
+        request.state.trace_id = request_id
+        token = _request_id_ctx.set(request_id)
         start_time = time.perf_counter()
-        response = await call_next(request)
-        duration = time.perf_counter() - start_time
-        response.headers["X-Trace-Id"] = trace_id
-        record_request_metric(
-            method=request.method,
-            path=request.url.path,
-            status_code=response.status_code,
-            duration_seconds=duration,
-        )
-        return response
+        try:
+            response = await call_next(request)
+            duration = time.perf_counter() - start_time
+            response.headers["X-Request-Id"] = request_id
+            logging.getLogger("workmesh.http").info(
+                "http_request method=%s path=%s status=%d duration_ms=%.2f",
+                request.method,
+                request.url.path,
+                response.status_code,
+                duration * 1000.0,
+            )
+            record_request_metric(
+                method=request.method,
+                path=request.url.path,
+                status_code=response.status_code,
+                duration_seconds=duration,
+            )
+            return response
+        finally:
+            _request_id_ctx.reset(token)
 
     # -----------------------------------------------------------------------
     # Routers
@@ -162,75 +228,68 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             return FileResponse(str(ui_index_path), media_type="text/html")
 
     # -----------------------------------------------------------------------
-    # Exception Handlers (Uniform ApiError shape with populated traceId)
+    # Exception Handlers (Uniform ErrorResponse: {"error": {"code", "message", "request_id"}})
     # -----------------------------------------------------------------------
     @application.exception_handler(AuthenticationRequiredError)
     async def authentication_required_handler(
         request: Request, exc: AuthenticationRequiredError
     ) -> JSONResponse:
-        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
+        request_id = _get_request_id(request)
         logging.getLogger(__name__).warning(
-            "authentication_required path=%s msg=%s trace_id=%s",
+            "authentication_required path=%s msg=%s request_id=%s",
             request.url.path,
             exc.message,
-            trace_id,
+            request_id,
         )
         return _build_api_error(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            error_phrase="Unauthorized",
+            code="UNAUTHORIZED",
             message=exc.message,
-            path=request.url.path,
-            trace_id=trace_id,
+            request_id=request_id,
         )
 
     @application.exception_handler(ConcurrencyLimitExceededError)
     async def concurrency_limit_handler(
         request: Request, exc: ConcurrencyLimitExceededError
     ) -> JSONResponse:
-        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
+        request_id = _get_request_id(request)
         logging.getLogger(__name__).warning(
-            "concurrency_limit_exceeded path=%s retry_after=%d trace_id=%s",
+            "concurrency_limit_exceeded path=%s retry_after=%d request_id=%s",
             request.url.path,
             exc.retry_after,
-            trace_id,
+            request_id,
         )
-        return JSONResponse(
+        return _build_api_error(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="SERVICE_UNAVAILABLE",
+            message=exc.message,
+            request_id=request_id,
             headers={"Retry-After": str(exc.retry_after)},
-            content={
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "status": status.HTTP_503_SERVICE_UNAVAILABLE,
-                "error": "Service Unavailable",
-                "message": exc.message,
-                "path": request.url.path,
-                "traceId": trace_id,
-            },
         )
 
     @application.exception_handler(AccessDeniedError)
     async def access_denied_handler(
         request: Request, exc: AccessDeniedError
     ) -> JSONResponse:
-        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
+        request_id = _get_request_id(request)
         logging.getLogger(__name__).warning(
-            "access_denied path=%s msg=%s trace_id=%s",
+            "access_denied path=%s msg=%s request_id=%s",
             request.url.path,
             exc.message,
-            trace_id,
+            request_id,
         )
         return _build_api_error(
             status_code=status.HTTP_403_FORBIDDEN,
-            error_phrase="Forbidden",
+            code="FORBIDDEN",
             message=exc.message,
-            path=request.url.path,
-            trace_id=trace_id,
+            request_id=request_id,
         )
 
     @application.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
+        request_id = _get_request_id(request)
         errors = exc.errors()
         if errors:
             first_err = errors[0]
@@ -243,82 +302,70 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         status_code = (
             status.HTTP_400_BAD_REQUEST
             if request.url.path.startswith("/api/v1")
-            else status.HTTP_422_UNPROCESSABLE_ENTITY
+            else status.HTTP_422_UNPROCESSABLE_CONTENT
         )
-        error_phrase = (
-            "Bad Request"
-            if status_code == status.HTTP_400_BAD_REQUEST
-            else "Unprocessable Entity"
-        )
+        code = "BAD_REQUEST" if status_code == status.HTTP_400_BAD_REQUEST else "VALIDATION_ERROR"
 
         logging.getLogger(__name__).info(
-            "validation_failed path=%s detail='%s' trace_id=%s status=%s",
+            "validation_failed path=%s detail='%s' request_id=%s status=%s",
             request.url.path,
             detail,
-            trace_id,
+            request_id,
             status_code,
         )
         return _build_api_error(
             status_code=status_code,
-            error_phrase=error_phrase,
+            code=code,
             message=detail,
-            path=request.url.path,
-            trace_id=trace_id,
+            request_id=request_id,
         )
 
     @application.exception_handler(DatabaseUnavailableError)
     async def database_unavailable(
         request: Request, exc: DatabaseUnavailableError
     ) -> JSONResponse:
-        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
+        request_id = _get_request_id(request)
         logging.getLogger(__name__).error(
-            "database_unavailable path=%s err=%s trace_id=%s",
+            "database_unavailable path=%s err=%s request_id=%s",
             request.url.path,
             str(exc),
-            trace_id,
+            request_id,
         )
         return _build_api_error(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            error_phrase="Service Unavailable",
+            code="SERVICE_UNAVAILABLE",
             message="database service is unavailable",
-            path=request.url.path,
-            trace_id=trace_id,
+            request_id=request_id,
         )
 
     @application.exception_handler(HTTPException)
     async def http_exception_handler(
         request: Request, exc: HTTPException
     ) -> JSONResponse:
-        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
-        try:
-            phrase = HTTPStatus(exc.status_code).phrase
-        except ValueError:
-            phrase = "Error"
-
+        request_id = _get_request_id(request)
         return _build_api_error(
             status_code=exc.status_code,
-            error_phrase=phrase,
+            code=_status_to_error_code(exc.status_code),
             message=str(exc.detail),
-            path=request.url.path,
-            trace_id=trace_id,
+            request_id=request_id,
+            headers=dict(exc.headers) if exc.headers else None,
         )
 
     @application.exception_handler(Exception)
     async def unhandled_exception(
         request: Request, exc: Exception
     ) -> JSONResponse:
-        trace_id = getattr(request.state, "trace_id", uuid.uuid4().hex)
+        request_id = _get_request_id(request)
         logging.getLogger(__name__).exception(
-            "unhandled_exception path=%s trace_id=%s",
+            "unhandled_exception path=%s request_id=%s",
             request.url.path,
-            trace_id,
+            request_id,
         )
         return _build_api_error(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error_phrase="Internal Server Error",
+            code="INTERNAL_ERROR",
             message="unexpected server error",
-            path=request.url.path,
-            trace_id=trace_id,
+            request_id=request_id,
         )
 
     return application
