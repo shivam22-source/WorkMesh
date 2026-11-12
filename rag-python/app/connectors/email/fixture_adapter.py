@@ -118,7 +118,7 @@ class EmailFixtureAdapter(SourceConnector):
             raw_item = RawSourceItem(
                 id=msg_id,
                 source_type=SourceType.EMAIL,
-                source_id=msg.get("message_id", msg_id),
+                source_id=msg_id,
                 source_url=msg.get("source_url", f"https://mail.company.internal/mail/messages/{msg_id}"),
                 title=msg.get("subject", "No Subject"),
                 author_id=msg.get("from_addr", "unknown"),

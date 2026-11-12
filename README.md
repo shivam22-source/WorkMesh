@@ -136,24 +136,52 @@ Tokens are issued outside this service; WorkMesh expects and validates the claim
 
 ### 1. Run with Docker Compose
 
+> **Warning:** `docker-compose.demo.yml` sets `AUTH_MODE=dev` and auto-ingests synthetic fixtures so the demo curl commands below work immediately without minting tokens. Never deploy `AUTH_MODE=dev` to production.
+
 ```bash
-# Start PostgreSQL and the WorkMesh API
+# Start PostgreSQL, ingest synthetic fixtures, and start WorkMesh API
 docker compose -f docker-compose.demo.yml up --build -d
 
 # Verify readiness (checks live database connection)
 curl http://localhost:8000/ready
 
-# Search enterprise knowledge (dev mode)
+# Search enterprise knowledge (demo compose runs with AUTH_MODE=dev)
 curl -s -X POST http://localhost:8000/api/v1/search \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"query": "DC-8692"}'
 
-# Ask a grounded question (dev mode)
+# Ask a grounded question (demo compose runs with AUTH_MODE=dev)
 curl -s -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"question": "Why did we change the validation flow?"}'
+```
+
+#### Production-Mode Curl Example (`AUTH_MODE=prod`)
+
+When running with `AUTH_MODE=prod` and a 32+ character `JWT_SECRET`, generate a signed token with [`scripts/make_token.py`](scripts/make_token.py) and pass it as a Bearer header:
+
+```bash
+# Linux / macOS
+export JWT_SECRET="replace_with_a_secure_random_key_of_at_least_32_characters_for_prod"
+TOKEN=$(rag-python/.venv/bin/python scripts/make_token.py \
+  --user-id employee_42 --role ENGINEER --groups group_engineering,group_backend --ttl 3600)
+curl -s -X POST http://localhost:8000/api/v1/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"query": "DC-8692"}'
+```
+
+```powershell
+# Windows (PowerShell)
+$env:JWT_SECRET="replace_with_a_secure_random_key_of_at_least_32_characters_for_prod"
+$TOKEN = rag-python\.venv\Scripts\python.exe scripts\make_token.py `
+  --user-id employee_42 --role ENGINEER --groups group_engineering,group_backend --ttl 3600
+curl.exe -s -X POST http://localhost:8000/api/v1/search `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer $TOKEN" `
+  -d '{\"query\": \"DC-8692\"}'
 ```
 
 ### 2. Interactive Web UI
@@ -163,21 +191,36 @@ curl -s -X POST http://localhost:8000/api/v1/ask \
 
 ### 3. Local Development
 
+**Linux / macOS:**
+
 ```bash
-# Start database
+cp .env.example .env
 docker compose up -d postgres
 
-# Install Python dependencies and start API
 cd rag-python
-python -m venv .venv
-.venv/Scripts/python.exe -m pip install -e ".[dev]"
-.venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-
-# Ingest synthetic documents
-.venv/Scripts/python.exe -m app.cli.ingest --source all
+python3 -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]"
+.venv/bin/python -m app.cli.ingest --source all
+.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 # Run 10,000-chunk scale benchmark & ablation study
-.venv/Scripts/python.exe -m app.cli.scale_benchmark --skip-seed --ablation
+.venv/bin/python -m app.cli.scale_benchmark --skip-seed --ablation
+```
+
+**Windows (PowerShell):**
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d postgres
+
+cd rag-python
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.venv\Scripts\python.exe -m app.cli.ingest --source all
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Run 10,000-chunk scale benchmark & ablation study
+.venv\Scripts\python.exe -m app.cli.scale_benchmark --skip-seed --ablation
 ```
 
 ---
@@ -187,8 +230,11 @@ python -m venv .venv
 The test suite runs self-contained and offline:
 
 ```bash
-cd rag-python
-.venv/Scripts/pytest.exe tests
+# Linux / macOS
+cd rag-python && .venv/bin/pytest tests
+
+# Windows (PowerShell)
+cd rag-python; .venv\Scripts\pytest.exe tests
 ```
 
 331 passed with model weights cached; 327 passed and 4 skipped without them (achieved by pointing `HF_HOME` and `SENTENCE_TRANSFORMERS_HOME` to an empty temporary directory so tests marked `@pytest.mark.real_model` are safely skipped). Covers hybrid retrieval, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
