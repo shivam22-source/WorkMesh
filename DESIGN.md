@@ -126,6 +126,7 @@ The LLM never sees an unauthorized document — not even in a filtered-out form.
 | [README.md](README.md) | Project overview, quick start, and benchmark results |
 | **DESIGN.md** (this file) | System architecture and design invariants |
 | [`docs/architecture/overview.md`](docs/architecture/overview.md) | Component architecture and data models |
+| [`docs/performance.md`](docs/performance.md) | PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` query plans on 10k chunks |
 | [`docs/api/api-contract.md`](docs/api/api-contract.md) | Public and internal API contract specification |
 | [`docs/decisions/ADR-0001-single-service-consolidation.md`](docs/decisions/ADR-0001-single-service-consolidation.md) | Consolidated single-service FastAPI architecture |
 | [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md) | Datastore simplicity and Redis deferral rationale |

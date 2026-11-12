@@ -261,6 +261,7 @@ cd rag-python; .venv\Scripts\pytest.exe tests
 ## Documentation
 
 - [`DESIGN.md`](DESIGN.md): System architecture, data model, and pushdown ACL invariant.
+- [`docs/performance.md`](docs/performance.md): Captured `EXPLAIN (ANALYZE, BUFFERS)` query plans across the 10k-chunk corpus.
 - [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md): Live walkthrough script with example queries.
 - [`docs/runbooks/evaluation-and-metrics.md`](docs/runbooks/evaluation-and-metrics.md): Evaluation methodology and metrics definitions.
 - [`docs/decisions/ADR-0001-single-service-consolidation.md`](docs/decisions/ADR-0001-single-service-consolidation.md): Consolidation rationale to single FastAPI service.
