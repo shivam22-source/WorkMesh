@@ -2,9 +2,8 @@
 
 import json
 import logging
-import os
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import List, Optional
 
 from app.connectors.email.fixture_adapter import EmailFixtureAdapter

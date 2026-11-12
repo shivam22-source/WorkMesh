@@ -7,9 +7,10 @@ Supports two authentication modes:
   with fallback to employee_42.
 """
 
-from dataclasses import dataclass, field
 import logging
-from typing import Annotated, Any, Dict, Optional, Set
+from dataclasses import dataclass, field
+from typing import Annotated, Optional, Set
+
 import jwt
 from fastapi import Depends, Header, Request
 

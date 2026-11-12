@@ -2,7 +2,6 @@
 
 import math
 from unittest.mock import MagicMock
-import pytest
 
 from app.connectors.github.fixture_adapter import GitHubFixtureAdapter
 from app.connectors.slack.fixture_adapter import SlackFixtureAdapter

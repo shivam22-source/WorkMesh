@@ -1,17 +1,18 @@
 """Tests for authentication modes: production JWT verification vs dev header simulation."""
 
 import time
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.auth.jwt_utils import create_jwt_token
 from app.common.config import DEFAULT_DEV_JWT_SECRET, Settings, get_settings
 from app.dependencies import get_hybrid_retriever, get_repository
-
-STRONG_PROD_SECRET = "production_super_strong_secret_key_exceeding_32_characters"
 from app.indexing.repository import InMemoryKnowledgeRepository
 from app.main import create_app
 from app.retrieval.hybrid import HybridRetriever
+
+STRONG_PROD_SECRET = "production_super_strong_secret_key_exceeding_32_characters"
 
 
 @pytest.fixture
@@ -237,6 +238,7 @@ def test_prod_mode_strong_secret_starts(monkeypatch):
 def test_dev_mode_default_secret_starts_with_warning(monkeypatch, caplog):
     """Dev mode with default secret starts and logs a security warning."""
     import logging
+
     from app.common.config import DEFAULT_DEV_JWT_SECRET
     monkeypatch.setenv("AUTH_MODE", "dev")
     monkeypatch.setenv("JWT_SECRET", DEFAULT_DEV_JWT_SECRET)

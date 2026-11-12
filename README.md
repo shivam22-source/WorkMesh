@@ -1,5 +1,7 @@
 # WorkMesh
 
+[![CI](https://github.com/shivam22-source/WorkMesh-Enterprise-Knowledge-Context-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/shivam22-source/WorkMesh-Enterprise-Knowledge-Context-Platform/actions/workflows/ci.yml)
+
 Permission-aware enterprise knowledge search and question answering with verifiable citations.
 Powered by a single FastAPI service on PostgreSQL 16 with pgvector.
 

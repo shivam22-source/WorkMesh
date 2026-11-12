@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+
 import jwt
 
 from app.common.config import get_settings

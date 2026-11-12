@@ -3,11 +3,11 @@
 Reads synthetic Slack channels and thread conversations without network calls.
 """
 
-from datetime import datetime, timezone
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from app.connectors.common.base import SourceConnector
 from app.connectors.common.models import (

@@ -1,12 +1,12 @@
 """Repository layer for persisting canonical knowledge, vectors, ACLs, and sync state."""
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 import json
 import logging
 import math
 import re
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.chunking.models import CanonicalChunk
@@ -1742,19 +1742,23 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                                 if rel.relationship_type == RelationshipType.IMPLEMENTED_BY.value:
                                     cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.target_entity_id,))
                                     r = cur.fetchone()
-                                    if r and r[0]: owners.add(r[0])
+                                    if r and r[0]:
+                                        owners.add(r[0])
                                 elif rel.relationship_type == RelationshipType.DISCUSSED_IN.value:
                                     cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.target_entity_id,))
                                     r = cur.fetchone()
-                                    if r and r[0]: owners.add(r[0])
+                                    if r and r[0]:
+                                        owners.add(r[0])
                                 elif rel.relationship_type == RelationshipType.AUTHORED_BY.value:
                                     cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.source_entity_id,))
                                     r = cur.fetchone()
-                                    if r and r[0]: owners.add(r[0])
+                                    if r and r[0]:
+                                        owners.add(r[0])
                                 elif rel.relationship_type == RelationshipType.CONTAINS.value:
                                     cur.execute("SELECT source_record_id FROM entities WHERE id = %s;", (rel.source_entity_id,))
                                     r = cur.fetchone()
-                                    if r and r[0]: owners.add(r[0])
+                                    if r and r[0]:
+                                        owners.add(r[0])
 
                             for owner_id in owners:
                                 cur.execute("""

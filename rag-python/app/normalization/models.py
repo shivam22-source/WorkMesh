@@ -6,6 +6,7 @@ into a unified representation for chunking, indexing, and permission assignment.
 
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 from app.connectors.common.models import AclReference

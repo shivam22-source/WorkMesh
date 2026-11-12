@@ -4,6 +4,7 @@ Contract documentation: docs/api/api-contract.md
 """
 
 from typing import List, Literal, Optional
+
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 

@@ -1,8 +1,9 @@
 """Focused integration tests for internal RAG search API (/internal/v1/rag/search)."""
 
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
+
 import pytest
+from fastapi.testclient import TestClient
 
 from app.api.internal_rag import get_hybrid_retriever
 from app.connectors.github.fixture_adapter import GitHubFixtureAdapter

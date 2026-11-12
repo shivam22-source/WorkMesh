@@ -1,14 +1,11 @@
 """Tests for bounded exponential retry, non-retryable handling, backfill regex, and migration parity (Phase 5 Step 2)."""
 
-from pathlib import Path
 import re
+from pathlib import Path
+
 import pytest
 
-from app.connectors.common.base import SourceConnector
-from app.connectors.common.models import RawSourceItem, SourceType
-from app.embeddings.mock_provider import MockEmbeddingProvider
-from app.indexing.pipeline import IngestionPipeline
-from app.indexing.repository import DatabaseUnavailableError, FencedSyncError, InMemoryKnowledgeRepository
+from app.indexing.repository import DatabaseUnavailableError, FencedSyncError
 from app.indexing.retry import is_transient_error, retry_with_backoff
 
 
@@ -201,8 +198,8 @@ def test_migration_and_docker_init_parity():
     assert docker_file.exists(), f"Missing {docker_file}"
 
     def strip_sql_comments(sql: str) -> str:
-        lines = [l.strip() for l in sql.splitlines() if not l.strip().startswith("--")]
-        return "\n".join(l for l in lines if l)
+        lines = [line.strip() for line in sql.splitlines() if not line.strip().startswith("--")]
+        return "\n".join(line for line in lines if line)
 
     with open(migration_file, "r", encoding="utf-8") as f:
         mig_content = strip_sql_comments(f.read())

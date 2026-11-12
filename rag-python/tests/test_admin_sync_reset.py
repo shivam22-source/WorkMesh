@@ -1,6 +1,7 @@
 """Unit and security tests for connector sync lease reset admin endpoint."""
 
 from datetime import datetime, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 

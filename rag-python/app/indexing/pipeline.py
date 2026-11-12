@@ -1,17 +1,17 @@
 """Ingestion pipeline orchestrating connector -> normalize -> chunk -> embed -> index -> checkpoint."""
 
-from datetime import datetime, timezone
 import logging
-from typing import List, Optional, Union
 import uuid
+from datetime import datetime, timezone
+from typing import List, Optional, Union
 
 from app.chunking.models import CanonicalChunk
 from app.chunking.source_aware_chunker import SourceAwareChunker
 from app.connectors.common.base import SourceConnector
-from app.connectors.common.models import AclReference, RawSourceItem, SourceType
+from app.connectors.common.models import AclReference, SourceType
 from app.embeddings.base import EmbeddingProvider
 from app.graph.extractor import extract_entities_and_relationships
-from app.indexing.models import SyncResult, SyncStateRecord
+from app.indexing.models import SyncResult
 from app.indexing.repository import KnowledgeRepository
 from app.indexing.retry import retry_with_backoff
 from app.normalization.email_normalizer import EmailNormalizer

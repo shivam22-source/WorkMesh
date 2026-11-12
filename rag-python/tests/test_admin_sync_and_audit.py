@@ -4,6 +4,7 @@ Tests /internal/v1/sync/status and /internal/v1/audit/events.
 """
 
 from datetime import datetime, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -178,6 +179,7 @@ def test_get_audit_events_filtering_and_limits(client: TestClient):
 
 def _detect_pg_url():
     import psycopg
+
     from app.common.config import get_settings
     settings = get_settings()
     custom_test_url = (

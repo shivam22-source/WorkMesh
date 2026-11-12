@@ -1,7 +1,6 @@
 """Normalizer converting raw GitHub items into canonical documents."""
 
-import re
-from typing import List, Set
+from typing import List
 
 from app.connectors.common.models import AclReference, RawSourceItem
 from app.normalization.common import extract_ticket_ids

@@ -12,9 +12,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timedelta, timezone
 import os
 import sys
+from datetime import datetime, timedelta, timezone
 
 try:
     import jwt

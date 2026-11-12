@@ -17,19 +17,15 @@ Proves that:
 
 from datetime import datetime, timezone
 from typing import List, Optional
-import pytest
 
 from app.chunking.models import CanonicalChunk
 from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType
-from app.contracts.rag_search import RagSearchResultItem
 from app.embeddings.mock_provider import MockEmbeddingProvider
-from app.indexing.repository import InMemoryKnowledgeRepository, PostgresKnowledgeRepository
+from app.indexing.repository import InMemoryKnowledgeRepository
 from app.normalization.models import CanonicalDocument
 from app.retrieval.hybrid import HybridRetriever
 from app.retrieval.lexical import LexicalRetriever
-from app.retrieval.vector import VectorRetriever
 from app.security.acl import build_acl_where_clause, has_read_permission
-
 
 # ---------------------------------------------------------------------------
 # Test Helpers

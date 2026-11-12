@@ -10,9 +10,10 @@ Covers:
     an independent raw SQL authorization query.
 """
 
-from datetime import datetime, timezone
 import random
+from datetime import datetime, timezone
 from typing import List, Optional, Set
+
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
@@ -28,7 +29,6 @@ from app.normalization.models import CanonicalDocument
 from app.rag.reranker import DeterministicReranker
 from app.rag.service import GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
-from app.security.acl import has_read_permission
 
 
 def _detect_test_postgres_url() -> Optional[str]:

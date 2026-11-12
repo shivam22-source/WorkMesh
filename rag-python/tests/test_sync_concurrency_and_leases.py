@@ -2,9 +2,7 @@
 
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
-import pytest
 
-from app.chunking.source_aware_chunker import SourceAwareChunker
 from app.connectors.common.base import SourceConnector
 from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType
 from app.embeddings.mock_provider import MockEmbeddingProvider

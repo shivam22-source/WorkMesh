@@ -1,6 +1,7 @@
 """Tests for SentenceTransformerEmbeddingProvider query LRU caching."""
 
 import pytest
+
 from app.embeddings.sentence_transformer_provider import SentenceTransformerEmbeddingProvider
 
 

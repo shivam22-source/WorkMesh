@@ -5,9 +5,9 @@ from fastapi.testclient import TestClient
 from app.chunking.models import CanonicalChunk
 from app.connectors.common.models import AclReference, PrincipalType
 from app.dependencies import get_grounded_rag_service, get_hybrid_retriever, get_repository
-from app.normalization.models import CanonicalDocument
 from app.indexing.repository import InMemoryKnowledgeRepository
 from app.main import create_app
+from app.normalization.models import CanonicalDocument
 from app.rag.service import GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
 

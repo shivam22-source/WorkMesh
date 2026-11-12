@@ -3,7 +3,6 @@
 This module provides internal service endpoints under /internal/v1.
 """
 
-from functools import lru_cache
 import logging
 from typing import Annotated, Any, Dict, List, Optional
 
@@ -19,7 +18,7 @@ from app.dependencies import (
     get_hybrid_retriever,
     get_repository,
 )
-from app.indexing.repository import KnowledgeRepository, PostgresKnowledgeRepository
+from app.indexing.repository import KnowledgeRepository
 from app.rag.service import GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
 

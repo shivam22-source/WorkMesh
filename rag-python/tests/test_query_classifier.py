@@ -3,7 +3,6 @@
 import pytest
 
 from app.retrieval.query_classifier import (
-    ClassificationResult,
     QueryClassifier,
     QueryType,
 )

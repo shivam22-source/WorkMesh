@@ -1,9 +1,6 @@
 """Shared dependency providers for FastAPI application routes."""
 
 from functools import lru_cache
-from typing import Annotated
-
-from fastapi import Depends
 
 from app.common.config import get_settings
 from app.indexing.repository import KnowledgeRepository, PostgresKnowledgeRepository

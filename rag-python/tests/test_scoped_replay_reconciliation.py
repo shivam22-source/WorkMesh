@@ -1,6 +1,7 @@
 """Tests for scoped replay reconciliation, immutable relationship metadata, and graph traversal authorization (Phase 5 Step 2)."""
 
 from datetime import datetime, timezone
+
 import pytest
 
 from app.chunking.models import CanonicalChunk
@@ -8,7 +9,6 @@ from app.connectors.common.models import AclReference, PrincipalType, RawSourceI
 from app.graph.models import Entity, EntityType, Relationship, RelationshipType
 from app.indexing.repository import (
     InMemoryKnowledgeRepository,
-    PostgresKnowledgeRepository,
     derive_canonical_metadata,
 )
 from app.normalization.models import CanonicalDocument

@@ -11,12 +11,11 @@ Validates:
 - Audit fail-open resilience
 """
 
-import time
 from typing import Any, Dict, List, Optional
+
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth.user_context import UserContext, get_current_user
 from app.contracts.rag_ask import CitationItem, RagAskRequest, RagAskResponse
 from app.contracts.rag_search import RagSearchResultItem
 from app.dependencies import (
@@ -27,11 +26,8 @@ from app.dependencies import (
 from app.indexing.repository import (
     DatabaseUnavailableError,
     InMemoryKnowledgeRepository,
-    SyncStateRecord,
 )
 from app.main import create_app
-from app.rag.service import GroundedRagService
-from app.retrieval.hybrid import HybridRetriever
 
 
 class MockRetriever:

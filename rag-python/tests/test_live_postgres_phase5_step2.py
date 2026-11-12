@@ -12,9 +12,9 @@ Verifies:
 """
 
 from datetime import datetime, timezone
-import json
-import pytest
+
 import psycopg
+import pytest
 
 from app.chunking.models import CanonicalChunk
 from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType

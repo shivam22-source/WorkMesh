@@ -1,12 +1,9 @@
 """Tests for database-level lease fencing, atomic claims, and status checks (Phase 5 Step 2)."""
 
-from datetime import datetime, timezone
 import pytest
 
-from app.connectors.common.models import RawSourceItem, SourceType
 from app.indexing.models import SyncStateRecord
 from app.indexing.repository import (
-    ClaimResult,
     FencedSyncError,
     InMemoryKnowledgeRepository,
     PostgresKnowledgeRepository,
@@ -16,7 +13,7 @@ from app.indexing.repository import (
 def test_in_memory_claim_sync_and_lease_acquisition():
     """Verify that claim_sync acquires an exclusive lease and resets counter."""
     repo = InMemoryKnowledgeRepository()
-    
+
     # Prior state with synced records
     prior_state = SyncStateRecord(
         source_type="GITHUB",

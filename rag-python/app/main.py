@@ -3,14 +3,14 @@
 Consolidates API Gateway orchestration, permission-filtered retrieval, and grounded RAG synthesis.
 """
 
-from datetime import datetime, timezone
-from http import HTTPStatus
 import logging
-from pathlib import Path
 import sys
 import time
-from typing import Any, Dict, Optional
 import uuid
+from datetime import datetime, timezone
+from http import HTTPStatus
+from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError

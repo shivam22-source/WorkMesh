@@ -1,7 +1,7 @@
 """SentenceTransformer embedding provider using local Hugging Face models."""
 
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
 from typing import Dict, List, Optional
 
 import numpy as np

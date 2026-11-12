@@ -1,6 +1,7 @@
 """Evidence builder formatting authorized candidate chunks into numbered context blocks for LLM synthesis."""
 
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 from app.contracts.rag_search import RagSearchResultItem

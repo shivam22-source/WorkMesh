@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "phase-1"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: knowledge
+          POSTGRES_PASSWORD: knowledge
+          POSTGRES_DB: knowledge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "rag-python/pyproject.toml"
+
+      - name: Cache HuggingFace model directory
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: ${{ runner.os }}-hf-all-MiniLM-L6-v2-v1
+          restore-keys: |
+            ${{ runner.os }}-hf-
+
+      - name: Install Python dependencies (CPU PyTorch + dev)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e "./rag-python[dev]"
+
+      - name: Initialize PostgreSQL schema and test database
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import psycopg
+
+          admin_dsn = "postgresql://knowledge:knowledge@127.0.0.1:5432/postgres"
+          with psycopg.connect(admin_dsn, autocommit=True) as conn:
+              with conn.cursor() as cur:
+                  cur.execute("SELECT 1 FROM pg_database WHERE datname = 'test_knowledge';")
+                  if cur.fetchone() is None:
+                      cur.execute("CREATE DATABASE test_knowledge;")
+
+          sql_files = sorted(Path("infra/docker/init").glob("*.sql"))
+          for db_name in ("knowledge", "test_knowledge"):
+              dsn = f"postgresql://knowledge:knowledge@127.0.0.1:5432/{db_name}"
+              with psycopg.connect(dsn, autocommit=True) as conn:
+                  with conn.cursor() as cur:
+                      for sql_file in sql_files:
+                          cur.execute(sql_file.read_text(encoding="utf-8"))
+          print("Initialized PostgreSQL databases cleanly.")
+          PY
+
+      - name: Run ruff lint check
+        working-directory: rag-python
+        run: ruff check app tests ../scripts
+
+      - name: Run pytest suite (skipping real_model tests)
+        working-directory: rag-python
+        env:
+          AUTH_MODE: dev
+          EMBEDDING_PROVIDER: mock
+          HF_HOME: ~/.cache/huggingface
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: "5432"
+          POSTGRES_DB: knowledge
+          POSTGRES_USER: knowledge
+          POSTGRES_PASSWORD: knowledge
+        run: pytest -m "not real_model" tests

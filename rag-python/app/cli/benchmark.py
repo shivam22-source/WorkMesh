@@ -3,7 +3,6 @@
 import argparse
 import json
 import logging
-import sys
 
 from app.common.config import get_settings
 from app.evaluation.benchmark import BenchmarkRunner
