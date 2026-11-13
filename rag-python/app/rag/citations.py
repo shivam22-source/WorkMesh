@@ -57,3 +57,47 @@ class CitationExtractor:
             )
 
         return citations
+
+    def extract_citations_from_ids(
+        self,
+        chunk_ids: List[str],
+        context: EvidenceContext,
+    ) -> List[CitationItem]:
+        """Validate and resolve explicit chunk IDs strictly against context.items.
+
+        Invariants:
+        - Drops any chunk ID not present in context.items (strips ungrounded/unauthorized citations).
+        - Preserves ordering of first appearance.
+        - Deduplicates repeated chunk IDs.
+        """
+        if not chunk_ids or not context or not context.items:
+            return []
+
+        evidence_by_chunk_id: Dict[str, EvidenceItem] = {
+            item.chunk_id: item for item in context.items
+        }
+
+        seen_ids: Set[str] = set()
+        citations: List[CitationItem] = []
+
+        for cid in chunk_ids:
+            clean_id = str(cid).strip()
+            if not clean_id or clean_id in seen_ids:
+                continue
+
+            item = evidence_by_chunk_id.get(clean_id)
+            if item is None:
+                # Chunk ID is NOT inside the authorized context set -> strip it
+                continue
+
+            seen_ids.add(clean_id)
+            citations.append(
+                CitationItem(
+                    source_type=item.source_type,
+                    title=item.title,
+                    url=item.source_url,
+                    snippet=item.content,
+                )
+            )
+
+        return citations
