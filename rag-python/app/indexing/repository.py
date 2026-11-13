@@ -2084,38 +2084,25 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         group_ids: Optional[List[str]] = None,
     ) -> Optional[CanonicalDocument]:
         """Retrieve a canonical document by ID or source_record_id, enforcing ACL read permissions in SQL."""
-        clean_user = str(user_id).strip() if user_id and str(user_id).strip() else None
-        clean_groups = [str(g).strip() for g in group_ids if str(g).strip()] if group_ids else []
-
-        sql = """
+        acl_clause, acl_params = build_acl_where_clause(
+            user_id=user_id,
+            group_ids=group_ids,
+            doc_alias="d",
+            chunk_alias="c",
+        )
+        sql = f"""
         SELECT d.id, d.source_record_id, d.source_type, d.title, d.content, d.author, d.url, d.metadata, d.created_at, d.updated_at
         FROM documents d
-        WHERE (d.id = %(doc_id)s OR d.source_record_id = %(doc_id)s)
-          AND (
-            EXISTS (
-              SELECT 1 FROM acl_entries a
-              WHERE a.resource_type = 'SOURCE_RECORD' AND a.resource_id = d.source_record_id
-                AND a.permission = 'READ'
-                AND (
-                  a.principal_type = 'PUBLIC'
-                  OR (a.principal_type = 'USER' AND a.principal_id = %(user_id)s)
-                  OR (a.principal_type = 'GROUP' AND a.principal_id = ANY(%(group_ids)s))
-                )
-            )
-          )
+        LEFT JOIN chunks c ON c.document_id = d.id
+        WHERE (d.id = %s OR d.source_record_id = %s)
+          AND {acl_clause}
         LIMIT 1;
         """
+        params = [document_id, document_id] + acl_params
         try:
-            with self._connect() as conn:
+            with self._get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        sql,
-                        {
-                            "doc_id": document_id,
-                            "user_id": clean_user or "",
-                            "group_ids": clean_groups,
-                        },
-                    )
+                    cur.execute(sql, tuple(params))
                     row = cur.fetchone()
                     if not row:
                         return None
@@ -2127,7 +2114,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                         content=row[4],
                         author=row[5],
                         url=row[6],
-                        metadata=row[7] if isinstance(row[7], dict) else {},
+                        metadata=row[7] if isinstance(row[7], dict) else (json.loads(row[7]) if row[7] else {}),
                         created_at=row[8],
                         updated_at=row[9],
                     )
@@ -2145,47 +2132,32 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         group_ids: Optional[List[str]] = None,
     ) -> List[CanonicalChunk]:
         """Retrieve Slack thread chunks, enforcing ACL read permissions in SQL."""
-        clean_user = str(user_id).strip() if user_id and str(user_id).strip() else None
-        clean_groups = [str(g).strip() for g in group_ids if str(g).strip()] if group_ids else []
-
-        sql = """
-        SELECT c.id, c.document_id, c.chunk_index, c.content, c.token_count, c.content_hash, c.metadata, c.created_at
+        acl_clause, acl_params = build_acl_where_clause(
+            user_id=user_id,
+            group_ids=group_ids,
+            doc_alias="d",
+            chunk_alias="c",
+        )
+        pattern = f"%{channel_id}%{thread_ts}%"
+        sql = f"""
+        SELECT c.id, c.document_id, c.chunk_index, c.content, c.token_count, c.metadata, c.created_at
         FROM chunks c
         JOIN documents d ON c.document_id = d.id
         WHERE d.source_type = 'SLACK'
           AND (
-            (d.metadata->>'channel_id' = %(channel_id)s AND d.metadata->>'thread_ts' = %(thread_ts)s)
-            OR (c.metadata->>'channel_id' = %(channel_id)s AND c.metadata->>'thread_ts' = %(thread_ts)s)
-            OR (d.source_record_id LIKE %(pattern)s)
+            (d.metadata->>'channel_id' = %s AND d.metadata->>'thread_ts' = %s)
+            OR (c.metadata->>'channel_id' = %s AND c.metadata->>'thread_ts' = %s)
+            OR (d.source_record_id LIKE %s)
+            OR (d.url LIKE %s)
           )
-          AND (
-            EXISTS (
-              SELECT 1 FROM acl_entries a
-              WHERE a.resource_type = 'SOURCE_RECORD' AND a.resource_id = d.source_record_id
-                AND a.permission = 'READ'
-                AND (
-                  a.principal_type = 'PUBLIC'
-                  OR (a.principal_type = 'USER' AND a.principal_id = %(user_id)s)
-                  OR (a.principal_type = 'GROUP' AND a.principal_id = ANY(%(group_ids)s))
-                )
-            )
-          )
+          AND {acl_clause}
         ORDER BY c.chunk_index ASC;
         """
-        pattern = f"%{channel_id}%{thread_ts}%"
+        params = [channel_id, thread_ts, channel_id, thread_ts, pattern, pattern] + acl_params
         try:
-            with self._connect() as conn:
+            with self._get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        sql,
-                        {
-                            "channel_id": channel_id,
-                            "thread_ts": thread_ts,
-                            "pattern": pattern,
-                            "user_id": clean_user or "",
-                            "group_ids": clean_groups,
-                        },
-                    )
+                    cur.execute(sql, tuple(params))
                     rows = cur.fetchall()
                     return [
                         CanonicalChunk(
@@ -2194,9 +2166,9 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                             chunk_index=r[2],
                             content=r[3],
                             token_count=r[4],
-                            content_hash=r[5],
-                            metadata=r[6] if isinstance(r[6], dict) else {},
-                            created_at=r[7],
+                            content_hash=CanonicalChunk.compute_hash(r[3]),
+                            metadata=r[5] if isinstance(r[5], dict) else (json.loads(r[5]) if r[5] else {}),
+                            created_at=r[6],
                         )
                         for r in rows
                     ]

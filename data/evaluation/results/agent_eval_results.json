@@ -1,0 +1,779 @@
+{
+  "timestamp": "2026-11-13 16:59:02 UTC",
+  "summary": {
+    "total_queries": 30,
+    "single_shot": {
+      "mean_coverage_percent": 76.67,
+      "average_steps": 1.0,
+      "mean_latency_ms": 194.15,
+      "p50_latency_ms": 188.56,
+      "p95_latency_ms": 241.08,
+      "mean_tokens_used": 248.3
+    },
+    "agent": {
+      "mean_coverage_percent": 76.67,
+      "average_steps": 2.73,
+      "mean_latency_ms": 393.69,
+      "p50_latency_ms": 402.6,
+      "p95_latency_ms": 546.2,
+      "mean_tokens_used": 1920.2
+    },
+    "comparison": {
+      "coverage_delta_pp": 0.0,
+      "latency_multiplier": 2.03,
+      "token_multiplier": 7.73
+    }
+  },
+  "queries": [
+    {
+      "query_id": "qv2-multi-01",
+      "question": "Why did we switch session cookies to SameSite=Lax and which PR implemented it?",
+      "gold_chunk_ids": [
+        "doc:slack:C04SEC:thread:1700000201.000100:c0",
+        "doc:github:company/auth-gateway:pr:701:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 406.98,
+        "steps": 1,
+        "tokens_used": 245,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 542.88,
+        "steps": 3,
+        "tokens_used": 1963,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-02",
+      "question": "What Slack mitigation stopped the billing webhook storm and which commit added signature caching?",
+      "gold_chunk_ids": [
+        "doc:slack:C0123PAY:thread:1700000202.000100:c0",
+        "doc:github:company/billing-hooks:commit:7c2201aa91f0:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 222.34,
+        "steps": 1,
+        "tokens_used": 248,
+        "gold_hits": 1,
+        "gold_coverage": 0.5
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 555.25,
+        "steps": 3,
+        "tokens_used": 2474,
+        "gold_hits": 1,
+        "gold_coverage": 0.5,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-03",
+      "question": "Which email approved raising statement_timeout for analytics exports and which PR configured the dedicated role?",
+      "gold_chunk_ids": [
+        "doc:email:dba@company.internal:msg-v2-103:c0",
+        "doc:github:company/dba-terraform:pr:703:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 201.41,
+        "steps": 1,
+        "tokens_used": 228,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 541.04,
+        "steps": 3,
+        "tokens_used": 1755,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-04",
+      "question": "Why did Slack engineers pick Zstandard over Gzip for trace compression and what PR rolled it out?",
+      "gold_chunk_ids": [
+        "doc:slack:C10OBS:thread:1700000204.000100:c0",
+        "doc:github:company/otel-config:pr:704:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 199.5,
+        "steps": 1,
+        "tokens_used": 239,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 485.75,
+        "steps": 3,
+        "tokens_used": 1976,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-05",
+      "question": "What vendor email warned about TLS 1.1 deprecation and which PR removed legacy ciphers?",
+      "gold_chunk_ids": [
+        "doc:email:partner@gateway.com:msg-v2-105:c0",
+        "doc:github:company/ingress-mesh:pr:705:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 177.94,
+        "steps": 1,
+        "tokens_used": 203,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 474.18,
+        "steps": 3,
+        "tokens_used": 1783,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-06",
+      "question": "How did Slack triage explain the Redis OOM spike and which PR enforced maxmemory-policy?",
+      "gold_chunk_ids": [
+        "doc:slack:C08SRCH:thread:1700000206.000100:c0",
+        "doc:github:company/cache-infra:pr:706:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 228.6,
+        "steps": 1,
+        "tokens_used": 258,
+        "gold_hits": 0,
+        "gold_coverage": 0.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 373.76,
+        "steps": 3,
+        "tokens_used": 2119,
+        "gold_hits": 0,
+        "gold_coverage": 0.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-07",
+      "question": "What email outlined compliance retention for audit logs and which PR implemented S3 Object Lock?",
+      "gold_chunk_ids": [
+        "doc:email:legal@company.internal:msg-v2-107:c0",
+        "doc:github:company/audit-archive:pr:707:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 178.31,
+        "steps": 1,
+        "tokens_used": 227,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 247.67,
+        "steps": 2,
+        "tokens_used": 1493,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 2
+      }
+    },
+    {
+      "query_id": "qv2-multi-08",
+      "question": "What schema migration blocker was raised in Slack for pgvector 384 dims and which PR updated the SQL?",
+      "gold_chunk_ids": [
+        "doc:slack:C08SRCH:thread:1700000208.000100:c0",
+        "doc:github:company/workmesh:pr:708:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 200.22,
+        "steps": 1,
+        "tokens_used": 216,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 349.71,
+        "steps": 3,
+        "tokens_used": 1549,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-09",
+      "question": "Which email flagged invoice PDF memory exhaustion and what commit streamed renders to disk?",
+      "gold_chunk_ids": [
+        "doc:email:finance.ops@company.internal:msg-v2-109:c0",
+        "doc:github:company/invoice-renderer:commit:44b19c0d82e1:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 188.56,
+        "steps": 1,
+        "tokens_used": 232,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 402.6,
+        "steps": 2,
+        "tokens_used": 1823,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 2
+      }
+    },
+    {
+      "query_id": "qv2-multi-10",
+      "question": "What Slack debate settled 15 concurrent workers for backpressure and which PR implemented Retry-After?",
+      "gold_chunk_ids": [
+        "doc:slack:C10OBS:thread:1700000210.000100:c0",
+        "doc:github:company/workmesh:pr:710:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 163.78,
+        "steps": 1,
+        "tokens_used": 276,
+        "gold_hits": 0,
+        "gold_coverage": 0.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 358.16,
+        "steps": 3,
+        "tokens_used": 2190,
+        "gold_hits": 0,
+        "gold_coverage": 0.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-11",
+      "question": "What did Slack report about Kafka consumer rebalance storms and which PR increased session.timeout.ms?",
+      "gold_chunk_ids": [
+        "doc:slack:C09DBA:thread:1700000211.000100:c0",
+        "doc:github:company/event-workers:pr:711:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 177.82,
+        "steps": 1,
+        "tokens_used": 276,
+        "gold_hits": 0,
+        "gold_coverage": 0.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 284.93,
+        "steps": 3,
+        "tokens_used": 2190,
+        "gold_hits": 0,
+        "gold_coverage": 0.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-12",
+      "question": "What email warned about NAT gateway port exhaustion and which PR switched to VPC endpoints?",
+      "gold_chunk_ids": [
+        "doc:email:sre@company.internal:msg-v2-112:c0",
+        "doc:github:company/aws-network:pr:712:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 169.24,
+        "steps": 1,
+        "tokens_used": 239,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 449.86,
+        "steps": 2,
+        "tokens_used": 1895,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 2
+      }
+    },
+    {
+      "query_id": "qv2-multi-13",
+      "question": "What architectural change did Slack propose for email source IDs and what PR fixed duplicate message rows?",
+      "gold_chunk_ids": [
+        "doc:slack:C08SRCH:thread:1700000213.000100:c0",
+        "doc:github:company/email-connector:pr:713:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 175.61,
+        "steps": 1,
+        "tokens_used": 245,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 492.43,
+        "steps": 3,
+        "tokens_used": 1976,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-14",
+      "question": "Which email flagged Stripe idempotency header truncation and which commit preserved full UUID length?",
+      "gold_chunk_ids": [
+        "doc:email:payments@company.internal:msg-v2-114:c0",
+        "doc:github:company/payment-service:commit:b119f30e2a4c:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 197.02,
+        "steps": 1,
+        "tokens_used": 211,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 465.36,
+        "steps": 3,
+        "tokens_used": 1774,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-15",
+      "question": "What Slack finding triggered removing HS256 default secret fallback and what PR aborted prod boot?",
+      "gold_chunk_ids": [
+        "doc:slack:C04SEC:thread:1700000215.000100:c0",
+        "doc:github:company/workmesh:pr:715:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 189.55,
+        "steps": 1,
+        "tokens_used": 234,
+        "gold_hits": 0,
+        "gold_coverage": 0.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 450.15,
+        "steps": 3,
+        "tokens_used": 1869,
+        "gold_hits": 0,
+        "gold_coverage": 0.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-16",
+      "question": "What did Slack say about pgvector HNSW iterative_scan and what email summarized the 1% access recall gain?",
+      "gold_chunk_ids": [
+        "doc:slack:C08SRCH:thread:1700000216.000100:c0",
+        "doc:email:search@company.internal:msg-v2-116:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 207.2,
+        "steps": 1,
+        "tokens_used": 251,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 546.2,
+        "steps": 3,
+        "tokens_used": 2038,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-17",
+      "question": "Why did SRE ask in email to add Prometheus histogram buckets under 50ms and which PR exported /metrics?",
+      "gold_chunk_ids": [
+        "doc:email:sre@company.internal:msg-v2-117:c0",
+        "doc:github:company/workmesh:pr:717:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 187.9,
+        "steps": 1,
+        "tokens_used": 221,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 457.43,
+        "steps": 3,
+        "tokens_used": 1721,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-18",
+      "question": "What Slack incident discussed orphaned Postgres advisory locks after pod SIGKILL and what PR added timeouts?",
+      "gold_chunk_ids": [
+        "doc:slack:C09DBA:thread:1700000218.000100:c0",
+        "doc:github:company/workmesh:pr:718:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 241.08,
+        "steps": 1,
+        "tokens_used": 263,
+        "gold_hits": 1,
+        "gold_coverage": 0.5
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 485.86,
+        "steps": 3,
+        "tokens_used": 2126,
+        "gold_hits": 1,
+        "gold_coverage": 0.5,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-19",
+      "question": "Which email summarized the SAML clock skew outage and which Slack thread confirmed the 60s assertion window?",
+      "gold_chunk_ids": [
+        "doc:email:security@company.internal:msg-v2-119:c0",
+        "doc:slack:C04SEC:thread:1700000219.000100:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 170.88,
+        "steps": 1,
+        "tokens_used": 230,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 420.55,
+        "steps": 3,
+        "tokens_used": 1924,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "qv2-multi-20",
+      "question": "What did Slack say about non-root UID 10001 Docker permissions and which PR baked model weights at build time?",
+      "gold_chunk_ids": [
+        "doc:slack:C06K8S:thread:1700000220.000100:c0",
+        "doc:github:company/workmesh:pr:720:c0"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 206.05,
+        "steps": 1,
+        "tokens_used": 252,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 527.87,
+        "steps": 3,
+        "tokens_used": 1977,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "agent-hop-21",
+      "question": "What decision was agreed in Slack regarding card validation for DC-8692 and which GitHub PR added defensive checks?",
+      "gold_chunk_ids": [
+        "scale:doc:00000:c0",
+        "scale:doc:00000:c1"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 168.13,
+        "steps": 1,
+        "tokens_used": 270,
+        "gold_hits": 0,
+        "gold_coverage": 0.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 320.76,
+        "steps": 3,
+        "tokens_used": 2169,
+        "gold_hits": 0,
+        "gold_coverage": 0.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "agent-hop-22",
+      "question": "Why did engineers modify null verification in payment card validation for DC-1000 and what commit applied it?",
+      "gold_chunk_ids": [
+        "scale:doc:00000:c0",
+        "scale:doc:00000:c2"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 192.02,
+        "steps": 1,
+        "tokens_used": 270,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 244.22,
+        "steps": 2,
+        "tokens_used": 1649,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 2
+      }
+    },
+    {
+      "query_id": "agent-hop-23",
+      "question": "What Slack discussion resolved the payment verification exception in DC-1100 and which PR updated the handler?",
+      "gold_chunk_ids": [
+        "scale:doc:00100:c0",
+        "scale:doc:00100:c1"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 139.82,
+        "steps": 1,
+        "tokens_used": 269,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 315.13,
+        "steps": 3,
+        "tokens_used": 2167,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "agent-hop-24",
+      "question": "Which email flagged payment card validation issues in DC-1200 and what PR added unit tests?",
+      "gold_chunk_ids": [
+        "scale:doc:00200:c0",
+        "scale:doc:00200:c1"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 162.2,
+        "steps": 1,
+        "tokens_used": 264,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 240.7,
+        "steps": 2,
+        "tokens_used": 1655,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 2
+      }
+    },
+    {
+      "query_id": "agent-hop-25",
+      "question": "What defensive checks were approved in Slack for DC-1300 and what PR was opened?",
+      "gold_chunk_ids": [
+        "scale:doc:00300:c0",
+        "scale:doc:00300:c1"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 177.32,
+        "steps": 1,
+        "tokens_used": 262,
+        "gold_hits": 0,
+        "gold_coverage": 0.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 328.87,
+        "steps": 3,
+        "tokens_used": 2152,
+        "gold_hits": 0,
+        "gold_coverage": 0.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "agent-hop-26",
+      "question": "What Slack announcement discussed payment validation rollout for DC-1400 and what commit was referenced?",
+      "gold_chunk_ids": [
+        "scale:doc:00400:c0",
+        "scale:doc:00400:c2"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 191.82,
+        "steps": 1,
+        "tokens_used": 268,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 304.85,
+        "steps": 3,
+        "tokens_used": 2164,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "agent-hop-27",
+      "question": "Which email summarized checkout error rates for DC-1500 and what PR implemented the fix?",
+      "gold_chunk_ids": [
+        "scale:doc:00500:c0",
+        "scale:doc:00500:c1"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 175.74,
+        "steps": 1,
+        "tokens_used": 254,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 328.64,
+        "steps": 2,
+        "tokens_used": 1572,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 2
+      }
+    },
+    {
+      "query_id": "agent-hop-28",
+      "question": "What PR addressed null verification in payment card validation for DC-1600 and what tests were added?",
+      "gold_chunk_ids": [
+        "scale:doc:00600:c0",
+        "scale:doc:00600:c3"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 205.04,
+        "steps": 1,
+        "tokens_used": 268,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 262.73,
+        "steps": 2,
+        "tokens_used": 1645,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 2
+      }
+    },
+    {
+      "query_id": "agent-hop-29",
+      "question": "What did Slack discuss regarding checkout validation for DC-1700 and what PR was deployed?",
+      "gold_chunk_ids": [
+        "scale:doc:00700:c0",
+        "scale:doc:00700:c1"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 168.59,
+        "steps": 1,
+        "tokens_used": 264,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 314.05,
+        "steps": 3,
+        "tokens_used": 2157,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 3
+      }
+    },
+    {
+      "query_id": "agent-hop-30",
+      "question": "Which email discussed null verification in payment card validation for DC-1800 and what PR fixed it?",
+      "gold_chunk_ids": [
+        "scale:doc:00800:c0",
+        "scale:doc:00800:c1"
+      ],
+      "single_shot": {
+        "status": "ANSWERED",
+        "latency_ms": 153.69,
+        "steps": 1,
+        "tokens_used": 267,
+        "gold_hits": 2,
+        "gold_coverage": 1.0
+      },
+      "agent": {
+        "status": "ANSWERED",
+        "latency_ms": 239.17,
+        "steps": 2,
+        "tokens_used": 1660,
+        "gold_hits": 2,
+        "gold_coverage": 1.0,
+        "trace_step_count": 2
+      }
+    }
+  ]
+}

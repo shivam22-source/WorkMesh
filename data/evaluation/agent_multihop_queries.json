@@ -1,0 +1,423 @@
+{
+  "queries": [
+    {
+      "query_id": "qv2-multi-01",
+      "question": "Why did we switch session cookies to SameSite=Lax and which PR implemented it?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C04SEC:thread:1700000201.000100:c0",
+        "doc:github:company/auth-gateway:pr:701:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-02",
+      "question": "What Slack mitigation stopped the billing webhook storm and which commit added signature caching?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C0123PAY:thread:1700000202.000100:c0",
+        "doc:github:company/billing-hooks:commit:7c2201aa91f0:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-03",
+      "question": "Which email approved raising statement_timeout for analytics exports and which PR configured the dedicated role?",
+      "user_id": "employee_06",
+      "group_ids": [
+        "group_engineering",
+        "group_finance"
+      ],
+      "gold_chunk_ids": [
+        "doc:email:dba@company.internal:msg-v2-103:c0",
+        "doc:github:company/dba-terraform:pr:703:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-04",
+      "question": "Why did Slack engineers pick Zstandard over Gzip for trace compression and what PR rolled it out?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C10OBS:thread:1700000204.000100:c0",
+        "doc:github:company/otel-config:pr:704:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-05",
+      "question": "What vendor email warned about TLS 1.1 deprecation and which PR removed legacy ciphers?",
+      "user_id": "employee_05",
+      "group_ids": [
+        "group_engineering",
+        "group_security"
+      ],
+      "gold_chunk_ids": [
+        "doc:email:partner@gateway.com:msg-v2-105:c0",
+        "doc:github:company/ingress-mesh:pr:705:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-06",
+      "question": "How did Slack triage explain the Redis OOM spike and which PR enforced maxmemory-policy?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C08SRCH:thread:1700000206.000100:c0",
+        "doc:github:company/cache-infra:pr:706:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-07",
+      "question": "What email outlined compliance retention for audit logs and which PR implemented S3 Object Lock?",
+      "user_id": "employee_01",
+      "group_ids": [
+        "group_engineering",
+        "group_finance",
+        "group_security"
+      ],
+      "gold_chunk_ids": [
+        "doc:email:legal@company.internal:msg-v2-107:c0",
+        "doc:github:company/audit-archive:pr:707:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-08",
+      "question": "What schema migration blocker was raised in Slack for pgvector 384 dims and which PR updated the SQL?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C08SRCH:thread:1700000208.000100:c0",
+        "doc:github:company/workmesh:pr:708:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-09",
+      "question": "Which email flagged invoice PDF memory exhaustion and what commit streamed renders to disk?",
+      "user_id": "employee_06",
+      "group_ids": [
+        "group_engineering",
+        "group_finance"
+      ],
+      "gold_chunk_ids": [
+        "doc:email:finance.ops@company.internal:msg-v2-109:c0",
+        "doc:github:company/invoice-renderer:commit:44b19c0d82e1:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-10",
+      "question": "What Slack debate settled 15 concurrent workers for backpressure and which PR implemented Retry-After?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C10OBS:thread:1700000210.000100:c0",
+        "doc:github:company/workmesh:pr:710:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-11",
+      "question": "What did Slack report about Kafka consumer rebalance storms and which PR increased session.timeout.ms?",
+      "user_id": "employee_04",
+      "group_ids": [
+        "group_engineering"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C09DBA:thread:1700000211.000100:c0",
+        "doc:github:company/event-workers:pr:711:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-12",
+      "question": "What email warned about NAT gateway port exhaustion and which PR switched to VPC endpoints?",
+      "user_id": "employee_10",
+      "group_ids": [
+        "group_engineering"
+      ],
+      "gold_chunk_ids": [
+        "doc:email:sre@company.internal:msg-v2-112:c0",
+        "doc:github:company/aws-network:pr:712:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-13",
+      "question": "What architectural change did Slack propose for email source IDs and what PR fixed duplicate message rows?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C08SRCH:thread:1700000213.000100:c0",
+        "doc:github:company/email-connector:pr:713:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-14",
+      "question": "Which email flagged Stripe idempotency header truncation and which commit preserved full UUID length?",
+      "user_id": "employee_06",
+      "group_ids": [
+        "group_engineering",
+        "group_finance"
+      ],
+      "gold_chunk_ids": [
+        "doc:email:payments@company.internal:msg-v2-114:c0",
+        "doc:github:company/payment-service:commit:b119f30e2a4c:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-15",
+      "question": "What Slack finding triggered removing HS256 default secret fallback and what PR aborted prod boot?",
+      "user_id": "employee_05",
+      "group_ids": [
+        "group_engineering",
+        "group_security"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C04SEC:thread:1700000215.000100:c0",
+        "doc:github:company/workmesh:pr:715:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-16",
+      "question": "What did Slack say about pgvector HNSW iterative_scan and what email summarized the 1% access recall gain?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C08SRCH:thread:1700000216.000100:c0",
+        "doc:email:search@company.internal:msg-v2-116:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-17",
+      "question": "Why did SRE ask in email to add Prometheus histogram buckets under 50ms and which PR exported /metrics?",
+      "user_id": "employee_04",
+      "group_ids": [
+        "group_engineering"
+      ],
+      "gold_chunk_ids": [
+        "doc:email:sre@company.internal:msg-v2-117:c0",
+        "doc:github:company/workmesh:pr:717:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-18",
+      "question": "What Slack incident discussed orphaned Postgres advisory locks after pod SIGKILL and what PR added timeouts?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C09DBA:thread:1700000218.000100:c0",
+        "doc:github:company/workmesh:pr:718:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-19",
+      "question": "Which email summarized the SAML clock skew outage and which Slack thread confirmed the 60s assertion window?",
+      "user_id": "employee_01",
+      "group_ids": [
+        "group_engineering",
+        "group_finance",
+        "group_security"
+      ],
+      "gold_chunk_ids": [
+        "doc:email:security@company.internal:msg-v2-119:c0",
+        "doc:slack:C04SEC:thread:1700000219.000100:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "qv2-multi-20",
+      "question": "What did Slack say about non-root UID 10001 Docker permissions and which PR baked model weights at build time?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "doc:slack:C06K8S:thread:1700000220.000100:c0",
+        "doc:github:company/workmesh:pr:720:c0"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-21",
+      "question": "What decision was agreed in Slack regarding card validation for DC-8692 and which GitHub PR added defensive checks?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00000:c0",
+        "scale:doc:00000:c1"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-22",
+      "question": "Why did engineers modify null verification in payment card validation for DC-1000 and what commit applied it?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00000:c0",
+        "scale:doc:00000:c2"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-23",
+      "question": "What Slack discussion resolved the payment verification exception in DC-1100 and which PR updated the handler?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00100:c0",
+        "scale:doc:00100:c1"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-24",
+      "question": "Which email flagged payment card validation issues in DC-1200 and what PR added unit tests?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00200:c0",
+        "scale:doc:00200:c1"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-25",
+      "question": "What defensive checks were approved in Slack for DC-1300 and what PR was opened?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00300:c0",
+        "scale:doc:00300:c1"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-26",
+      "question": "What Slack announcement discussed payment validation rollout for DC-1400 and what commit was referenced?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00400:c0",
+        "scale:doc:00400:c2"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-27",
+      "question": "Which email summarized checkout error rates for DC-1500 and what PR implemented the fix?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00500:c0",
+        "scale:doc:00500:c1"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-28",
+      "question": "What PR addressed null verification in payment card validation for DC-1600 and what tests were added?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00600:c0",
+        "scale:doc:00600:c3"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-29",
+      "question": "What did Slack discuss regarding checkout validation for DC-1700 and what PR was deployed?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00700:c0",
+        "scale:doc:00700:c1"
+      ],
+      "hop_count": 2
+    },
+    {
+      "query_id": "agent-hop-30",
+      "question": "Which email discussed null verification in payment card validation for DC-1800 and what PR fixed it?",
+      "user_id": "employee_42",
+      "group_ids": [
+        "group_engineering",
+        "group_backend"
+      ],
+      "gold_chunk_ids": [
+        "scale:doc:00800:c0",
+        "scale:doc:00800:c1"
+      ],
+      "hop_count": 2
+    }
+  ]
+}
