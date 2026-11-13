@@ -1,7 +1,9 @@
 """Tests for embedding provider interface, mock implementation, and sentence-transformers."""
 
 import math
+
 import pytest
+
 from app.embeddings.factory import get_embedding_provider
 from app.embeddings.mock_provider import MockEmbeddingProvider
 from app.embeddings.sentence_transformer_provider import SentenceTransformerEmbeddingProvider

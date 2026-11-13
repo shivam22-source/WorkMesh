@@ -140,8 +140,9 @@ def evaluate_query(
 def run_evaluation(
     queries_path: Optional[Path] = None,
     output_path: Optional[Path] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the full 30-query comparative benchmark."""
+    """Execute the comparative benchmark."""
     settings = get_settings()
 
     if queries_path is None:
@@ -151,6 +152,8 @@ def run_evaluation(
 
     logger.info("loading_queries path=%s", queries_path)
     queries = load_multihop_queries(queries_path)
+    if limit is not None and limit > 0:
+        queries = queries[:limit]
     logger.info("evaluating_queries total=%d", len(queries))
 
     # Initialize repository and services
@@ -268,6 +271,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run WorkMesh multi-hop agent evaluation.")
     parser.add_argument("--queries", type=Path, default=None, help="Path to multihop queries JSON")
     parser.add_argument("--output", type=Path, default=None, help="Path to output results JSON")
+    parser.add_argument("--limit", type=int, default=None, help="Optional limit on number of queries to evaluate")
     args = parser.parse_args()
 
-    run_evaluation(queries_path=args.queries, output_path=args.output)
+    run_evaluation(queries_path=args.queries, output_path=args.output, limit=args.limit)

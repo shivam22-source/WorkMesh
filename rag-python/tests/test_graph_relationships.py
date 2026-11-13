@@ -22,6 +22,7 @@ Verifies:
 """
 
 from datetime import datetime, timezone
+
 import pytest
 
 from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType
@@ -32,7 +33,6 @@ from app.graph.extractor import extract_entities_and_relationships
 from app.graph.models import Entity, EntityType, Relationship, RelationshipType
 from app.indexing.pipeline import IngestionPipeline
 from app.indexing.repository import InMemoryKnowledgeRepository
-
 
 # ---------------------------------------------------------------------------
 # 1. Canonical Relationship Directions & Extraction
@@ -533,6 +533,7 @@ def test_postgres_save_entities_prevalidation_rejects_intra_batch_conflict():
 def test_postgres_save_entities_conflict_aware_sql_and_rollback(monkeypatch):
     """PostgresKnowledgeRepository executes in transaction and rolls back when WHERE condition fails."""
     from unittest.mock import MagicMock
+
     from app.indexing.repository import PostgresKnowledgeRepository
 
     mock_conn = MagicMock()

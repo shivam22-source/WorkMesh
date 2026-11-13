@@ -7,9 +7,10 @@ Supports two authentication modes:
   with fallback to employee_42.
 """
 
-from dataclasses import dataclass, field
 import logging
-from typing import Annotated, Any, Dict, Optional, Set
+from dataclasses import dataclass, field
+from typing import Annotated, Optional, Set
+
 import jwt
 from fastapi import Depends, Header, Request
 
@@ -51,33 +52,70 @@ DEFAULT_GROUPS = {"group_engineering", "group_backend"}
 
 
 def _decode_jwt_token(token: str, settings: Settings) -> UserContext:
-    """Decode and validate a signed JWT token."""
+    """Decode and validate a signed JWT token against explicit algorithms and TTL bounds."""
+    try:
+        header = jwt.get_unverified_header(token)
+    except jwt.InvalidTokenError as exc:
+        logger.warning("jwt_header_invalid err=%s", exc)
+        raise AuthenticationRequiredError("Invalid token header")
+
+    alg = str(header.get("alg") or "").strip()
+    if not alg or alg.lower() == "none" or alg not in settings.allowed_jwt_algorithms:
+        logger.warning("jwt_algorithm_rejected alg=%s allowed=%s", alg, settings.allowed_jwt_algorithms)
+        raise AuthenticationRequiredError("Unsupported or disallowed JWT signing algorithm")
+
     try:
         payload = jwt.decode(
             token,
             settings.jwt_secret,
-            algorithms=[settings.jwt_algorithm],
-            options={"require": ["exp"]},
+            algorithms=settings.allowed_jwt_algorithms,
+            options={"require": ["exp", "sub"]},
         )
     except jwt.ExpiredSignatureError:
         logger.warning("jwt_token_expired")
         raise AuthenticationRequiredError("Token has expired")
+    except jwt.MissingRequiredClaimError as exc:
+        logger.warning("jwt_missing_required_claim err=%s", exc)
+        raise AuthenticationRequiredError(f"Token missing required claim: {exc.claim}")
     except jwt.InvalidTokenError as exc:
         logger.warning("jwt_token_invalid err=%s", exc)
         raise AuthenticationRequiredError("Invalid token signature or payload")
 
-    user_id = str(payload.get("sub") or payload.get("userId") or payload.get("user_id") or "").strip()
+    user_id = str(payload.get("sub") or "").strip()
     if not user_id:
         raise AuthenticationRequiredError("Token claims missing required user identifier ('sub')")
 
+    # Enforce JWT_MAX_TTL_SECONDS using (exp - iat) when iat is present
+    exp_val = payload.get("exp")
+    iat_val = payload.get("iat")
+    if not isinstance(exp_val, (int, float)):
+        raise AuthenticationRequiredError("Token 'exp' claim must be numeric")
+    if iat_val is not None:
+        if not isinstance(iat_val, (int, float)):
+            raise AuthenticationRequiredError("Token 'iat' claim must be numeric")
+        if (exp_val - iat_val) > settings.jwt_max_ttl_seconds:
+            logger.warning(
+                "jwt_ttl_exceeded ttl=%s max_ttl=%s",
+                exp_val - iat_val,
+                settings.jwt_max_ttl_seconds,
+            )
+            raise AuthenticationRequiredError(
+                f"Token lifetime exceeds JWT_MAX_TTL_SECONDS ({settings.jwt_max_ttl_seconds}s)"
+            )
+
     role = str(payload.get("role") or DEFAULT_ROLE).strip().upper()
-    groups_claim = payload.get("groups") or payload.get("groupIds") or []
-    if isinstance(groups_claim, str):
-        group_ids = {g.strip() for g in groups_claim.split(",") if g.strip()}
-    elif isinstance(groups_claim, (list, tuple, set)):
-        group_ids = {str(g).strip() for g in groups_claim if str(g).strip()}
+    if "groups" in payload and payload["groups"] is not None:
+        groups_claim = payload["groups"]
+    elif "groupIds" in payload and payload["groupIds"] is not None:
+        groups_claim = payload["groupIds"]
     else:
-        group_ids = set()
+        groups_claim = []
+
+    if not isinstance(groups_claim, list) or not all(isinstance(g, str) for g in groups_claim):
+        logger.warning("jwt_invalid_groups_claim type=%s", type(groups_claim).__name__)
+        raise AuthenticationRequiredError("Token 'groups' claim must be a list of strings")
+
+    group_ids = {g.strip() for g in groups_claim if g.strip()}
 
     email = str(payload.get("email") or f"{user_id}@company.internal")
     name = str(payload.get("name") or f"User ({user_id})")

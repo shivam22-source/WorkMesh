@@ -36,13 +36,25 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-knowledge}
-      ENVIRONMENT: production
+      # =======================================================================
+      # SECURITY WARNING: DEMO ONLY — NOT SAFE FOR PRODUCTION!
+      # AUTH_MODE=dev disables mandatory JWT verification so Quick Start curl
+      # examples work with X-User-* simulation headers. For real deployments,
+      # set AUTH_MODE=prod and supply a 32+ character JWT_SECRET.
+      # =======================================================================
+      AUTH_MODE: dev
+      EMBEDDING_PROVIDER: sentence-transformers
+      EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      EMBEDDING_DIMENSION: 384
     ports:
       - "8000:8000"
-      - "8080:8000"
     volumes:
       - ./data:/app/data:ro
       - ./demo-ui:/app/demo-ui:ro
+    command:
+      - sh
+      - -c
+      - "python -m app.cli.ingest --source all && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
       postgres:
         condition: service_healthy

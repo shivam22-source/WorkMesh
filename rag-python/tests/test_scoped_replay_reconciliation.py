@@ -1,6 +1,7 @@
 """Tests for scoped replay reconciliation, immutable relationship metadata, and graph traversal authorization (Phase 5 Step 2)."""
 
 from datetime import datetime, timezone
+
 import pytest
 
 from app.chunking.models import CanonicalChunk
@@ -8,7 +9,6 @@ from app.connectors.common.models import AclReference, PrincipalType, RawSourceI
 from app.graph.models import Entity, EntityType, Relationship, RelationshipType
 from app.indexing.repository import (
     InMemoryKnowledgeRepository,
-    PostgresKnowledgeRepository,
     derive_canonical_metadata,
 )
 from app.normalization.models import CanonicalDocument
@@ -60,30 +60,30 @@ def test_relationship_metadata_derived_unambiguously_with_colons():
     """Repository names and IDs containing colons are parsed unambiguously using rsplit."""
     canonical = derive_canonical_metadata(
         source_entity_id="ticket:SEC-404",
-        target_entity_id="pr:git.internal:8080/org/core-infra:42",
+        target_entity_id="pr:git.internal:8443/org/core-infra:42",
         rel_type="implemented_by",
     )
-    assert canonical["repository"] == "git.internal:8080/org/core-infra"
+    assert canonical["repository"] == "git.internal:8443/org/core-infra"
     assert canonical["pr_number"] == "42"
     assert canonical["ticket_id"] == "SEC-404"
 
     # Commit relationship (contains)
     commit_meta = derive_canonical_metadata(
-        source_entity_id="pr:git.internal:8080/org/core-infra:42",
-        target_entity_id="commit:git.internal:8080/org/core-infra:deadbeef0123",
+        source_entity_id="pr:git.internal:8443/org/core-infra:42",
+        target_entity_id="commit:git.internal:8443/org/core-infra:deadbeef0123",
         rel_type="contains",
     )
-    assert commit_meta["repository"] == "git.internal:8080/org/core-infra"
+    assert commit_meta["repository"] == "git.internal:8443/org/core-infra"
     assert commit_meta["pr_number"] == "42"
     assert commit_meta["sha"] == "deadbeef0123"
 
     # Authored by relationship
     author_meta = derive_canonical_metadata(
-        source_entity_id="commit:git.internal:8080/org/core-infra:deadbeef0123",
+        source_entity_id="commit:git.internal:8443/org/core-infra:deadbeef0123",
         target_entity_id="employee:alice.dev",
         rel_type="authored_by",
     )
-    assert author_meta["repository"] == "git.internal:8080/org/core-infra"
+    assert author_meta["repository"] == "git.internal:8443/org/core-infra"
     assert author_meta["sha"] == "deadbeef0123"
 
     # Discussed in relationship

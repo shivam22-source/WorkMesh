@@ -1,8 +1,8 @@
 """Prometheus-compatible operational metrics endpoint for WorkMesh."""
 
 from collections import defaultdict
-import time
 from typing import Dict, List, Tuple
+
 from fastapi import APIRouter, Response
 
 router = APIRouter(tags=["metrics"])

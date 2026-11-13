@@ -49,7 +49,7 @@
       <div class="flex items-center space-x-4">
         <!-- Live vs Sim Toggle -->
         <div class="flex items-center bg-slate-800/90 rounded-lg p-1 border border-slate-700/80 text-xs">
-          <button id="mode-live" onclick="setMode('live')" class="px-2.5 py-1 rounded font-medium transition text-slate-300 hover:text-white">Live API (:8080)</button>
+          <button id="mode-live" onclick="setMode('live')" class="px-2.5 py-1 rounded font-medium transition text-slate-300 hover:text-white">Live API (:8000)</button>
           <button id="mode-sim" onclick="setMode('sim')" class="px-2.5 py-1 rounded font-medium transition bg-indigo-600 text-white shadow-sm">Offline Sim</button>
         </div>
 
@@ -303,10 +303,10 @@
 
   <!-- Footer -->
   <footer class="border-t border-slate-800/60 bg-slate-950 py-4 text-center text-xs text-slate-500 font-mono">
-    WorkMesh • Permission-Aware Multi-Tenant RAG • Dual-Service (Java 21 + Python 3.12) over PostgreSQL + pgvector
+    WorkMesh • Permission-Aware Multi-Tenant RAG • Consolidated FastAPI Service (Python 3.12+) over PostgreSQL + pgvector
   </footer>
 
-  <!-- Interactive JavaScript Engine -->
+  <!-- Interactive Client Engine -->
   <script>
     let currentMode = 'sim'; // 'live' or 'sim'
     let currentTab = 'search';
@@ -463,7 +463,7 @@
 
       if (currentMode === 'live') {
         try {
-          const res = await fetch('http://localhost:8080/api/v1/search', {
+          const res = await fetch('http://localhost:8000/api/v1/search', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -536,7 +536,7 @@
 
       if (currentMode === 'live') {
         try {
-          const res = await fetch('http://localhost:8080/api/v1/ask', {
+          const res = await fetch('http://localhost:8000/api/v1/ask', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

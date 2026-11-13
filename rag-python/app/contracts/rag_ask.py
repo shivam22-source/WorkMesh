@@ -1,15 +1,15 @@
-"""Wire contract for internal Grounded RAG ask between backend-java and rag-python.
+"""Wire contract for internal Grounded RAG ask in rag-python.
 
 Contract documentation: docs/api/api-contract.md
-Java DTOs: com.company.knowledge.search.dto (AskRequest, AskResponse, CitationItem)
 """
 
 from typing import List, Literal, Optional
+
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class RagAskRequest(BaseModel):
-    """Request payload sent from backend-java to rag-python for permission-aware Q&A."""
+    """Request payload for permission-aware Grounded Q&A."""
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
@@ -21,13 +21,13 @@ class RagAskRequest(BaseModel):
         validation_alias=AliasChoices("userId", "user_id"),
         serialization_alias="userId",
         min_length=1,
-        description="Authenticated employee identity resolved by backend-java.",
+        description="Authenticated employee identity.",
     )
     group_ids: List[str] = Field(
         default_factory=list,
         validation_alias=AliasChoices("groupIds", "group_ids"),
         serialization_alias="groupIds",
-        description="Team/group memberships resolved by backend-java.",
+        description="Team/group memberships resolved for the caller.",
     )
     source_types: Optional[List[str]] = Field(
         default=None,
@@ -52,7 +52,7 @@ class CitationItem(BaseModel):
 
 
 class RagAskResponse(BaseModel):
-    """Response payload returned from rag-python to backend-java."""
+    """Response payload returned from rag-python Grounded Q&A."""
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 

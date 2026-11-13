@@ -16,7 +16,7 @@ Extracts canonical directed relationships:
 
 import logging
 import re
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from app.connectors.common.models import RawSourceItem, SourceType
 from app.graph.models import Entity, EntityType, Relationship, RelationshipType

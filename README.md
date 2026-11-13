@@ -189,7 +189,7 @@ Evaluation dataset: [`data/evaluation/agent_multihop_queries.json`](data/evaluat
 
 ## Architecture
 
-A single consolidated FastAPI application interfacing directly with PostgreSQL 16 + pgvector. See [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md).
+A single consolidated FastAPI application interfacing directly with PostgreSQL 16 + pgvector. See [`docs/decisions/ADR-0001-single-service-consolidation.md`](docs/decisions/ADR-0001-single-service-consolidation.md).
 
 ```mermaid
 flowchart TD
@@ -275,7 +275,7 @@ cd rag-python
 .venv/Scripts/pytest.exe tests
 ```
 
-381 passed with model weights cached (or 377 passed and 4 deselected with `-m "not real_model"` when skipping `@pytest.mark.real_model` tests without cached weights). Covers hybrid retrieval, query-type routing, optional Cross-Encoder reranking, pushdown ACL enforcement, pluggable LLM providers (Mock, Gemini, Anthropic), prompt injection containment, autonomous multi-step agent execution, citation validation, role-based access control, concurrency backpressure, and error handling contracts. CI runs 100% on mocks with zero external API calls.
+400 passed with model weights cached (or 396 passed and 4 deselected with `-m "not real_model"` when skipping `@pytest.mark.real_model` tests without cached weights). Covers hybrid retrieval, query-type routing, optional Cross-Encoder reranking, pushdown ACL enforcement, pluggable LLM providers (Mock, Gemini, Anthropic), prompt injection containment, autonomous multi-step agent execution, citation validation, role-based access control, concurrency backpressure, and error handling contracts. CI runs 100% on mocks with zero external API calls.
 
 ---
 
@@ -285,5 +285,6 @@ cd rag-python
 - [`docs/runbooks/final-demo-script.md`](docs/runbooks/final-demo-script.md): Live walkthrough script with example queries.
 - [`docs/runbooks/evaluation-and-metrics.md`](docs/runbooks/evaluation-and-metrics.md): Evaluation methodology and metrics definitions.
 - [`docs/experiments.md`](docs/experiments.md): Semantic weakness sweeps, Cross-Encoder latency/recall benchmarks, and experimental graph boost findings.
-- [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md): Consolidation rationale to single FastAPI service.
+- [`docs/decisions/ADR-0001-single-service-consolidation.md`](docs/decisions/ADR-0001-single-service-consolidation.md): Consolidation rationale to single FastAPI service.
 - [`docs/decisions/ADR-0002-redis-deferral.md`](docs/decisions/ADR-0002-redis-deferral.md): Datastore simplicity and Redis deferral rationale.
+- [`docs/decisions/ADR-0003-gateway-merge.md`](docs/decisions/ADR-0003-gateway-merge.md): Architecture rationale for direct API routing without separate gateway proxy.

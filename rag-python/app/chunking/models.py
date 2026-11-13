@@ -1,8 +1,9 @@
 """Models for knowledge chunks (the unit of search, retrieval, and ACL filtering)."""
 
-from datetime import datetime, timezone
 import hashlib
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 from app.connectors.common.models import AclReference

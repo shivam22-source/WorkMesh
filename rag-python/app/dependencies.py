@@ -1,9 +1,6 @@
 """Shared dependency providers for FastAPI application routes."""
 
 from functools import lru_cache
-from typing import Annotated
-
-from fastapi import Depends
 
 from app.agent.service import AgentService
 from app.common.config import get_settings

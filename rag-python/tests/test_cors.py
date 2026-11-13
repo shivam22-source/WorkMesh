@@ -26,4 +26,4 @@ def test_cors_preflight_and_headers():
     res_health = client.get("/health", headers={"Origin": "http://localhost:3000"})
     assert res_health.status_code == 200
     assert res_health.headers["access-control-allow-origin"] == "http://localhost:3000"
-    assert "X-Trace-Id" in res_health.headers.get("access-control-expose-headers", "")
+    assert "X-Request-Id" in res_health.headers.get("access-control-expose-headers", "")

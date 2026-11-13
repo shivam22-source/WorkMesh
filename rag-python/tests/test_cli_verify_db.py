@@ -1,6 +1,7 @@
 """Tests for database verification CLI."""
 
 from unittest.mock import MagicMock, patch
+
 from app.cli.verify_db import verify_database_and_vector
 
 

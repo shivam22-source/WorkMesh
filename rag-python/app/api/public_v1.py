@@ -1,7 +1,6 @@
 """Public REST API v1 for WorkMesh Enterprise Knowledge & Context Platform.
 
-Consolidates search, ask, and administrative endpoints previously split between
-backend-java and rag-python into a unified, high-performance FastAPI service.
+Provides search, grounded Q&A, and administrative endpoints in a unified FastAPI service.
 """
 
 import logging
@@ -15,6 +14,7 @@ from app.agent.service import AgentAskRequest, AgentAskResponse, AgentService
 from app.api.concurrency import ConcurrencyLimitExceededError, search_concurrency_limiter
 from app.auth.user_context import AccessDeniedError, UserContext, get_current_user, require_admin
 from app.common.config import get_settings
+from app.contracts.errors import ErrorResponse
 from app.contracts.rag_ask import RagAskRequest
 from app.dependencies import (
     get_agent_service,
@@ -28,7 +28,14 @@ from app.rag.service import GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1", tags=["public_v1"])
+COMMON_ERROR_RESPONSES = {
+    400: {"model": ErrorResponse, "description": "Invalid request payload or parameters"},
+    401: {"model": ErrorResponse, "description": "Missing or invalid authentication credentials"},
+    403: {"model": ErrorResponse, "description": "Insufficient permissions for the requested resource"},
+    500: {"model": ErrorResponse, "description": "Unexpected internal server error"},
+    503: {"model": ErrorResponse, "description": "Service overloaded or database unavailable"},
+}
+router = APIRouter(prefix="/api/v1", tags=["public_v1"], responses=COMMON_ERROR_RESPONSES)
 
 
 # ---------------------------------------------------------------------------
@@ -152,6 +159,16 @@ class AuditEventResponse(BaseModel):
     details: Optional[Dict[str, Any]] = None
     ipAddress: Optional[str] = None
     timestamp: Optional[str] = None
+
+
+class PaginatedAuditEventsResponse(BaseModel):
+    """Paginated response envelope for administrator audit log queries."""
+
+    items: List[AuditEventResponse] = Field(description="Audit events in the requested page.")
+    total: int = Field(ge=0, description="Total number of matching audit events.")
+    limit: int = Field(ge=1, le=1000, description="Page size requested.")
+    offset: int = Field(ge=0, description="Zero-based row offset applied.")
+    hasMore: bool = Field(description="True when additional events exist beyond this page.")
 
 
 class SyncResetRequest(BaseModel):
@@ -468,16 +485,22 @@ def get_admin_sync_status(
     return _get_sync_status_common(req, user, repo)
 
 
-@router.get("/admin/audit/events", response_model=List[AuditEventResponse])
+@router.get(
+    "/admin/audit/events",
+    response_model=PaginatedAuditEventsResponse,
+    summary="List audit events",
+    description="Retrieve paginated security and query audit events (requires ADMIN role).",
+)
 def get_audit_events(
     user: Annotated[UserContext, Depends(get_current_user)],
     repo: Annotated[KnowledgeRepository, Depends(get_repository)],
-    userId: Optional[str] = Query(None),
-    user_id: Optional[str] = Query(None),
-    action: Optional[str] = Query(None),
-    limit: int = Query(50, ge=1, le=1000),
-) -> List[AuditEventResponse]:
-    """Retrieve audit events for administrators."""
+    userId: Optional[str] = Query(None, description="Filter by acting user ID."),
+    user_id: Optional[str] = Query(None, description="Snake-case alias for userId filter."),
+    action: Optional[str] = Query(None, description="Filter by audit action (e.g. SEARCH, ASK, SYNC_STATUS)."),
+    limit: int = Query(50, ge=1, le=1000, description="Maximum number of events per page."),
+    offset: int = Query(0, ge=0, description="Zero-based pagination offset."),
+) -> PaginatedAuditEventsResponse:
+    """Retrieve paginated audit events for administrators."""
     if user.role.upper() != "ADMIN":
         logger.warning(
             "audit_events_forbidden user_id=%s role=%s",
@@ -491,9 +514,20 @@ def get_audit_events(
         user_id=effective_user_id,
         action=action,
         limit=limit,
+        offset=offset,
     )
-
-    return [AuditEventResponse(**e) for e in raw_events]
+    total = repo.count_audit_events(
+        user_id=effective_user_id,
+        action=action,
+    )
+    items = [AuditEventResponse(**e) for e in raw_events]
+    return PaginatedAuditEventsResponse(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+        hasMore=(offset + len(items)) < total,
+    )
 
 
 @router.post("/admin/sync/reset", response_model=SyncResetResponse)

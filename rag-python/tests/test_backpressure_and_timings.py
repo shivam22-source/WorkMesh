@@ -77,9 +77,9 @@ def test_concurrency_limiter_rejects_with_503_and_retry_after(test_client):
         assert "Retry-After" in resp.headers
         assert resp.headers["Retry-After"] == "1"
         data = resp.json()
-        assert data["status"] == 503
-        assert data["error"] == "Service Unavailable"
-        assert "concurrency limit" in data["message"].lower()
+        assert data["error"]["code"] == "SERVICE_UNAVAILABLE"
+        assert "concurrency limit" in data["error"]["message"].lower()
+        assert data["error"]["request_id"]
 
         # Same for /ask
         resp_ask = test_client.post(

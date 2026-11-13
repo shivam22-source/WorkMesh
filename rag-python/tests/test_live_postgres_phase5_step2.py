@@ -12,9 +12,9 @@ Verifies:
 """
 
 from datetime import datetime, timezone
-import json
-import pytest
+
 import psycopg
+import pytest
 
 from app.chunking.models import CanonicalChunk
 from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType
@@ -606,24 +606,88 @@ def test_live_postgres_relationship_ownership_and_authorization_queries():
 
 @pytest.mark.skipif(LIVE_POSTGRES_URL is None, reason="Requires real PostgreSQL service")
 def test_live_postgres_low_access_user_vector_search_and_no_leakage():
-    """Verify in real PostgreSQL that low-access user (test_user_1, 1%) retrieves permitted chunks with no ACL leakage."""
-    from app.common.config import get_settings
-    settings = get_settings()
-    repo = PostgresKnowledgeRepository(settings.database_url)
+    """Verify in real PostgreSQL that low-access user (1% of seeded corpus) retrieves permitted chunks with no ACL leakage."""
+    repo = PostgresKnowledgeRepository(LIVE_POSTGRES_URL)
+    now = datetime(2026, 11, 1, tzinfo=timezone.utc)
+
+    raw_items = []
+    docs = []
+    chunks = []
+    acls = []
+    for i in range(100):
+        sr_id = f"sr-1pct-{i:03d}"
+        doc_id = f"doc-1pct-{i:03d}"
+        chunk_id = f"chunk-1pct-{i:03d}"
+        raw_items.append(
+            RawSourceItem(
+                id=sr_id,
+                source_type=SourceType.GITHUB,
+                source_id=doc_id,
+                source_url=f"https://github.com/org/repo/pull/{i}",
+                title=f"Doc {i}",
+                raw_content=f"Vector ACL test content {i}",
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        docs.append(
+            CanonicalDocument(
+                id=doc_id,
+                source_record_id=sr_id,
+                source_type="GITHUB",
+                title=f"Doc {i}",
+                content=f"Vector ACL test content {i}",
+                author="eng",
+                url=f"https://github.com/org/repo/pull/{i}",
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        # Put non-target vectors slightly closer/varied and ensure unit norm
+        vec = [0.05] * 384
+        vec[0] = 0.2 if i == 99 else 0.05 + 0.0001 * i
+        chunks.append(
+            CanonicalChunk(
+                id=chunk_id,
+                document_id=doc_id,
+                chunk_index=0,
+                content=f"Vector ACL test content {i}",
+                token_count=5,
+                content_hash=CanonicalChunk.compute_hash(f"Vector ACL test content {i}"),
+                embedding=vec,
+                created_at=now,
+            )
+        )
+        if i == 99:
+            acls.append(
+                AclReference(
+                    resource_type="DOCUMENT",
+                    resource_id=doc_id,
+                    principal_type=PrincipalType.USER,
+                    principal_id="test_user_1",
+                    permission="READ",
+                )
+            )
+        else:
+            acls.append(
+                AclReference(
+                    resource_type="DOCUMENT",
+                    resource_id=doc_id,
+                    principal_type=PrincipalType.GROUP,
+                    principal_id="group_other_99pct",
+                    permission="READ",
+                )
+            )
+
+    repo.save_source_records(raw_items)
+    repo.save_documents(docs)
+    repo.save_chunks(chunks)
+    repo.save_acls(acls)
 
     test_vector = [0.05] * 384
-    # test_user_1 has access to 25 documents out of 2500
     results = repo.search_vector(test_vector, limit=5, user_id="test_user_1", group_ids=[])
-    assert len(results) > 0, "Low-access user must retrieve permitted results via iterative scan/fallback"
-
-    # Verify every returned chunk belongs to an authorized document
-    with repo._get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT resource_id FROM acl_references WHERE principal_id = 'test_user_1';")
-            allowed_doc_ids = set(r[0] for r in cur.fetchall())
-
-    for r in results:
-        assert r.document_id in allowed_doc_ids, f"Returned document {r.document_id} outside user ACL!"
+    assert len(results) == 1
+    assert results[0].document_id == "doc-1pct-099"
 
     # Completely unauthorized user gets zero results
     unauth_results = repo.search_vector(test_vector, limit=5, user_id="unauthorized_ghost_user", group_ids=[])
@@ -633,9 +697,7 @@ def test_live_postgres_low_access_user_vector_search_and_no_leakage():
 @pytest.mark.skipif(LIVE_POSTGRES_URL is None, reason="Requires real PostgreSQL service")
 def test_live_postgres_hnsw_settings_transaction_scoping():
     """Verify hnsw.ef_search and hnsw.iterative_scan are SET LOCAL inside transaction and revert without leak."""
-    from app.common.config import get_settings
-    settings = get_settings()
-    repo = PostgresKnowledgeRepository(settings.database_url)
+    repo = PostgresKnowledgeRepository(LIVE_POSTGRES_URL)
 
     with repo._get_connection() as conn:
         with conn.cursor() as cur:

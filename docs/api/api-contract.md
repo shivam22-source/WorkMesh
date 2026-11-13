@@ -22,7 +22,6 @@ WorkMesh supports two runtime authentication modes:
 |---|---|---|---|
 | GET | `/health` | Liveness check. Returns `{"status": "ok"}`. | None |
 | GET | `/ready` | Readiness check. Verifies live PostgreSQL connection. | None |
-| GET | `/actuator/health` | Health compatibility endpoint. Returns `{"status": "UP"}`. | None |
 | POST | `/api/v1/search` | Permission-aware hybrid search (lexical + dense vector RRF). | User JWT / dev header |
 | POST | `/api/v1/ask` | Grounded question answering with verifiable citations. | User JWT / dev header |
 | GET | `/api/v1/sync/status` | Read connector sync status and source sync state. | ADMIN role required |
@@ -108,15 +107,14 @@ Synthesizes a grounded answer strictly from authorized evidence chunks, complete
 
 ## Error Envelope Shape
 
-All errors across public and admin endpoints return a uniform JSON error envelope with an active `traceId`:
+All errors across public and admin endpoints return a uniform JSON error envelope with an active `request_id` matching the `X-Request-Id` response header:
 
 ```json
 {
-  "timestamp": "2026-11-04T19:40:00Z",
-  "status": 401,
-  "error": "Unauthorized",
-  "message": "Authorization header missing or invalid",
-  "path": "/api/v1/search",
-  "traceId": "c8a41df2a1"
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authorization header missing or invalid",
+    "request_id": "c8a41df2a1"
+  }
 }
 ```

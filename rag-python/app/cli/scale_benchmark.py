@@ -3,10 +3,8 @@
 import argparse
 import json
 import logging
-import math
 import os
 import random
-import sys
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -15,7 +13,6 @@ from pgvector.psycopg import register_vector
 
 from app.common.config import get_settings
 from app.embeddings.base import EmbeddingProvider
-from app.embeddings.factory import get_embedding_provider
 from app.embeddings.mock_provider import MockEmbeddingProvider
 from app.embeddings.sentence_transformer_provider import SentenceTransformerEmbeddingProvider
 from app.indexing.repository import PostgresKnowledgeRepository
@@ -792,8 +789,8 @@ def main():
     print("      WORKMESH 10,000-CHUNK SCALE BENCHMARK & SECURITY REPORT")
     print("=" * 70)
     print(f"Corpus Scale:                  {chunks_count:,} chunks ({docs_count:,} documents)")
-    print(f"Simulated Multi-Tenant Scope:  50 users, 5 departments across 3 systems")
-    print(f"Index Strategy:                pgvector HNSW (cosine) + PostgreSQL GIN (tsvector)")
+    print("Simulated Multi-Tenant Scope:  50 users, 5 departments across 3 systems")
+    print("Index Strategy:                pgvector HNSW (cosine) + PostgreSQL GIN (tsvector)")
     print("-" * 70)
     print(f"Evaluated Search Queries:      {results['total_queries']}")
     print(f"Recall@1:                      {results['recall_at_1']}%")

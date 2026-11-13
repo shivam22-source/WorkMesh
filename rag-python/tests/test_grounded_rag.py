@@ -10,6 +10,7 @@ Verifies:
 """
 
 from datetime import datetime, timezone
+
 import pytest
 
 from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType
@@ -19,7 +20,7 @@ from app.contracts.rag_ask import RagAskRequest
 from app.embeddings.mock_provider import MockEmbeddingProvider
 from app.indexing.pipeline import IngestionPipeline
 from app.indexing.repository import InMemoryKnowledgeRepository
-from app.rag.service import GroundedRagService, GENERIC_INSUFFICIENT_EVIDENCE_ANSWER
+from app.rag.service import GENERIC_INSUFFICIENT_EVIDENCE_ANSWER, GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
 
 
@@ -155,8 +156,8 @@ def test_acl_isolation_unauthorized_user_receives_identical_insufficient_evidenc
     repo.save_source_records([raw_confidential])
 
     # Ingest through pipeline with restricted ACL
-    from app.normalization.slack_normalizer import SlackNormalizer
     from app.chunking.source_aware_chunker import SourceAwareChunker
+    from app.normalization.slack_normalizer import SlackNormalizer
 
     doc = SlackNormalizer().normalize(raw_confidential, [])
     chunks = SourceAwareChunker().chunk(doc)

@@ -3,15 +3,6 @@
 .env.*
 !.env.example
 
-# ---- Java / Maven ----
-target/
-*.class
-*.jar
-*.war
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-hs_err_pid*.log
-
 # ---- Python ----
 __pycache__/
 *.py[cod]

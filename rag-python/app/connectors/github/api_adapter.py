@@ -3,9 +3,9 @@
 Fetches Pull Requests and Commits over HTTPS if credentials are provided.
 """
 
-from datetime import datetime, timezone
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, Tuple
 
 import httpx
 
