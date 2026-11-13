@@ -11,7 +11,8 @@ Powered by a single FastAPI service on PostgreSQL 16 with pgvector.
 - **Graph Reranking (Experimental)**: Boosts relevant results based on entity relationships across GitHub pull requests, Slack messages, and internal emails (currently experimental; paired bootstrap testing showed no statistically significant gain on multi-source evaluation).
 - **Pushdown Access Control**: Enforces document-level permissions inside PostgreSQL queries so users never see content outside their authorized groups.
 - **Grounded Answers**: Extracts supporting citations `[1]` linked to original sources. Declines to answer when evidence is missing or unauthorized.
-- **Audit Logging & Admin**: Tracks search and question queries durably with fail-open resilience, plus role-protected connector sync status endpoints.
+- **Multi-Step Reasoning Agent**: Autonomous multi-step exploration agent (`POST /api/v1/agent/ask`) executing read-only tools (`search`, `get_document`, `get_related`, `get_thread`) with strict resource budgets and per-call ACL enforcement.
+- **Audit Logging & Admin**: Tracks search, question, and autonomous agent tool calls durably with fail-open resilience, plus role-protected connector sync status endpoints.
 
 ---
 
@@ -27,9 +28,10 @@ To ensure complete transparency regarding system capabilities and boundaries:
 | **Graph Reranking** | **Experimental** | Candidate-grounded entity relationship boost (`+0.0020` max). Marked experimental because paired bootstrap evaluation on multi-source queries showed `+0.00 pp` Recall@5 and non-significant nDCG@10 (`+0.0102`, `sig=False`). |
 | **Pushdown Security & RBAC** | **Real** | SQL-level ACL filtering inside PostgreSQL queries. Production mode enforces signed PyJWT tokens (`sub`, `role`, `groups`) and rejects header simulation. |
 | **Concurrency Control & Metrics** | **Real** | Concurrency limiter guards against worker pool starvation, shedding excess load with HTTP 503 (`Retry-After: 1`). Per-stage timings and P95 latency exposed on `/metrics`. |
-| **Audit Logging** | **Real** | Transactional database logging with fail-open resilience to prevent user query blocking. |
+| **Audit Logging** | **Real** | Transactional database logging with fail-open resilience to prevent user query blocking. Captures all user queries and agent tool steps. |
 | **Benchmark Corpus** | **Synthetic** | **Synthetic data**: 10,000 template-generated chunks across 2,500 documents and 12,500 ACL rules. This is not real company data. |
-| **LLM Answer Synthesis** | **Stubbed** | Deterministic rule-grounded passage extractor (`MockLLMProvider`). Extracts direct evidence and formats citations without calling a commercial LLM API (such as OpenAI or Anthropic). |
+| **LLM Provider Layer** | **Pluggable (Mock default, Gemini, Anthropic)** | Abstract `LlmProvider` interface with deterministic mock (default), Gemini (`gemini-2.5-flash`), and Anthropic (`claude-3-7-sonnet`). Keys read strictly from env; zero prompt logging (prompt hashes only); exponential backoff retries. Tests and CI run exclusively on mocks with zero external network calls. |
+| **Multi-Step Agent** | **Real / Bounded** | Autonomous multi-step tool execution (`POST /api/v1/agent/ask`) bounded by 5 steps, token budget, and wall-time budget. Caller identity strictly enforced on every tool call. |
 | **Connector Feeds** | **Mocked** | GitHub, Slack, and Email connectors ingest from local JSON fixture files rather than live SaaS OAuth APIs. |
 
 ---
@@ -129,6 +131,62 @@ The application handles up to 15 concurrent users without backpressure shedding,
 
 ---
 
+## Multi-Step Agent & Evaluation Benchmark
+
+WorkMesh provides an autonomous multi-step reasoning endpoint (`POST /api/v1/agent/ask`) designed to explore cross-source entity relationships when single-shot retrieval requires iterative navigation.
+
+### 1. Security Architecture & Invariants
+
+The agent loop executes under strict enterprise sandbox invariants:
+
+1. **Identity Binding on Every Tool Call**: The caller's authenticated identity (`user_id` and `group_ids`) is extracted exclusively from validated JWT claims and passed explicitly to every tool execution. Autonomous steps cannot bypass, escalate, or spoof permissions; every underlying query enforces SQL-level pushdown ACL filtering.
+2. **Read-Only Tool Primitives**: The agent catalog exposes four strictly read-only tools:
+   - `search(query, limit)`: Runs hybrid lexical + dense vector search with query routing and pushdown ACLs.
+   - `get_document(document_id)`: Fetches authorized chunks belonging to a specific document.
+   - `get_related(chunk_id, limit)`: Traverses cross-document relationships grounded in the candidate graph.
+   - `get_thread(thread_id)`: Retrieves chronologically ordered messages within an authorized Slack thread or email exchange.
+   The agent has no write tools, cannot modify database state, and cannot alter ACL policies.
+3. **Bounded Budgets & Loop Guardrails**:
+   - `max_steps`: Hard-limited to 5 iterations (default: 5). If exceeded, the agent halts and synthesizes an answer from gathered evidence.
+   - `max_output_tokens`: Bounded token budget per model invocation.
+   - `wall_time`: Enforces strict request timeout (`LLM_TIMEOUT_SECONDS`), terminating runaways fail-safe.
+4. **Durable Audit Trail**: Every tool call is logged durably to the PostgreSQL audit log (`AGENT_TOOL_CALL`) recording:
+   - Step sequence number (`step`)
+   - Tool name invoked (`tool`)
+   - SHA-256 hash of tool arguments (`args_hash`, ensuring sensitive query text is not logged)
+   - Number of candidate chunks returned (`result_count`)
+   - Caller identity (`user_id`, `groups`)
+5. **Prompt Injection Containment & Grounded Validation**:
+   - Retrieved chunks are wrapped inside `<untrusted_context_data>` tags accompanied by an explicit security warning that context data is untrusted and cannot override system instructions.
+   - Structured citations are strictly validated against the retrieved candidate set. Any ungrounded or fabricated chunk ID is automatically stripped.
+   - If no grounded citations remain or evidence is missing, the agent refuses to answer (`INSUFFICIENT_EVIDENCE`).
+6. **Pluggable LLM Provider Layer**:
+   - Abstract `LlmProvider` interface with implementations: `mock` (deterministic local rule extractor, default), `gemini` (`gemini-2.5-flash`), and `anthropic` (`claude-3-7-sonnet`).
+   - Configured via `LLM_PROVIDER` and `LLM_MODEL`; keys loaded exclusively from environment variables (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`).
+   - Exponential backoff retries and zero logging of raw prompt contents.
+   - CI and test suites run 100% on mocks with zero external network dependencies.
+
+### 2. Multi-Hop Evaluation Benchmark
+
+Evaluated over 30 multi-hop queries (`data/evaluation/agent_multihop_queries.json`) requiring synthesis across multiple systems (e.g. Slack + GitHub, Email + GitHub) against the full 10,000-chunk PostgreSQL + pgvector database (`python scripts/run_agent_eval.py`):
+
+| Metric | Single-Shot (`POST /api/v1/ask`) | Multi-Step Agent (`POST /api/v1/agent/ask`) | Delta / Overhead |
+|---|:---:|:---:|:---:|
+| **Gold Citation Coverage** | **76.67%** | **76.67%** | **+0.00 pp** |
+| **Average Steps** | 1.00 | 2.73 | +1.73 steps |
+| **Mean Latency** | **194.15 ms** | **393.69 ms** | **2.03x** |
+| **P50 Latency** | 188.56 ms | 402.60 ms | 2.14x |
+| **P95 Latency** | 241.08 ms | 546.20 ms | 2.27x |
+| **Mean Tokens Used** | **248.3 tokens** | **1,920.2 tokens** | **7.73x** |
+
+**Honest Assessment & Production Recommendation**:
+On this enterprise corpus, single-shot hybrid retrieval with query-routed RRF already surfaces the relevant multi-source candidates in step 1. The multi-step agent executes an average of 2.73 tool steps, which consumes **7.73x more tokens** and **2.03x higher latency** without lifting gold citation coverage (+0.00 pp). Single-shot `/ask` remains the recommended, latency-optimal production default for standard question answering, while the agent endpoint serves targeted use cases where iterative traversal across distant entities is required.
+
+Raw benchmark results: [`data/evaluation/results/agent_eval_results.json`](data/evaluation/results/agent_eval_results.json).
+Evaluation dataset: [`data/evaluation/agent_multihop_queries.json`](data/evaluation/agent_multihop_queries.json).
+
+---
+
 ## Architecture
 
 A single consolidated FastAPI application interfacing directly with PostgreSQL 16 + pgvector. See [`docs/decisions/ADR-0001-two-service-split.md`](docs/decisions/ADR-0001-two-service-split.md).
@@ -174,6 +232,12 @@ curl -s -X POST http://localhost:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -H "X-User-Id: employee_42" \
   -d '{"question": "Why did we change the validation flow?"}'
+
+# Run multi-step agent exploration (dev mode)
+curl -s -X POST http://localhost:8000/api/v1/agent/ask \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: employee_42" \
+  -d '{"question": "Why did we switch session cookies to SameSite=Lax and which PR implemented it?"}'
 ```
 
 ### 2. Interactive Web UI
@@ -211,7 +275,7 @@ cd rag-python
 .venv/Scripts/pytest.exe tests
 ```
 
-344 passed with model weights cached (or 340 passed and 4 deselected with `-m "not real_model"` when skipping `@pytest.mark.real_model` tests without cached weights). Covers hybrid retrieval, query-type routing, optional Cross-Encoder reranking, pushdown ACL enforcement, grounded answer synthesis, citation validation, role-based access control, concurrency backpressure, and error handling contracts.
+381 passed with model weights cached (or 377 passed and 4 deselected with `-m "not real_model"` when skipping `@pytest.mark.real_model` tests without cached weights). Covers hybrid retrieval, query-type routing, optional Cross-Encoder reranking, pushdown ACL enforcement, pluggable LLM providers (Mock, Gemini, Anthropic), prompt injection containment, autonomous multi-step agent execution, citation validation, role-based access control, concurrency backpressure, and error handling contracts. CI runs 100% on mocks with zero external API calls.
 
 ---
 
