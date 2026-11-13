@@ -11,11 +11,13 @@ from typing import Annotated, Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field, field_validator
 
+from app.agent.service import AgentAskRequest, AgentAskResponse, AgentService
 from app.api.concurrency import ConcurrencyLimitExceededError, search_concurrency_limiter
 from app.auth.user_context import AccessDeniedError, UserContext, get_current_user, require_admin
 from app.common.config import get_settings
 from app.contracts.rag_ask import RagAskRequest
 from app.dependencies import (
+    get_agent_service,
     get_grounded_rag_service,
     get_hybrid_retriever,
     get_repository,
@@ -329,6 +331,46 @@ def ask(
             citations=citations,
             confidence=rag_response.confidence,
             status=rag_response.status,
+        )
+    finally:
+        search_concurrency_limiter.release()
+
+
+@router.post("/agent/ask", response_model=AgentAskResponse)
+def agent_ask(
+    request: AgentAskRequest,
+    req: Request,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    agent_service: Annotated[AgentService, Depends(get_agent_service)],
+    repo: Annotated[KnowledgeRepository, Depends(get_repository)],
+) -> AgentAskResponse:
+    """Execute bounded multi-step agent reasoning with read-only tools and audit logging."""
+    if not search_concurrency_limiter.acquire():
+        raise ConcurrencyLimitExceededError(
+            retry_after=get_settings().search_retry_after_seconds
+        )
+
+    try:
+        client_ip = req.client.host if req.client else None
+        logger.info(
+            "agent_ask_initiated user_id=%s question='%s'",
+            user.user_id,
+            request.question,
+        )
+
+        _record_audit_safe(
+            repo=repo,
+            user_id=user.user_id,
+            action="AGENT_ASK",
+            resource="agent_assistant",
+            details={"question": request.question, "max_steps": request.max_steps},
+            ip_address=client_ip,
+        )
+
+        return agent_service.ask(
+            request=request,
+            user_id=user.user_id,
+            group_ids=list(user.group_ids),
         )
     finally:
         search_concurrency_limiter.release()

@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.agent.service import AgentService
 from app.common.config import get_settings
 from app.indexing.repository import KnowledgeRepository, PostgresKnowledgeRepository
 from app.rag.cross_encoder_reranker import CrossEncoderReranker
@@ -44,3 +45,16 @@ def get_grounded_rag_service() -> GroundedRagService:
     retriever = get_hybrid_retriever()
     llm_provider = get_llm_provider(settings)
     return GroundedRagService(retriever=retriever, llm_provider=llm_provider)
+
+
+@lru_cache(maxsize=1)
+def get_agent_service() -> AgentService:
+    settings = get_settings()
+    retriever = get_hybrid_retriever()
+    repo = get_repository()
+    llm_provider = get_llm_provider(settings)
+    return AgentService(
+        retriever=retriever,
+        repository=repo,
+        llm_provider=llm_provider,
+    )

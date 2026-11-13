@@ -147,7 +147,10 @@ class MockLlmProvider(LlmProvider):
     def _parse_evidence_blocks(self, prompt: str) -> List[tuple[int, str]]:
         """Parse numbered evidence items [1], [2] and their snippet content from the prompt."""
         # Pattern matching: [idx] Source: ... \n Snippet: {content}
-        pattern = re.compile(r"\[(\d+)\]\s+Source:[^\n]+\nSnippet:\s*(.+?)(?=\n\n\[\d+\]|\Z)", re.DOTALL)
+        pattern = re.compile(
+            r"\[(\d+)\]\s+Source:[^\n]+\nSnippet:\s*(.+?)(?=\n\n\[\d+\]|</untrusted_context_data>|</context>|\Z)",
+            re.DOTALL,
+        )
         blocks = []
         for match in pattern.finditer(prompt):
             idx = int(match.group(1))

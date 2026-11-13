@@ -185,6 +185,27 @@ class KnowledgeRepository(ABC):
         ...
 
     @abstractmethod
+    def get_document(
+        self,
+        document_id: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> Optional[CanonicalDocument]:
+        """Retrieve a canonical document by ID or source_record_id, enforcing ACL read permissions."""
+        ...
+
+    @abstractmethod
+    def get_thread(
+        self,
+        channel_id: str,
+        thread_ts: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> List[CanonicalChunk]:
+        """Retrieve Slack thread chunks, enforcing ACL read permissions."""
+        ...
+
+    @abstractmethod
     def search_lexical(
         self,
         query: str,
@@ -770,6 +791,62 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         if doc.acl_references:
             acls.extend(doc.acl_references)
         return acls
+
+    def get_document(
+        self,
+        document_id: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> Optional[CanonicalDocument]:
+        """Retrieve a canonical document by ID or source_record_id, enforcing ACL read permissions."""
+        doc = self.documents.get(document_id)
+        if not doc:
+            for d in self.documents.values():
+                if d.source_record_id == document_id or d.id == f"doc:{document_id}":
+                    doc = d
+                    break
+        if not doc:
+            return None
+
+        acls = [a for a in self.acls if a.resource_type == "SOURCE_RECORD" and a.resource_id == doc.source_record_id]
+        if doc.acl_references:
+            acls.extend(doc.acl_references)
+        if not has_read_permission(acls, user_id=user_id, group_ids=group_ids):
+            return None
+        return doc
+
+    def get_thread(
+        self,
+        channel_id: str,
+        thread_ts: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> List[CanonicalChunk]:
+        """Retrieve Slack thread chunks, strictly ACL-filtered."""
+        matching_chunks: List[CanonicalChunk] = []
+        for chunk in self.chunks.values():
+            doc = self.documents.get(chunk.document_id)
+            if not doc or doc.source_type != "SLACK":
+                continue
+            meta = doc.metadata or {}
+            c_meta = chunk.metadata or {}
+            c_chan = c_meta.get("channel_id") or meta.get("channel_id")
+            c_ts = c_meta.get("thread_ts") or meta.get("thread_ts")
+            matches_thread = (
+                (c_chan == channel_id and c_ts == thread_ts)
+                or (thread_ts in doc.source_record_id and channel_id in doc.source_record_id)
+                or (thread_ts in doc.url and channel_id in doc.url)
+            )
+            if matches_thread:
+                acls = [a for a in self.acls if a.resource_type == "SOURCE_RECORD" and a.resource_id == doc.source_record_id]
+                if doc.acl_references:
+                    acls.extend(doc.acl_references)
+                if chunk.acl_references:
+                    acls.extend(chunk.acl_references)
+                if has_read_permission(acls, user_id=user_id, group_ids=group_ids):
+                    matching_chunks.append(chunk)
+        matching_chunks.sort(key=lambda c: c.chunk_index)
+        return matching_chunks
 
     def search_lexical(
         self,
@@ -1998,6 +2075,135 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             raise
         except Exception as e:
             logger.error("postgres_get_relationships_for_entity_failed entity_id=%s err=%s", entity_id, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def get_document(
+        self,
+        document_id: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> Optional[CanonicalDocument]:
+        """Retrieve a canonical document by ID or source_record_id, enforcing ACL read permissions in SQL."""
+        clean_user = str(user_id).strip() if user_id and str(user_id).strip() else None
+        clean_groups = [str(g).strip() for g in group_ids if str(g).strip()] if group_ids else []
+
+        sql = """
+        SELECT d.id, d.source_record_id, d.source_type, d.title, d.content, d.author, d.url, d.metadata, d.created_at, d.updated_at
+        FROM documents d
+        WHERE (d.id = %(doc_id)s OR d.source_record_id = %(doc_id)s)
+          AND (
+            EXISTS (
+              SELECT 1 FROM acl_entries a
+              WHERE a.resource_type = 'SOURCE_RECORD' AND a.resource_id = d.source_record_id
+                AND a.permission = 'READ'
+                AND (
+                  a.principal_type = 'PUBLIC'
+                  OR (a.principal_type = 'USER' AND a.principal_id = %(user_id)s)
+                  OR (a.principal_type = 'GROUP' AND a.principal_id = ANY(%(group_ids)s))
+                )
+            )
+          )
+        LIMIT 1;
+        """
+        try:
+            with self._connect() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        sql,
+                        {
+                            "doc_id": document_id,
+                            "user_id": clean_user or "",
+                            "group_ids": clean_groups,
+                        },
+                    )
+                    row = cur.fetchone()
+                    if not row:
+                        return None
+                    return CanonicalDocument(
+                        id=row[0],
+                        source_record_id=row[1],
+                        source_type=row[2],
+                        title=row[3],
+                        content=row[4],
+                        author=row[5],
+                        url=row[6],
+                        metadata=row[7] if isinstance(row[7], dict) else {},
+                        created_at=row[8],
+                        updated_at=row[9],
+                    )
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_get_document_failed doc_id=%s err=%s", document_id, e)
+            raise DatabaseUnavailableError(f"Database query failed: {e}") from e
+
+    def get_thread(
+        self,
+        channel_id: str,
+        thread_ts: str,
+        user_id: Optional[str] = None,
+        group_ids: Optional[List[str]] = None,
+    ) -> List[CanonicalChunk]:
+        """Retrieve Slack thread chunks, enforcing ACL read permissions in SQL."""
+        clean_user = str(user_id).strip() if user_id and str(user_id).strip() else None
+        clean_groups = [str(g).strip() for g in group_ids if str(g).strip()] if group_ids else []
+
+        sql = """
+        SELECT c.id, c.document_id, c.chunk_index, c.content, c.token_count, c.content_hash, c.metadata, c.created_at
+        FROM chunks c
+        JOIN documents d ON c.document_id = d.id
+        WHERE d.source_type = 'SLACK'
+          AND (
+            (d.metadata->>'channel_id' = %(channel_id)s AND d.metadata->>'thread_ts' = %(thread_ts)s)
+            OR (c.metadata->>'channel_id' = %(channel_id)s AND c.metadata->>'thread_ts' = %(thread_ts)s)
+            OR (d.source_record_id LIKE %(pattern)s)
+          )
+          AND (
+            EXISTS (
+              SELECT 1 FROM acl_entries a
+              WHERE a.resource_type = 'SOURCE_RECORD' AND a.resource_id = d.source_record_id
+                AND a.permission = 'READ'
+                AND (
+                  a.principal_type = 'PUBLIC'
+                  OR (a.principal_type = 'USER' AND a.principal_id = %(user_id)s)
+                  OR (a.principal_type = 'GROUP' AND a.principal_id = ANY(%(group_ids)s))
+                )
+            )
+          )
+        ORDER BY c.chunk_index ASC;
+        """
+        pattern = f"%{channel_id}%{thread_ts}%"
+        try:
+            with self._connect() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        sql,
+                        {
+                            "channel_id": channel_id,
+                            "thread_ts": thread_ts,
+                            "pattern": pattern,
+                            "user_id": clean_user or "",
+                            "group_ids": clean_groups,
+                        },
+                    )
+                    rows = cur.fetchall()
+                    return [
+                        CanonicalChunk(
+                            id=r[0],
+                            document_id=r[1],
+                            chunk_index=r[2],
+                            content=r[3],
+                            token_count=r[4],
+                            content_hash=r[5],
+                            metadata=r[6] if isinstance(r[6], dict) else {},
+                            created_at=r[7],
+                        )
+                        for r in rows
+                    ]
+        except DatabaseUnavailableError:
+            raise
+        except Exception as e:
+            logger.error("postgres_get_thread_failed channel=%s ts=%s err=%s", channel_id, thread_ts, e)
             raise DatabaseUnavailableError(f"Database query failed: {e}") from e
 
     def search_lexical(
