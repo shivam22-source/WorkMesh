@@ -8,6 +8,7 @@ from fastapi import Depends
 from app.common.config import get_settings
 from app.indexing.repository import KnowledgeRepository, PostgresKnowledgeRepository
 from app.rag.cross_encoder_reranker import CrossEncoderReranker
+from app.rag.llm import get_llm_provider
 from app.rag.service import GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
 
@@ -39,5 +40,7 @@ def get_hybrid_retriever() -> HybridRetriever:
 
 @lru_cache(maxsize=1)
 def get_grounded_rag_service() -> GroundedRagService:
+    settings = get_settings()
     retriever = get_hybrid_retriever()
-    return GroundedRagService(retriever=retriever)
+    llm_provider = get_llm_provider(settings)
+    return GroundedRagService(retriever=retriever, llm_provider=llm_provider)

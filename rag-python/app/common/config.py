@@ -104,6 +104,15 @@ class Settings(BaseSettings):
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     reranker_top_k: int = 50
 
+    # LLM provider settings
+    llm_provider: str = "mock"  # "mock", "gemini", "anthropic"
+    llm_model: str = ""  # Provider-specific model identifier; never hardcoded
+    llm_timeout_seconds: int = 30
+    llm_max_retries: int = 3
+    llm_max_output_tokens: int = 1024
+    gemini_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None
+
     # Backpressure & concurrency limits
     search_concurrency_limit: int = 15
     search_retry_after_seconds: int = 1
