@@ -183,6 +183,7 @@ def evaluate_queries_v2(
         "confidence_level": 0.95,
         "strategies": {},
         "paired_comparisons": {},
+        "per_query_rows": per_strategy_rows,
     }
 
     for key in strat_keys:

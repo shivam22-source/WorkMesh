@@ -33,14 +33,14 @@
           "ci_high": 0.63125
         },
         "ndcg_at_10": {
-          "mean": 0.489862,
-          "ci_low": 0.389775,
-          "ci_high": 0.595021
+          "mean": 0.490242,
+          "ci_low": 0.390455,
+          "ci_high": 0.595137
         },
         "latency_ms": {
-          "p50": 922.84,
-          "p95": 3766.41,
-          "mean": 1437.0
+          "p50": 920.04,
+          "p95": 3736.06,
+          "mean": 1433.13
         }
       },
       "by_category": {
@@ -77,9 +77,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 154.52,
-            "p95": 1340.77,
-            "mean": 459.2
+            "p50": 170.77,
+            "p95": 1357.36,
+            "mean": 465.21
           }
         },
         "exact_identifier": {
@@ -110,14 +110,14 @@
             "ci_high": 1.0
           },
           "ndcg_at_10": {
-            "mean": 0.953082,
-            "ci_low": 0.914255,
+            "mean": 0.954602,
+            "ci_low": 0.917295,
             "ci_high": 0.983818
           },
           "latency_ms": {
-            "p50": 60.26,
-            "p95": 3991.49,
-            "mean": 854.95
+            "p50": 60.1,
+            "p95": 3998.34,
+            "mean": 853.25
           }
         },
         "link_only": {
@@ -153,9 +153,9 @@
             "ci_high": 0.953866
           },
           "latency_ms": {
-            "p50": 2535.65,
-            "p95": 4004.72,
-            "mean": 2722.45
+            "p50": 2538.05,
+            "p95": 3927.94,
+            "mean": 2698.15
           }
         },
         "multi_source": {
@@ -191,9 +191,9 @@
             "ci_high": 0.772629
           },
           "latency_ms": {
-            "p50": 2705.56,
-            "p95": 3750.71,
-            "mean": 2695.31
+            "p50": 2751.49,
+            "p95": 3736.06,
+            "mean": 2697.85
           }
         },
         "semantic": {
@@ -229,9 +229,9 @@
             "ci_high": 0.271534
           },
           "latency_ms": {
-            "p50": 819.26,
-            "p95": 2175.95,
-            "mean": 833.25
+            "p50": 789.08,
+            "p95": 2177.6,
+            "mean": 823.02
           }
         }
       },
@@ -263,14 +263,14 @@
           "ci_high": 0.722222
         },
         "ndcg_at_10": {
-          "mean": 0.559301,
-          "ci_low": 0.439958,
-          "ci_high": 0.672603
+          "mean": 0.559808,
+          "ci_low": 0.440386,
+          "ci_high": 0.673262
         },
         "latency_ms": {
-          "p50": 922.84,
-          "p95": 3750.71,
-          "mean": 1461.17
+          "p50": 920.04,
+          "p95": 3736.06,
+          "mean": 1458.04
         }
       },
       "denied_identity_leaks": 0,
@@ -310,9 +310,9 @@
           "ci_high": 0.347977
         },
         "latency_ms": {
-          "p50": 34.56,
-          "p95": 77.41,
-          "mean": 39.74
+          "p50": 37.62,
+          "p95": 73.95,
+          "mean": 40.97
         }
       },
       "by_category": {
@@ -349,9 +349,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 37.05,
-            "p95": 85.97,
-            "mean": 43.32
+            "p50": 33.68,
+            "p95": 95.12,
+            "mean": 44.54
           }
         },
         "exact_identifier": {
@@ -387,9 +387,9 @@
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 40.38,
-            "p95": 75.65,
-            "mean": 45.62
+            "p50": 41.73,
+            "p95": 73.03,
+            "mean": 43.87
           }
         },
         "link_only": {
@@ -425,9 +425,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 38.04,
-            "p95": 78.11,
-            "mean": 43.53
+            "p50": 44.29,
+            "p95": 70.74,
+            "mean": 45.24
           }
         },
         "multi_source": {
@@ -463,9 +463,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 30.68,
-            "p95": 50.45,
-            "mean": 33.28
+            "p50": 23.93,
+            "p95": 57.28,
+            "mean": 33.49
           }
         },
         "semantic": {
@@ -501,9 +501,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 31.28,
-            "p95": 77.41,
-            "mean": 36.66
+            "p50": 38.15,
+            "p95": 68.67,
+            "mean": 41.71
           }
         }
       },
@@ -540,9 +540,9 @@
           "ci_high": 0.447303
         },
         "latency_ms": {
-          "p50": 34.52,
-          "p95": 74.07,
-          "mean": 38.52
+          "p50": 37.62,
+          "p95": 68.94,
+          "mean": 39.69
         }
       },
       "denied_identity_leaks": 0,
@@ -582,9 +582,9 @@
           "ci_high": 0.392392
         },
         "latency_ms": {
-          "p50": 93.34,
-          "p95": 154.76,
-          "mean": 99.11
+          "p50": 86.74,
+          "p95": 123.18,
+          "mean": 89.89
         }
       },
       "by_category": {
@@ -621,9 +621,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 80.1,
-            "p95": 139.45,
-            "mean": 91.74
+            "p50": 78.71,
+            "p95": 125.38,
+            "mean": 85.86
           }
         },
         "exact_identifier": {
@@ -659,9 +659,9 @@
             "ci_high": 0.706837
           },
           "latency_ms": {
-            "p50": 107.78,
-            "p95": 242.86,
-            "mean": 125.85
+            "p50": 87.19,
+            "p95": 129.43,
+            "mean": 93.14
           }
         },
         "link_only": {
@@ -697,9 +697,9 @@
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 71.58,
-            "p95": 127.23,
-            "mean": 83.87
+            "p50": 93.46,
+            "p95": 122.89,
+            "mean": 94.62
           }
         },
         "multi_source": {
@@ -735,9 +735,9 @@
             "ci_high": 0.395259
           },
           "latency_ms": {
-            "p50": 91.62,
-            "p95": 121.74,
-            "mean": 92.94
+            "p50": 90.58,
+            "p95": 119.64,
+            "mean": 92.8
           }
         },
         "semantic": {
@@ -773,9 +773,9 @@
             "ci_high": 0.35
           },
           "latency_ms": {
-            "p50": 93.3,
-            "p95": 122.59,
-            "mean": 89.06
+            "p50": 81.11,
+            "p95": 115.84,
+            "mean": 84.27
           }
         }
       },
@@ -812,9 +812,9 @@
           "ci_high": 0.402878
         },
         "latency_ms": {
-          "p50": 96.07,
-          "p95": 155.29,
-          "mean": 102.62
+          "p50": 88.65,
+          "p95": 119.64,
+          "mean": 90.07
         }
       },
       "denied_identity_leaks": 0,
@@ -826,37 +826,37 @@
         "recall_at_1": {
           "mean": 0.478125,
           "ci_low": 0.3875,
-          "ci_high": 0.56875
+          "ci_high": 0.575
         },
         "recall_at_3": {
-          "mean": 0.621875,
-          "ci_low": 0.51875,
-          "ci_high": 0.721875
+          "mean": 0.628125,
+          "ci_low": 0.521875,
+          "ci_high": 0.728125
         },
         "recall_at_5": {
-          "mean": 0.65,
-          "ci_low": 0.5375,
-          "ci_high": 0.75
+          "mean": 0.65625,
+          "ci_low": 0.55,
+          "ci_high": 0.75625
         },
         "recall_at_10": {
-          "mean": 0.66875,
-          "ci_low": 0.56875,
-          "ci_high": 0.76875
+          "mean": 0.6625,
+          "ci_low": 0.55625,
+          "ci_high": 0.7625
         },
         "mrr": {
-          "mean": 0.655208,
-          "ci_low": 0.551042,
+          "mean": 0.6525,
+          "ci_low": 0.55,
           "ci_high": 0.75625
         },
         "ndcg_at_10": {
-          "mean": 0.641695,
-          "ci_low": 0.538363,
-          "ci_high": 0.742448
+          "mean": 0.643306,
+          "ci_low": 0.540493,
+          "ci_high": 0.746059
         },
         "latency_ms": {
-          "p50": 1467.6,
-          "p95": 3959.66,
-          "mean": 1674.99
+          "p50": 174.69,
+          "p95": 205.66,
+          "mean": 175.54
         }
       },
       "by_category": {
@@ -893,9 +893,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 312.53,
-            "p95": 1498.4,
-            "mean": 603.42
+            "p50": 160.86,
+            "p95": 193.14,
+            "mean": 165.48
           }
         },
         "exact_identifier": {
@@ -926,14 +926,14 @@
             "ci_high": 1.0
           },
           "ndcg_at_10": {
-            "mean": 0.973654,
-            "ci_low": 0.94316,
+            "mean": 0.991909,
+            "ci_low": 0.975728,
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 180.92,
-            "p95": 4277.98,
-            "mean": 1191.39
+            "p50": 175.23,
+            "p95": 202.64,
+            "mean": 172.74
           }
         },
         "link_only": {
@@ -944,8 +944,8 @@
             "ci_high": 1.0
           },
           "recall_at_3": {
-            "mean": 0.875,
-            "ci_low": 0.625,
+            "mean": 1.0,
+            "ci_low": 1.0,
             "ci_high": 1.0
           },
           "recall_at_5": {
@@ -959,19 +959,19 @@
             "ci_high": 1.0
           },
           "mrr": {
-            "mean": 0.90625,
-            "ci_low": 0.71875,
+            "mean": 0.9375,
+            "ci_low": 0.8125,
             "ci_high": 1.0
           },
           "ndcg_at_10": {
-            "mean": 0.928835,
-            "ci_low": 0.786504,
+            "mean": 0.953866,
+            "ci_low": 0.861599,
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 2670.11,
-            "p95": 4159.34,
-            "mean": 2882.04
+            "p50": 166.47,
+            "p95": 199.72,
+            "mean": 172.54
           }
         },
         "multi_source": {
@@ -982,34 +982,34 @@
             "ci_high": 0.475
           },
           "recall_at_3": {
-            "mean": 0.75,
-            "ci_low": 0.575,
+            "mean": 0.725,
+            "ci_low": 0.55,
             "ci_high": 0.9
           },
           "recall_at_5": {
-            "mean": 0.75,
-            "ci_low": 0.575,
-            "ci_high": 0.9
+            "mean": 0.725,
+            "ci_low": 0.525,
+            "ci_high": 0.875
           },
           "recall_at_10": {
-            "mean": 0.775,
-            "ci_low": 0.6,
+            "mean": 0.75,
+            "ci_low": 0.575,
             "ci_high": 0.925
           },
           "mrr": {
-            "mean": 0.825,
-            "ci_low": 0.65,
-            "ci_high": 0.975
+            "mean": 0.8,
+            "ci_low": 0.6,
+            "ci_high": 0.95
           },
           "ndcg_at_10": {
-            "mean": 0.772235,
-            "ci_low": 0.602892,
-            "ci_high": 0.922235
+            "mean": 0.748878,
+            "ci_low": 0.568615,
+            "ci_high": 0.907301
           },
           "latency_ms": {
-            "p50": 3000.65,
-            "p95": 3892.97,
-            "mean": 3017.09
+            "p50": 185.1,
+            "p95": 207.22,
+            "mean": 183.77
           }
         },
         "semantic": {
@@ -1017,7 +1017,7 @@
           "recall_at_1": {
             "mean": 0.4,
             "ci_low": 0.2,
-            "ci_high": 0.6
+            "ci_high": 0.65
           },
           "recall_at_3": {
             "mean": 0.45,
@@ -1025,9 +1025,9 @@
             "ci_high": 0.65
           },
           "recall_at_5": {
-            "mean": 0.45,
-            "ci_low": 0.25,
-            "ci_high": 0.65
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
           },
           "recall_at_10": {
             "mean": 0.5,
@@ -1035,19 +1035,19 @@
             "ci_high": 0.7
           },
           "mrr": {
-            "mean": 0.433333,
+            "mean": 0.435,
             "ci_low": 0.225,
             "ci_high": 0.65
           },
           "ndcg_at_10": {
-            "mean": 0.449357,
-            "ci_low": 0.249357,
-            "ci_high": 0.663093
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.669343
           },
           "latency_ms": {
-            "p50": 967.42,
-            "p95": 2337.33,
-            "mean": 976.59
+            "p50": 174.69,
+            "p95": 193.41,
+            "mean": 177.36
           }
         }
       },
@@ -1055,38 +1055,38 @@
         "count": 60,
         "recall_at_1": {
           "mean": 0.520833,
-          "ci_low": 0.420833,
-          "ci_high": 0.616667
+          "ci_low": 0.425,
+          "ci_high": 0.620833
         },
         "recall_at_3": {
-          "mean": 0.7125,
-          "ci_low": 0.6125,
-          "ci_high": 0.816667
+          "mean": 0.704167,
+          "ci_low": 0.595833,
+          "ci_high": 0.808333
         },
         "recall_at_5": {
-          "mean": 0.733333,
-          "ci_low": 0.616667,
-          "ci_high": 0.833333
+          "mean": 0.741667,
+          "ci_low": 0.625,
+          "ci_high": 0.841667
         },
         "recall_at_10": {
-          "mean": 0.758333,
-          "ci_low": 0.65,
+          "mean": 0.75,
+          "ci_low": 0.641667,
           "ci_high": 0.858333
         },
         "mrr": {
-          "mean": 0.752778,
-          "ci_low": 0.636111,
-          "ci_high": 0.855556
+          "mean": 0.745,
+          "ci_low": 0.628333,
+          "ci_high": 0.85
         },
         "ndcg_at_10": {
-          "mean": 0.731749,
-          "ci_low": 0.628396,
-          "ci_high": 0.833113
+          "mean": 0.730559,
+          "ci_low": 0.625088,
+          "ci_high": 0.831951
         },
         "latency_ms": {
-          "p50": 1766.95,
-          "p95": 3931.22,
-          "mean": 1728.36
+          "p50": 177.73,
+          "p95": 203.98,
+          "mean": 177.96
         }
       },
       "denied_identity_leaks": 0,
@@ -1098,37 +1098,37 @@
         "recall_at_1": {
           "mean": 0.478125,
           "ci_low": 0.3875,
-          "ci_high": 0.56875
+          "ci_high": 0.575
         },
         "recall_at_3": {
-          "mean": 0.6,
-          "ci_low": 0.496875,
-          "ci_high": 0.7
+          "mean": 0.628125,
+          "ci_low": 0.521875,
+          "ci_high": 0.728125
         },
         "recall_at_5": {
-          "mean": 0.6125,
-          "ci_low": 0.509375,
-          "ci_high": 0.709375
-        },
-        "recall_at_10": {
-          "mean": 0.6375,
-          "ci_low": 0.53125,
-          "ci_high": 0.73125
-        },
-        "mrr": {
-          "mean": 0.655208,
-          "ci_low": 0.551042,
+          "mean": 0.65625,
+          "ci_low": 0.55,
           "ci_high": 0.75625
         },
+        "recall_at_10": {
+          "mean": 0.66875,
+          "ci_low": 0.56875,
+          "ci_high": 0.76875
+        },
+        "mrr": {
+          "mean": 0.654286,
+          "ci_low": 0.552321,
+          "ci_high": 0.756786
+        },
         "ndcg_at_10": {
-          "mean": 0.623181,
-          "ci_low": 0.521003,
-          "ci_high": 0.721486
+          "mean": 0.645861,
+          "ci_low": 0.543539,
+          "ci_high": 0.74767
         },
         "latency_ms": {
-          "p50": 1431.16,
-          "p95": 3915.75,
-          "mean": 1674.1
+          "p50": 192.71,
+          "p95": 237.6,
+          "mean": 196.62
         }
       },
       "by_category": {
@@ -1165,9 +1165,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 327.58,
-            "p95": 1445.81,
-            "mean": 596.36
+            "p50": 204.66,
+            "p95": 277.76,
+            "mean": 210.36
           }
         },
         "exact_identifier": {
@@ -1178,19 +1178,19 @@
             "ci_high": 0.9
           },
           "recall_at_3": {
-            "mean": 0.85,
-            "ci_low": 0.7375,
-            "ci_high": 0.9625
+            "mean": 0.9375,
+            "ci_low": 0.8875,
+            "ci_high": 0.9875
           },
           "recall_at_5": {
-            "mean": 0.85,
-            "ci_low": 0.725,
-            "ci_high": 0.95
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
           },
           "recall_at_10": {
-            "mean": 0.875,
-            "ci_low": 0.775,
-            "ci_high": 0.95
+            "mean": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
           },
           "mrr": {
             "mean": 1.0,
@@ -1198,14 +1198,14 @@
             "ci_high": 1.0
           },
           "ndcg_at_10": {
-            "mean": 0.899598,
-            "ci_low": 0.811865,
-            "ci_high": 0.969433
+            "mean": 0.991909,
+            "ci_low": 0.975728,
+            "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 258.49,
-            "p95": 4317.93,
-            "mean": 1228.92
+            "p50": 201.79,
+            "p95": 240.77,
+            "mean": 199.37
           }
         },
         "link_only": {
@@ -1216,8 +1216,8 @@
             "ci_high": 1.0
           },
           "recall_at_3": {
-            "mean": 0.875,
-            "ci_low": 0.625,
+            "mean": 1.0,
+            "ci_low": 1.0,
             "ci_high": 1.0
           },
           "recall_at_5": {
@@ -1231,19 +1231,19 @@
             "ci_high": 1.0
           },
           "mrr": {
-            "mean": 0.90625,
-            "ci_low": 0.71875,
+            "mean": 0.9375,
+            "ci_low": 0.8125,
             "ci_high": 1.0
           },
           "ndcg_at_10": {
-            "mean": 0.928835,
-            "ci_low": 0.786504,
+            "mean": 0.953866,
+            "ci_low": 0.861599,
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 2695.6,
-            "p95": 4137.24,
-            "mean": 2864.44
+            "p50": 183.1,
+            "p95": 223.34,
+            "mean": 186.22
           }
         },
         "multi_source": {
@@ -1254,14 +1254,14 @@
             "ci_high": 0.475
           },
           "recall_at_3": {
-            "mean": 0.75,
-            "ci_low": 0.575,
+            "mean": 0.725,
+            "ci_low": 0.55,
             "ci_high": 0.9
           },
           "recall_at_5": {
-            "mean": 0.75,
-            "ci_low": 0.575,
-            "ci_high": 0.9
+            "mean": 0.725,
+            "ci_low": 0.525,
+            "ci_high": 0.875
           },
           "recall_at_10": {
             "mean": 0.775,
@@ -1269,19 +1269,19 @@
             "ci_high": 0.925
           },
           "mrr": {
-            "mean": 0.825,
-            "ci_low": 0.65,
-            "ci_high": 0.975
+            "mean": 0.807143,
+            "ci_low": 0.614286,
+            "ci_high": 0.957143
           },
           "ndcg_at_10": {
-            "mean": 0.772235,
-            "ci_low": 0.602892,
-            "ci_high": 0.922235
+            "mean": 0.759098,
+            "ci_low": 0.585347,
+            "ci_high": 0.913813
           },
           "latency_ms": {
-            "p50": 2922.33,
-            "p95": 3850.32,
-            "mean": 2985.54
+            "p50": 186.76,
+            "p95": 230.75,
+            "mean": 195.15
           }
         },
         "semantic": {
@@ -1289,7 +1289,7 @@
           "recall_at_1": {
             "mean": 0.4,
             "ci_low": 0.2,
-            "ci_high": 0.6
+            "ci_high": 0.65
           },
           "recall_at_3": {
             "mean": 0.45,
@@ -1297,9 +1297,9 @@
             "ci_high": 0.65
           },
           "recall_at_5": {
-            "mean": 0.45,
-            "ci_low": 0.25,
-            "ci_high": 0.65
+            "mean": 0.5,
+            "ci_low": 0.3,
+            "ci_high": 0.7
           },
           "recall_at_10": {
             "mean": 0.5,
@@ -1307,19 +1307,19 @@
             "ci_high": 0.7
           },
           "mrr": {
-            "mean": 0.433333,
+            "mean": 0.435,
             "ci_low": 0.225,
             "ci_high": 0.65
           },
           "ndcg_at_10": {
-            "mean": 0.449357,
-            "ci_low": 0.249357,
-            "ci_high": 0.663093
+            "mean": 0.450889,
+            "ci_low": 0.25,
+            "ci_high": 0.669343
           },
           "latency_ms": {
-            "p50": 933.24,
-            "p95": 2340.2,
-            "mean": 978.35
+            "p50": 184.47,
+            "p95": 228.91,
+            "mean": 191.26
           }
         }
       },
@@ -1327,38 +1327,38 @@
         "count": 60,
         "recall_at_1": {
           "mean": 0.520833,
-          "ci_low": 0.420833,
-          "ci_high": 0.616667
+          "ci_low": 0.425,
+          "ci_high": 0.620833
         },
         "recall_at_3": {
-          "mean": 0.683333,
-          "ci_low": 0.579167,
-          "ci_high": 0.791667
+          "mean": 0.704167,
+          "ci_low": 0.595833,
+          "ci_high": 0.808333
         },
         "recall_at_5": {
-          "mean": 0.683333,
-          "ci_low": 0.570833,
-          "ci_high": 0.7875
+          "mean": 0.741667,
+          "ci_low": 0.625,
+          "ci_high": 0.841667
         },
         "recall_at_10": {
-          "mean": 0.716667,
-          "ci_low": 0.608333,
-          "ci_high": 0.825
+          "mean": 0.758333,
+          "ci_low": 0.65,
+          "ci_high": 0.858333
         },
         "mrr": {
-          "mean": 0.752778,
-          "ci_low": 0.636111,
-          "ci_high": 0.855556
+          "mean": 0.747381,
+          "ci_low": 0.630714,
+          "ci_high": 0.852381
         },
         "ndcg_at_10": {
-          "mean": 0.707063,
-          "ci_low": 0.60574,
-          "ci_high": 0.81072
+          "mean": 0.733965,
+          "ci_low": 0.630589,
+          "ci_high": 0.833648
         },
         "latency_ms": {
-          "p50": 1755.98,
-          "p95": 3899.8,
-          "mean": 1730.94
+          "p50": 189.1,
+          "p95": 234.75,
+          "mean": 195.26
         }
       },
       "denied_identity_leaks": 0,
@@ -1368,28 +1368,28 @@
   "paired_comparisons": {
     "hybrid_plus_graph_vs_hybrid_overall": {
       "recall_at_5": {
-        "delta_mean": -0.0375,
-        "ci_low": -0.06875,
-        "ci_high": -0.009375,
-        "statistically_significant": true
-      },
-      "recall_at_10": {
-        "delta_mean": -0.03125,
-        "ci_low": -0.05625,
-        "ci_high": -0.00625,
-        "statistically_significant": true
-      },
-      "mrr": {
         "delta_mean": 0.0,
         "ci_low": 0.0,
         "ci_high": 0.0,
         "statistically_significant": false
       },
+      "recall_at_10": {
+        "delta_mean": 0.00625,
+        "ci_low": 0.0,
+        "ci_high": 0.01875,
+        "statistically_significant": false
+      },
+      "mrr": {
+        "delta_mean": 0.001786,
+        "ci_low": 0.0,
+        "ci_high": 0.005357,
+        "statistically_significant": false
+      },
       "ndcg_at_10": {
-        "delta_mean": -0.018514,
-        "ci_low": -0.034596,
-        "ci_high": -0.005101,
-        "statistically_significant": true
+        "delta_mean": 0.002555,
+        "ci_low": 0.0,
+        "ci_high": 0.007664,
+        "statistically_significant": false
       }
     },
     "hybrid_plus_graph_vs_hybrid_multi_source": {
@@ -1400,21 +1400,21 @@
         "statistically_significant": false
       },
       "recall_at_10": {
-        "delta_mean": 0.0,
+        "delta_mean": 0.025,
         "ci_low": 0.0,
-        "ci_high": 0.0,
+        "ci_high": 0.075,
         "statistically_significant": false
       },
       "mrr": {
-        "delta_mean": 0.0,
+        "delta_mean": 0.007143,
         "ci_low": 0.0,
-        "ci_high": 0.0,
+        "ci_high": 0.021429,
         "statistically_significant": false
       },
       "ndcg_at_10": {
-        "delta_mean": 0.0,
+        "delta_mean": 0.010219,
         "ci_low": 0.0,
-        "ci_high": 0.0,
+        "ci_high": 0.030657,
         "statistically_significant": false
       }
     },

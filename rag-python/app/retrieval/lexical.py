@@ -33,7 +33,7 @@ class LexicalRetriever:
         source_types: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
-        semantics: str = "or",
+        semantics: str = "and",
     ) -> List[RagSearchResultItem]:
         """Execute lexical full-text search returning ranked RagSearchResultItem records enforcing ACLs."""
         if not query or not query.strip():

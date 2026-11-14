@@ -38,9 +38,9 @@
           "ci_high": 0.747257
         },
         "latency_ms": {
-          "p50": 2878.73,
-          "p95": 4107.95,
-          "mean": 2531.3
+          "p50": 2877.38,
+          "p95": 4106.74,
+          "mean": 2542.73
         }
       },
       "by_category": {
@@ -77,9 +77,9 @@
             "ci_high": 0.857695
           },
           "latency_ms": {
-            "p50": 3747.15,
-            "p95": 4183.42,
-            "mean": 3835.82
+            "p50": 3725.26,
+            "p95": 4225.73,
+            "mean": 3858.14
           }
         },
         "multi_source": {
@@ -115,9 +115,9 @@
             "ci_high": 0.922629
           },
           "latency_ms": {
-            "p50": 2878.73,
-            "p95": 3280.29,
-            "mean": 2879.26
+            "p50": 2877.38,
+            "p95": 3311.89,
+            "mean": 2894.83
           }
         },
         "semantic": {
@@ -153,9 +153,9 @@
             "ci_high": 0.663093
           },
           "latency_ms": {
-            "p50": 842.05,
-            "p95": 1921.38,
-            "mean": 878.81
+            "p50": 858.72,
+            "p95": 1889.77,
+            "mean": 875.23
           }
         }
       }
@@ -194,9 +194,9 @@
           "ci_high": 0.45989
         },
         "latency_ms": {
-          "p50": 37.33,
-          "p95": 64.91,
-          "mean": 38.49
+          "p50": 49.88,
+          "p95": 80.45,
+          "mean": 52.01
         }
       },
       "by_category": {
@@ -233,9 +233,9 @@
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 36.59,
-            "p95": 41.55,
-            "mean": 34.75
+            "p50": 44.8,
+            "p95": 55.17,
+            "mean": 42.77
           }
         },
         "multi_source": {
@@ -271,9 +271,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 33.95,
-            "p95": 59.15,
-            "mean": 34.79
+            "p50": 55.71,
+            "p95": 85.02,
+            "mean": 58.11
           }
         },
         "semantic": {
@@ -309,9 +309,9 @@
             "ci_high": 0.0
           },
           "latency_ms": {
-            "p50": 40.09,
-            "p95": 64.91,
-            "mean": 45.93
+            "p50": 52.46,
+            "p95": 80.09,
+            "mean": 55.14
           }
         }
       }
@@ -350,9 +350,9 @@
           "ci_high": 0.361681
         },
         "latency_ms": {
-          "p50": 77.9,
-          "p95": 126.39,
-          "mean": 81.75
+          "p50": 77.48,
+          "p95": 114.91,
+          "mean": 81.46
         }
       },
       "by_category": {
@@ -389,9 +389,9 @@
             "ci_high": 0.472622
           },
           "latency_ms": {
-            "p50": 73.43,
-            "p95": 90.5,
-            "mean": 70.67
+            "p50": 68.19,
+            "p95": 80.89,
+            "mean": 66.79
           }
         },
         "multi_source": {
@@ -427,9 +427,9 @@
             "ci_high": 0.461315
           },
           "latency_ms": {
-            "p50": 84.99,
-            "p95": 126.39,
-            "mean": 88.02
+            "p50": 87.47,
+            "p95": 114.18,
+            "mean": 88.55
           }
         },
         "semantic": {
@@ -465,9 +465,9 @@
             "ci_high": 0.5
           },
           "latency_ms": {
-            "p50": 81.78,
-            "p95": 127.78,
-            "mean": 86.55
+            "p50": 84.75,
+            "p95": 114.91,
+            "mean": 89.04
           }
         }
       }
@@ -476,9 +476,9 @@
       "overall": {
         "count": 30,
         "recall_at_1": {
-          "mean": 0.516667,
-          "ci_low": 0.4,
-          "ci_high": 0.633333
+          "mean": 0.533333,
+          "ci_low": 0.416667,
+          "ci_high": 0.65
         },
         "recall_at_3": {
           "mean": 0.8,
@@ -491,24 +491,24 @@
           "ci_high": 0.916667
         },
         "recall_at_10": {
-          "mean": 0.816667,
-          "ci_low": 0.683333,
-          "ci_high": 0.933333
+          "mean": 0.8,
+          "ci_low": 0.666667,
+          "ci_high": 0.916667
         },
         "mrr": {
-          "mean": 0.833333,
-          "ci_low": 0.7,
-          "ci_high": 0.95
+          "mean": 0.85,
+          "ci_low": 0.716667,
+          "ci_high": 0.966667
         },
         "ndcg_at_10": {
-          "mean": 0.791941,
-          "ci_low": 0.657248,
-          "ci_high": 0.912413
+          "mean": 0.793332,
+          "ci_low": 0.661358,
+          "ci_high": 0.906885
         },
         "latency_ms": {
-          "p50": 3027.36,
-          "p95": 4253.78,
-          "mean": 2670.56
+          "p50": 171.07,
+          "p95": 206.23,
+          "mean": 174.63
         }
       },
       "by_category": {
@@ -545,16 +545,16 @@
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 3852.3,
-            "p95": 4357.42,
-            "mean": 3961.9
+            "p50": 165.9,
+            "p95": 171.57,
+            "mean": 160.67
           }
         },
         "multi_source": {
           "count": 10,
           "recall_at_1": {
-            "mean": 0.4,
-            "ci_low": 0.25,
+            "mean": 0.45,
+            "ci_low": 0.35,
             "ci_high": 0.5
           },
           "recall_at_3": {
@@ -568,24 +568,24 @@
             "ci_high": 0.9
           },
           "recall_at_10": {
-            "mean": 0.75,
-            "ci_low": 0.55,
-            "ci_high": 0.95
+            "mean": 0.7,
+            "ci_low": 0.5,
+            "ci_high": 0.9
           },
           "mrr": {
-            "mean": 0.85,
-            "ci_low": 0.65,
+            "mean": 0.9,
+            "ci_low": 0.7,
             "ci_high": 1.0
           },
           "ndcg_at_10": {
-            "mean": 0.733059,
-            "ci_low": 0.518458,
+            "mean": 0.737231,
+            "ci_low": 0.529203,
             "ci_high": 0.914602
           },
           "latency_ms": {
-            "p50": 3027.36,
-            "p95": 3416.72,
-            "mean": 3024.01
+            "p50": 187.13,
+            "p95": 206.02,
+            "mean": 181.09
           }
         },
         "semantic": {
@@ -621,9 +621,9 @@
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 1017.57,
-            "p95": 2066.98,
-            "mean": 1025.78
+            "p50": 183.55,
+            "p95": 211.08,
+            "mean": 182.13
           }
         }
       }
@@ -632,39 +632,39 @@
       "overall": {
         "count": 30,
         "recall_at_1": {
-          "mean": 0.516667,
-          "ci_low": 0.4,
-          "ci_high": 0.633333
+          "mean": 0.533333,
+          "ci_low": 0.416667,
+          "ci_high": 0.65
         },
         "recall_at_3": {
-          "mean": 0.716667,
-          "ci_low": 0.583333,
-          "ci_high": 0.85
+          "mean": 0.8,
+          "ci_low": 0.666667,
+          "ci_high": 0.916667
         },
         "recall_at_5": {
-          "mean": 0.716667,
-          "ci_low": 0.583333,
-          "ci_high": 0.833333
+          "mean": 0.8,
+          "ci_low": 0.666667,
+          "ci_high": 0.916667
         },
         "recall_at_10": {
-          "mean": 0.816667,
-          "ci_low": 0.683333,
-          "ci_high": 0.933333
+          "mean": 0.8,
+          "ci_low": 0.666667,
+          "ci_high": 0.916667
         },
         "mrr": {
-          "mean": 0.833333,
-          "ci_low": 0.7,
-          "ci_high": 0.95
+          "mean": 0.85,
+          "ci_low": 0.716667,
+          "ci_high": 0.966667
         },
         "ndcg_at_10": {
-          "mean": 0.771291,
-          "ci_low": 0.637925,
-          "ci_high": 0.890829
+          "mean": 0.793332,
+          "ci_low": 0.661358,
+          "ci_high": 0.906885
         },
         "latency_ms": {
-          "p50": 3041.13,
-          "p95": 4275.52,
-          "mean": 2665.17
+          "p50": 201.36,
+          "p95": 244.54,
+          "mean": 200.67
         }
       },
       "by_category": {
@@ -676,14 +676,14 @@
             "ci_high": 0.5
           },
           "recall_at_3": {
-            "mean": 0.65,
-            "ci_low": 0.45,
-            "ci_high": 0.85
+            "mean": 0.9,
+            "ci_low": 0.7,
+            "ci_high": 1.0
           },
           "recall_at_5": {
-            "mean": 0.65,
-            "ci_low": 0.45,
-            "ci_high": 0.85
+            "mean": 0.9,
+            "ci_low": 0.7,
+            "ci_high": 1.0
           },
           "recall_at_10": {
             "mean": 0.9,
@@ -696,21 +696,21 @@
             "ci_high": 1.0
           },
           "ndcg_at_10": {
-            "mean": 0.81574,
-            "ci_low": 0.586655,
-            "ci_high": 0.963657
+            "mean": 0.879671,
+            "ci_low": 0.659342,
+            "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 3864.81,
-            "p95": 4383.08,
-            "mean": 3970.97
+            "p50": 204.44,
+            "p95": 241.68,
+            "mean": 204.66
           }
         },
         "multi_source": {
           "count": 10,
           "recall_at_1": {
-            "mean": 0.4,
-            "ci_low": 0.25,
+            "mean": 0.45,
+            "ci_low": 0.35,
             "ci_high": 0.5
           },
           "recall_at_3": {
@@ -724,24 +724,24 @@
             "ci_high": 0.9
           },
           "recall_at_10": {
-            "mean": 0.75,
-            "ci_low": 0.55,
-            "ci_high": 0.95
+            "mean": 0.7,
+            "ci_low": 0.5,
+            "ci_high": 0.9
           },
           "mrr": {
-            "mean": 0.85,
-            "ci_low": 0.65,
+            "mean": 0.9,
+            "ci_low": 0.7,
             "ci_high": 1.0
           },
           "ndcg_at_10": {
-            "mean": 0.73504,
-            "ci_low": 0.520438,
-            "ci_high": 0.916793
+            "mean": 0.737231,
+            "ci_low": 0.529203,
+            "ci_high": 0.914602
           },
           "latency_ms": {
-            "p50": 3041.13,
-            "p95": 3411.99,
-            "mean": 3015.67
+            "p50": 201.36,
+            "p95": 259.48,
+            "mean": 210.18
           }
         },
         "semantic": {
@@ -777,9 +777,9 @@
             "ci_high": 1.0
           },
           "latency_ms": {
-            "p50": 1012.76,
-            "p95": 2057.24,
-            "mean": 1008.86
+            "p50": 173.69,
+            "p95": 238.06,
+            "mean": 187.18
           }
         }
       }
@@ -788,10 +788,10 @@
   "paired_comparisons": {
     "hybrid_plus_graph_vs_hybrid_overall": {
       "recall_at_5": {
-        "delta_mean": -0.083333,
-        "ci_low": -0.15,
-        "ci_high": -0.016667,
-        "statistically_significant": true
+        "delta_mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "statistically_significant": false
       },
       "recall_at_10": {
         "delta_mean": 0.0,
@@ -806,10 +806,10 @@
         "statistically_significant": false
       },
       "ndcg_at_10": {
-        "delta_mean": -0.02065,
-        "ci_low": -0.044438,
-        "ci_high": -0.003138,
-        "statistically_significant": true
+        "delta_mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "statistically_significant": false
       }
     },
     "hybrid_plus_graph_vs_hybrid_multi_source": {
@@ -832,9 +832,9 @@
         "statistically_significant": false
       },
       "ndcg_at_10": {
-        "delta_mean": 0.001981,
+        "delta_mean": 0.0,
         "ci_low": 0.0,
-        "ci_high": 0.005942,
+        "ci_high": 0.0,
         "statistically_significant": false
       }
     },
@@ -864,5 +864,1667 @@
         "statistically_significant": false
       }
     }
+  },
+  "per_query_rows": {
+    "lexical_only": [
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 3739.4460000214167,
+        "id": "heldout-id-01",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 3686.8963000015356,
+        "id": "heldout-id-02",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 3711.0791000304744,
+        "id": "heldout-id-03",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 4203.942299995106,
+        "id": "heldout-id-04",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 3987.9309000098146,
+        "id": "heldout-id-05",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 3703.168599982746,
+        "id": "heldout-id-06",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 3683.9202000410296,
+        "id": "heldout-id-07",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 3645.3123000101186,
+        "id": "heldout-id-08",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 4243.5633999994025,
+        "id": "heldout-id-09",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 3976.1880000005476,
+        "id": "heldout-id-10",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 1240.0871000136249,
+        "id": "heldout-sem-01",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 45.46590003883466,
+        "id": "heldout-sem-02",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 54.96419995324686,
+        "id": "heldout-sem-03",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 1600.7536000106484,
+        "id": "heldout-sem-04",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 860.159800038673,
+        "id": "heldout-sem-05",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 2126.232400012668,
+        "id": "heldout-sem-06",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 846.1781999794766,
+        "id": "heldout-sem-07",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 1052.4674999760464,
+        "id": "heldout-sem-08",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 857.2895000106655,
+        "id": "heldout-sem-09",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 0.5,
+        "ndcg_at_10": 0.6309297535714574,
+        "latency_ms": 68.71809996664524,
+        "id": "heldout-sem-10",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 3245.236399990972,
+        "id": "heldout-multi-01",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 3316.5426999912597,
+        "id": "heldout-multi-02",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 3037.501999991946,
+        "id": "heldout-multi-03",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 2855.821599951014,
+        "id": "heldout-multi-04",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 2505.2290999446996,
+        "id": "heldout-multi-05",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 2898.932700045407,
+        "id": "heldout-multi-06",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 2207.1834999951534,
+        "id": "heldout-multi-07",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 2779.2393999989145,
+        "id": "heldout-multi-08",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 3306.2061999808066,
+        "id": "heldout-multi-09",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 2796.3910999824293,
+        "id": "heldout-multi-10",
+        "category": "multi_source"
+      }
+    ],
+    "lexical_and": [
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 56.37659999774769,
+        "id": "heldout-id-01",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 43.410199985373765,
+        "id": "heldout-id-02",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 23.922699969261885,
+        "id": "heldout-id-03",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 53.70499996934086,
+        "id": "heldout-id-04",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 38.39880001032725,
+        "id": "heldout-id-05",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 46.417899953667074,
+        "id": "heldout-id-06",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 39.09969999222085,
+        "id": "heldout-id-07",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 53.41470002895221,
+        "id": "heldout-id-08",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 46.19649995584041,
+        "id": "heldout-id-09",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 26.803899963852018,
+        "id": "heldout-id-10",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 36.471800005529076,
+        "id": "heldout-sem-01",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 47.853600000962615,
+        "id": "heldout-sem-02",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 36.363699997309595,
+        "id": "heldout-sem-03",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 69.74000000627711,
+        "id": "heldout-sem-04",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 68.20550002157688,
+        "id": "heldout-sem-05",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 45.463599963113666,
+        "id": "heldout-sem-06",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 57.07340000662953,
+        "id": "heldout-sem-07",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 85.86019999347627,
+        "id": "heldout-sem-08",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 31.323299976065755,
+        "id": "heldout-sem-09",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 73.03839997621253,
+        "id": "heldout-sem-10",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 45.85149994818494,
+        "id": "heldout-multi-01",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 52.97780002001673,
+        "id": "heldout-multi-02",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 51.90610000863671,
+        "id": "heldout-multi-03",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 34.28190003614873,
+        "id": "heldout-multi-04",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 69.96789999539033,
+        "id": "heldout-multi-05",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 58.44040005467832,
+        "id": "heldout-multi-06",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 34.42250000080094,
+        "id": "heldout-multi-07",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 73.84510000701994,
+        "id": "heldout-multi-08",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 65.2356999926269,
+        "id": "heldout-multi-09",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 94.166100025177,
+        "id": "heldout-multi-10",
+        "category": "multi_source"
+      }
+    ],
+    "vector_only": [
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 69.30480001028627,
+        "id": "heldout-id-01",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.5,
+        "mrr": 0.1111111111111111,
+        "ndcg_at_10": 0.24872141525284142,
+        "latency_ms": 64.32900001527742,
+        "id": "heldout-id-02",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 61.62569997832179,
+        "id": "heldout-id-03",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.9327783893101107,
+        "latency_ms": 55.519299989100546,
+        "id": "heldout-id-04",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 75.16920001944527,
+        "id": "heldout-id-05",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 85.57729999301955,
+        "id": "heldout-id-06",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 67.93439999455586,
+        "id": "heldout-id-07",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 68.45299998531118,
+        "id": "heldout-id-08",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 73.47160001518205,
+        "id": "heldout-id-09",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.9639404333166532,
+        "latency_ms": 46.54120001941919,
+        "id": "heldout-id-10",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 119.27229998400435,
+        "id": "heldout-sem-01",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 79.79519997024909,
+        "id": "heldout-sem-02",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 80.58770000934601,
+        "id": "heldout-sem-03",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 109.58390001906082,
+        "id": "heldout-sem-04",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 93.16409996245056,
+        "id": "heldout-sem-05",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 70.20539999939501,
+        "id": "heldout-sem-06",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 73.42519995290786,
+        "id": "heldout-sem-07",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 103.59660000540316,
+        "id": "heldout-sem-08",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 88.90480000991374,
+        "id": "heldout-sem-09",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 71.89190003555268,
+        "id": "heldout-sem-10",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 105.45550001552328,
+        "id": "heldout-multi-01",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 81.15390001330525,
+        "id": "heldout-multi-02",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 72.69800000358373,
+        "id": "heldout-multi-03",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 121.05830002110451,
+        "id": "heldout-multi-04",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 88.70110003044829,
+        "id": "heldout-multi-05",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 86.24660002533346,
+        "id": "heldout-multi-06",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 90.07480001309887,
+        "id": "heldout-multi-07",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 68.65730002755299,
+        "id": "heldout-multi-08",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 65.65329997101799,
+        "id": "heldout-multi-09",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 105.78260000329465,
+        "id": "heldout-multi-10",
+        "category": "multi_source"
+      }
+    ],
+    "hybrid_rrf": [
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 165.85440002381802,
+        "id": "heldout-id-01",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 171.75169999245554,
+        "id": "heldout-id-02",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 163.986700004898,
+        "id": "heldout-id-03",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 165.94669996993616,
+        "id": "heldout-id-04",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 171.3416000129655,
+        "id": "heldout-id-05",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 128.5508000291884,
+        "id": "heldout-id-06",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 167.23549994640052,
+        "id": "heldout-id-07",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 167.9219999932684,
+        "id": "heldout-id-08",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 155.23319999920204,
+        "id": "heldout-id-09",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 148.91479996731505,
+        "id": "heldout-id-10",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 190.53260004147887,
+        "id": "heldout-sem-01",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 176.88579997047782,
+        "id": "heldout-sem-02",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 171.51919996831566,
+        "id": "heldout-sem-03",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 190.210799977649,
+        "id": "heldout-sem-04",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 0.5,
+        "ndcg_at_10": 0.6309297535714574,
+        "latency_ms": 153.3517999923788,
+        "id": "heldout-sem-05",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 218.22909999173135,
+        "id": "heldout-sem-06",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 159.38299999106675,
+        "id": "heldout-sem-07",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 163.95979997469112,
+        "id": "heldout-sem-08",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 202.3427999811247,
+        "id": "heldout-sem-09",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 194.87500004470348,
+        "id": "heldout-sem-10",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 178.9058999856934,
+        "id": "heldout-multi-01",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 168.16280002240092,
+        "id": "heldout-multi-02",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 209.40310001606122,
+        "id": "heldout-multi-03",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.9197207891481876,
+        "latency_ms": 201.8767999834381,
+        "id": "heldout-multi-04",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 170.80830002669245,
+        "id": "heldout-multi-05",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 155.9955999837257,
+        "id": "heldout-multi-06",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 195.3541999682784,
+        "id": "heldout-multi-07",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 196.56740000937134,
+        "id": "heldout-multi-08",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 138.3285999763757,
+        "id": "heldout-multi-09",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 195.5156999756582,
+        "id": "heldout-multi-10",
+        "category": "multi_source"
+      }
+    ],
+    "hybrid_plus_graph": [
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 193.03030002629384,
+        "id": "heldout-id-01",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 214.220900030341,
+        "id": "heldout-id-02",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 203.14210001379251,
+        "id": "heldout-id-03",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 206.2718000379391,
+        "id": "heldout-id-04",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 202.4591999943368,
+        "id": "heldout-id-05",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 174.96499995468184,
+        "id": "heldout-id-06",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.7967075809905066,
+        "latency_ms": 244.82710001757368,
+        "id": "heldout-id-07",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 205.7348999660462,
+        "id": "heldout-id-08",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 237.8305000020191,
+        "id": "heldout-id-09",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 164.12890003994107,
+        "id": "heldout-id-10",
+        "category": "exact_identifier"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 229.55829999409616,
+        "id": "heldout-sem-01",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 198.94730002852157,
+        "id": "heldout-sem-02",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 163.55390002718195,
+        "id": "heldout-sem-03",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 166.03800002485514,
+        "id": "heldout-sem-04",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 0.5,
+        "ndcg_at_10": 0.6309297535714574,
+        "latency_ms": 160.47300002537668,
+        "id": "heldout-sem-05",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 239.90970000158995,
+        "id": "heldout-sem-06",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 143.43619998544455,
+        "id": "heldout-sem-07",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 152.73719996912405,
+        "id": "heldout-sem-08",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 235.80610001226887,
+        "id": "heldout-sem-09",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 181.33540003327653,
+        "id": "heldout-sem-10",
+        "category": "semantic"
+      },
+      {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_10": 0.0,
+        "latency_ms": 230.32360000070184,
+        "id": "heldout-multi-01",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 200.09729999583215,
+        "id": "heldout-multi-02",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 201.59589999821037,
+        "id": "heldout-multi-03",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.9197207891481876,
+        "latency_ms": 244.19870000565425,
+        "id": "heldout-multi-04",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 188.249500002712,
+        "id": "heldout-multi-05",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 195.96659997478127,
+        "id": "heldout-multi-06",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 207.36040000338107,
+        "id": "heldout-multi-07",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 201.13359997048974,
+        "id": "heldout-multi-08",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_10": 1.0,
+        "latency_ms": 160.86930001620203,
+        "id": "heldout-multi-09",
+        "category": "multi_source"
+      },
+      {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "latency_ms": 271.97880001040176,
+        "id": "heldout-multi-10",
+        "category": "multi_source"
+      }
+    ]
   }
 }

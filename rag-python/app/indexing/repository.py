@@ -213,7 +213,7 @@ class KnowledgeRepository(ABC):
         source_types: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
-        semantics: str = "or",
+        semantics: str = "and",
     ) -> List[RagSearchResultItem]:
         """Perform lexical (full-text) search over indexed chunks enforcing ACL filtering."""
         ...
@@ -866,7 +866,7 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         source_types: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
-        semantics: str = "or",
+        semantics: str = "and",
     ) -> List[RagSearchResultItem]:
         if not query or not query.strip():
             return []
@@ -2222,7 +2222,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         source_types: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
-        semantics: str = "or",
+        semantics: str = "and",
     ) -> List[RagSearchResultItem]:
         if not query or not query.strip():
             return []

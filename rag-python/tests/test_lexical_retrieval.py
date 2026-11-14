@@ -175,15 +175,16 @@ def test_postgres_search_lexical_sql_structure():
     assert results[0].chunk_id == "chunk:1"
     assert results[0].score == 0.42
 
-    # Verify SQL query used ts_rank_cd and fair OR semantics by default
+    # Verify SQL query used ts_rank_cd and strict AND semantics by default
     executed_sql, executed_params = mock_cursor.execute.call_args[0]
-    assert "replace(plainto_tsquery('english', %s)::text, '&', '|')::tsquery" in executed_sql
+    assert "ts_rank_cd(c.tsv, plainto_tsquery('english', %s))" in executed_sql
+    assert "c.tsv @@ plainto_tsquery('english', %s)" in executed_sql
     assert "d.source_type = ANY(%s)" in executed_sql
-    assert executed_params == ("NullPointerException", "NullPointerException", "NullPointerException", "NullPointerException", ["GITHUB"], 5)
+    assert executed_params == ("NullPointerException", "NullPointerException", ["GITHUB"], 5)
 
-    # Verify strict AND semantics
-    repo.search_lexical("NullPointerException", limit=5, source_types=["GITHUB"], semantics="and")
-    executed_sql_and, executed_params_and = mock_cursor.execute.call_args[0]
-    assert "ts_rank_cd(c.tsv, plainto_tsquery('english', %s))" in executed_sql_and
-    assert "c.tsv @@ plainto_tsquery('english', %s)" in executed_sql_and
-    assert executed_params_and == ("NullPointerException", "NullPointerException", ["GITHUB"], 5)
+    # Verify fair OR semantics when explicitly requested
+    repo.search_lexical("NullPointerException", limit=5, source_types=["GITHUB"], semantics="or")
+    executed_sql_or, executed_params_or = mock_cursor.execute.call_args[0]
+    assert "replace(plainto_tsquery('english', %s)::text, '&', '|')::tsquery" in executed_sql_or
+    assert "d.source_type = ANY(%s)" in executed_sql_or
+    assert executed_params_or == ("NullPointerException", "NullPointerException", "NullPointerException", "NullPointerException", ["GITHUB"], 5)

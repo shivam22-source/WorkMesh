@@ -70,9 +70,11 @@ class HybridRetriever:
         enable_query_routing: bool = True,
         routing_weights: Optional[Dict[str, Tuple[float, float]]] = None,
         cross_encoder_reranker: Optional[Any] = None,
+        lexical_semantics: str = "and",
     ):
         self.default_user_id = default_user_id
         self.default_group_ids = default_group_ids
+        self.lexical_semantics = lexical_semantics
 
         if lexical_retriever is not None and vector_retriever is not None:
             self.lexical_retriever = lexical_retriever
@@ -193,6 +195,7 @@ class HybridRetriever:
             source_types=source_types,
             user_id=effective_user_id,
             group_ids=effective_group_ids,
+            semantics=self.lexical_semantics,
         )
         lexical_ms = round((time.perf_counter() - t_lex0) * 1000.0, 2)
 
