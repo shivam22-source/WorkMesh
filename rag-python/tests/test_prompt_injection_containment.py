@@ -8,10 +8,9 @@ Verifies:
 3. No unauthorized chunk can ever appear in LLM context or in the returned citations.
 """
 
-from datetime import datetime, timezone
 import json
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
 
 import pytest
 
@@ -22,7 +21,7 @@ from app.embeddings.mock_provider import MockEmbeddingProvider
 from app.indexing.repository import InMemoryKnowledgeRepository
 from app.normalization.models import CanonicalDocument
 from app.rag.llm import LlmProvider, LlmResponse
-from app.rag.service import GroundedRagService, GENERIC_INSUFFICIENT_EVIDENCE_ANSWER
+from app.rag.service import GENERIC_INSUFFICIENT_EVIDENCE_ANSWER, GroundedRagService
 from app.retrieval.hybrid import HybridRetriever
 
 

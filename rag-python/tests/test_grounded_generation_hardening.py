@@ -18,10 +18,8 @@ import pytest
 
 from app.contracts.rag_ask import RagAskRequest
 from app.contracts.rag_search import RagSearchResultItem
-from app.rag.citations import CitationExtractor
-from app.rag.evidence import EvidenceBuilder
 from app.rag.llm import GeminiLlmProvider, LlmProvider, LlmResponse
-from app.rag.service import GroundedRagService, GENERIC_INSUFFICIENT_EVIDENCE_ANSWER
+from app.rag.service import GENERIC_INSUFFICIENT_EVIDENCE_ANSWER, GroundedRagService
 
 
 class FakeLlm(LlmProvider):

@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from app.agent.tools import AgentTools
-from app.contracts.rag_ask import CitationItem, RagAskResponse
+from app.contracts.rag_ask import CitationItem
 from app.contracts.rag_search import RagSearchResultItem
 from app.indexing.repository import KnowledgeRepository
 from app.rag.citations import CitationExtractor

@@ -57,8 +57,8 @@ def test_build_review_markdown_puts_seed42_sample_first():
         assert f"- **Query ID:** `q-{i:02d}`" in md
         assert f"- **Identity:** `employee_{i}` (groups: `group_engineering`)" in md
         assert f"Full DB text for chunk {i}-0" in md
-        assert f"source `github`" in md
-        assert f"source `slack`" in md
+        assert "source `github`" in md
+        assert "source `slack`" in md
 
 
 def test_generated_review_queries_v2_markdown_matches_jsonl():

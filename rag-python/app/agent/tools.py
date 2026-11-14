@@ -12,7 +12,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from app.contracts.rag_search import RagSearchResultItem
 from app.indexing.repository import KnowledgeRepository
 from app.retrieval.hybrid import HybridRetriever
 

@@ -6,11 +6,8 @@ Verifies:
 3. JSON output structure with summary and query-level details.
 """
 
-import json
-from pathlib import Path
 import sys
-
-import pytest
+from pathlib import Path
 
 # Ensure scripts and rag-python are importable
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -18,7 +15,7 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from run_agent_eval import evaluate_query, load_multihop_queries
+from run_agent_eval import evaluate_query, load_multihop_queries  # noqa: E402
 
 
 def test_load_multihop_queries_loads_30_queries():

@@ -10,24 +10,20 @@ Verifies:
 """
 
 from datetime import datetime, timezone
-import json
-from unittest.mock import MagicMock, patch
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
-from app.agent.service import AgentAskRequest, AgentAskResponse, AgentService
+from app.agent.service import AgentAskRequest, AgentService
 from app.agent.tools import AgentTools
 from app.chunking.models import CanonicalChunk
-from app.connectors.common.models import AclReference, PrincipalType, RawSourceItem, SourceType
+from app.connectors.common.models import AclReference, PrincipalType
 from app.embeddings.mock_provider import MockEmbeddingProvider
 from app.graph.models import Entity, EntityType, Relationship, RelationshipType
 from app.indexing.repository import InMemoryKnowledgeRepository
 from app.main import create_app
 from app.normalization.models import CanonicalDocument
-from app.rag.citations import CitationExtractor
-from app.rag.evidence import EvidenceBuilder
-from app.rag.llm import LlmProvider, LlmResponse, MockLlmProvider
+from app.rag.llm import MockLlmProvider
 from app.retrieval.hybrid import HybridRetriever
 
 

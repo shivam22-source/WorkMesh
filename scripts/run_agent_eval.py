@@ -17,7 +17,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -29,14 +28,13 @@ RAG_PYTHON_DIR = REPO_ROOT / "rag-python"
 if str(RAG_PYTHON_DIR) not in sys.path:
     sys.path.insert(0, str(RAG_PYTHON_DIR))
 
-from app.agent.service import AgentAskRequest, AgentService
-from app.common.config import get_settings
-from app.contracts.rag_ask import RagAskRequest
-from app.indexing.repository import PostgresKnowledgeRepository
-from app.rag.evidence import EvidenceBuilder
-from app.rag.llm import MockLlmProvider, get_llm_provider
-from app.rag.service import GroundedRagService
-from app.retrieval.hybrid import HybridRetriever
+from app.agent.service import AgentAskRequest, AgentService  # noqa: E402
+from app.common.config import get_settings  # noqa: E402
+from app.contracts.rag_ask import RagAskRequest  # noqa: E402
+from app.indexing.repository import PostgresKnowledgeRepository  # noqa: E402
+from app.rag.llm import get_llm_provider  # noqa: E402
+from app.rag.service import GroundedRagService  # noqa: E402
+from app.retrieval.hybrid import HybridRetriever  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("agent_eval")

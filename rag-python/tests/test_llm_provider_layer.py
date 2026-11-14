@@ -10,9 +10,8 @@ Covers:
 - LLMProvider alias exists for naming convention.
 """
 
-import json
 import logging
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
@@ -20,16 +19,14 @@ import pytest
 from app.rag.llm import (
     AnthropicLlmProvider,
     GeminiLlmProvider,
-    LlmProvider,
-    LlmResponse,
     LLMProvider,
+    LlmProvider,
     MockLlmProvider,
     _hash_prompt,
     _retry_with_backoff,
     get_llm_provider,
 )
 from app.rag.service import SYSTEM_PROMPT
-
 
 # ---------------------------------------------------------------------------
 # LLMProvider alias
