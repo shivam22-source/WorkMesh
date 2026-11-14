@@ -1,5 +1,7 @@
 {
-  "timestamp": "2026-11-13 16:59:02 UTC",
+  "timestamp": "2026-11-14 10:10:33 UTC",
+  "provider": "mock",
+  "model": "mock-grounded-v1",
   "summary": {
     "total_queries": 30,
     "single_shot": {

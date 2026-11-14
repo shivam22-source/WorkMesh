@@ -17,15 +17,21 @@ def _load_check_overlap_module():
 
 
 def test_queries_v2_dataset_structure_and_categories():
-    """queries_v2.jsonl contains 60 valid queries (20/20/20) with graded qrels and user identities."""
+    """queries_v2.jsonl contains 80 valid queries (20/20/20/12/8) with graded qrels and user identities."""
     mod = _load_check_overlap_module()
     queries_path = Path(__file__).resolve().parents[2] / "data" / "evaluation" / "queries_v2.jsonl"
     assert queries_path.exists()
 
     records = mod.load_queries_jsonl(queries_path)
-    assert len(records) == 60
+    assert len(records) == 80
 
-    counts = {"exact_identifier": 0, "semantic": 0, "multi_source": 0}
+    counts = {
+        "exact_identifier": 0,
+        "semantic": 0,
+        "multi_source": 0,
+        "denied_identity": 0,
+        "link_only": 0,
+    }
     for rec in records:
         assert rec["id"]
         assert rec["query"].strip()
@@ -40,7 +46,13 @@ def test_queries_v2_dataset_structure_and_categories():
             assert len(rec["required_sources"]) == 2
             assert len([g for g in qrels.values() if g == 2]) >= 2
 
-    assert counts == {"exact_identifier": 20, "semantic": 20, "multi_source": 20}
+    assert counts == {
+        "exact_identifier": 20,
+        "semantic": 20,
+        "multi_source": 20,
+        "denied_identity": 12,
+        "link_only": 8,
+    }
 
 
 def test_semantic_queries_strict_max_one_content_word_overlap():
@@ -62,3 +74,25 @@ def test_v2_extension_records_have_unique_ids():
     assert len(docs) == 75
     assert len(entities) > 0
     assert len(relationships) > 0
+
+
+def test_denied_identity_queries_have_zero_permission_leakage():
+    """All 12 denied-identity queries verify that unauthorized users have 0% access to target chunks."""
+    from app.evaluation.corpus_v2 import DENIED_IDENTITY_SCENARIOS
+    from app.security.acl import has_read_permission
+
+    _, _, acls, _, _ = build_v2_extension_records(embedder=None)
+    acl_by_chunk: dict[str, list] = {}
+    for a in acls:
+        if a.resource_type == "CHUNK":
+            acl_by_chunk.setdefault(a.resource_id, []).append(a)
+
+    for q in DENIED_IDENTITY_SCENARIOS:
+        for target in q["qrels"].keys():
+            doc_id = target.rsplit(":", 1)[0]
+            doc_acls = [a for a in acls if a.resource_id == doc_id or a.resource_id == f"raw:{doc_id}"]
+            chunk_acls = acl_by_chunk.get(target, [])
+            all_acls = doc_acls + chunk_acls
+            allowed = has_read_permission(all_acls, user_id=q["user_id"], group_ids=q["group_ids"])
+            assert not allowed, f"Denied query leaked: {q['id']} for user {q['user_id']}"
+

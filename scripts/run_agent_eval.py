@@ -139,6 +139,8 @@ def run_evaluation(
     queries_path: Optional[Path] = None,
     output_path: Optional[Path] = None,
     limit: Optional[int] = None,
+    sleep_seconds: float = 5.0,
+    resume: bool = True,
 ) -> Dict[str, Any]:
     """Execute the comparative benchmark."""
     settings = get_settings()
@@ -166,11 +168,35 @@ def run_evaluation(
         llm_provider=llm_provider,
     )
 
+    # Resume support: check if output file already contains evaluated queries
+    existing_results: Dict[str, Dict[str, Any]] = {}
+    if resume and output_path.exists():
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                prev_data = json.load(f)
+                if isinstance(prev_data, dict) and "queries" in prev_data:
+                    for prev_q in prev_data["queries"]:
+                        if isinstance(prev_q, dict) and "query_id" in prev_q:
+                            existing_results[prev_q["query_id"]] = prev_q
+            logger.info("resume_support loaded_existing_queries count=%d", len(existing_results))
+        except Exception as e:
+            logger.warning("resume_support_read_error err=%s", e)
+
     query_results: List[Dict[str, Any]] = []
     for idx, q in enumerate(queries, start=1):
-        logger.info("[%d/%d] evaluating %s: %s", idx, len(queries), q["query_id"], q["question"][:50])
+        qid = q["query_id"]
+        if qid in existing_results:
+            logger.info("[%d/%d] resuming (skipping already evaluated) %s", idx, len(queries), qid)
+            query_results.append(existing_results[qid])
+            continue
+
+        logger.info("[%d/%d] evaluating %s: %s", idx, len(queries), qid, q["question"][:50])
         res = evaluate_query(q, rag_service, agent_service)
         query_results.append(res)
+
+        if sleep_seconds > 0 and idx < len(queries):
+            logger.info("rate_limit_throttle sleep_seconds=%.2f", sleep_seconds)
+            time.sleep(sleep_seconds)
 
     # Compute aggregate summary statistics
     n = len(query_results)
@@ -216,8 +242,17 @@ def run_evaluation(
         },
     }
 
+    provider_name = getattr(settings, "llm_provider", "mock")
+    model_name = (
+        getattr(settings, "llm_model", "")
+        or getattr(llm_provider, "model", "")
+        or getattr(llm_provider, "model_name", "")
+    )
+
     report_payload = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+        "provider": provider_name,
+        "model": model_name,
         "summary": summary,
         "queries": query_results,
     }
@@ -270,6 +305,14 @@ if __name__ == "__main__":
     parser.add_argument("--queries", type=Path, default=None, help="Path to multihop queries JSON")
     parser.add_argument("--output", type=Path, default=None, help="Path to output results JSON")
     parser.add_argument("--limit", type=int, default=None, help="Optional limit on number of queries to evaluate")
+    parser.add_argument("--sleep-seconds", type=float, default=5.0, help="Seconds to sleep between LLM calls to respect rate limits")
+    parser.add_argument("--no-resume", action="store_true", default=False, help="Do not resume from existing results file")
     args = parser.parse_args()
 
-    run_evaluation(queries_path=args.queries, output_path=args.output, limit=args.limit)
+    run_evaluation(
+        queries_path=args.queries,
+        output_path=args.output,
+        limit=args.limit,
+        sleep_seconds=args.sleep_seconds,
+        resume=not args.no_resume,
+    )

@@ -1066,8 +1066,178 @@ def _content_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:32]
 
 
+# 12 Denied-Identity scenarios: unprivileged or unauthorized identities querying restricted documents.
+# Evaluates pushdown SQL ACL filtering to guarantee a 0.0% permission leak rate.
+DENIED_IDENTITY_SCENARIOS: list[dict[str, Any]] = [
+    {
+        "id": "qv2-denied-01",
+        "category": "denied_identity",
+        "query": "FIN-418 payout reconciliation variance",
+        "user_id": "employee_04",
+        "group_ids": ["group_engineering"],
+        "qrels": {"doc:email:finance.ops@company.internal:msg-fin-418:c0": 2},
+    },
+    {
+        "id": "qv2-denied-02",
+        "category": "denied_identity",
+        "query": "commit 9f3e21ab4c8d rounding drift FX legs",
+        "user_id": "employee_04",
+        "group_ids": ["group_engineering"],
+        "qrels": {"doc:github:company/ledger-core:commit:9f3e21ab4c8d:c0": 2},
+    },
+    {
+        "id": "qv2-denied-03",
+        "category": "denied_identity",
+        "query": "ERR_MTLS_HANDSHAKE_495 leaf certificates",
+        "user_id": "employee_06",
+        "group_ids": ["group_engineering", "group_finance"],
+        "qrels": {"doc:slack:C04SEC:thread:1700000001.000100:c0": 2},
+    },
+    {
+        "id": "qv2-denied-04",
+        "category": "denied_identity",
+        "query": "CVE-2026-4410 XML signature wrapping patch",
+        "user_id": "employee_06",
+        "group_ids": ["group_engineering", "group_finance"],
+        "qrels": {"doc:email:security@company.internal:msg-cve-4410:c0": 2},
+    },
+    {
+        "id": "qv2-denied-05",
+        "category": "denied_identity",
+        "query": "ReconcileSettlementBatch checkpoint tokens",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:github:company/payout-worker:pr:519:c0": 2},
+    },
+    {
+        "id": "qv2-denied-06",
+        "category": "denied_identity",
+        "query": "RFC-0042 tenant isolated encryption key hierarchy",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:email:arch@company.internal:msg-rfc-0042:c0": 2},
+    },
+    {
+        "id": "qv2-denied-07",
+        "category": "denied_identity",
+        "query": "SEC-904 Vault audit sink bearer token rotation",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:slack:C04SEC:thread:1700000019.000100:c0": 2},
+    },
+    {
+        "id": "qv2-denied-08",
+        "category": "denied_identity",
+        "query": "BILL-312 proration credit memo annual downgrade",
+        "user_id": "employee_05",
+        "group_ids": ["group_engineering", "group_security"],
+        "qrels": {"doc:email:billing@company.internal:msg-bill-312:c0": 2},
+    },
+    {
+        "id": "qv2-denied-09",
+        "category": "denied_identity",
+        "query": "V2-103 approval for analytics_ro statement_timeout",
+        "user_id": "employee_04",
+        "group_ids": ["group_engineering"],
+        "qrels": {"doc:email:dba@company.internal:msg-v2-103:c0": 2},
+    },
+    {
+        "id": "qv2-denied-10",
+        "category": "denied_identity",
+        "query": "V2-105 TLS 1.1 deprecation mandatory vendor notice",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:email:partner@gateway.com:msg-v2-105:c0": 2},
+    },
+    {
+        "id": "qv2-denied-11",
+        "category": "denied_identity",
+        "query": "V2-107 SOC2 WORM audit retention mandate 7 years",
+        "user_id": "employee_04",
+        "group_ids": ["group_engineering"],
+        "qrels": {"doc:email:legal@company.internal:msg-v2-107:c0": 2},
+    },
+    {
+        "id": "qv2-denied-12",
+        "category": "denied_identity",
+        "query": "V2-109 enterprise monthly invoice generator OOM crash",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:email:finance.ops@company.internal:msg-v2-109:c0": 2},
+    },
+]
+
+# 8 Link-Only scenarios: queries targeting entity relationships across tickets, PRs, Slack discussions, and commits.
+LINK_ONLY_SCENARIOS: list[dict[str, Any]] = [
+    {
+        "id": "qv2-link-01",
+        "category": "link_only",
+        "query": "Which PR implemented ticket V2-101 session cookie fix?",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:github:company/auth-gateway:pr:701:c0": 2},
+    },
+    {
+        "id": "qv2-link-02",
+        "category": "link_only",
+        "query": "Which commit resolved ticket V2-102 billing webhook storm?",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:github:company/billing-hooks:commit:7c2201aa91f0:c0": 2},
+    },
+    {
+        "id": "qv2-link-03",
+        "category": "link_only",
+        "query": "Which PR configured the PostgreSQL role for V2-103 analytics exports?",
+        "user_id": "employee_06",
+        "group_ids": ["group_engineering", "group_finance"],
+        "qrels": {"doc:github:company/dba-terraform:pr:703:c0": 2},
+    },
+    {
+        "id": "qv2-link-04",
+        "category": "link_only",
+        "query": "What Slack discussion compared Zstandard against Gzip for V2-104?",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:slack:C10OBS:thread:1700000204.000100:c0": 2},
+    },
+    {
+        "id": "qv2-link-05",
+        "category": "link_only",
+        "query": "Which PR implemented TLS 1.2+ minimum protocol for ticket V2-105?",
+        "user_id": "employee_05",
+        "group_ids": ["group_engineering", "group_security"],
+        "qrels": {"doc:github:company/ingress-mesh:pr:705:c0": 2},
+    },
+    {
+        "id": "qv2-link-06",
+        "category": "link_only",
+        "query": "Which PR updated the ElastiCache parameter group for V2-106 Redis OOM?",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:github:company/cache-infra:pr:706:c0": 2},
+    },
+    {
+        "id": "qv2-link-07",
+        "category": "link_only",
+        "query": "Which PR enabled S3 Object Lock COMPLIANCE mode for V2-107 audit archive?",
+        "user_id": "employee_01",
+        "group_ids": ["group_engineering", "group_security"],
+        "qrels": {"doc:github:company/audit-archive:pr:707:c0": 2},
+    },
+    {
+        "id": "qv2-link-08",
+        "category": "link_only",
+        "query": "Which PR migrated the chunks embedding column to vector(384) for V2-108?",
+        "user_id": "employee_42",
+        "group_ids": ["group_engineering", "group_backend"],
+        "qrels": {"doc:github:company/workmesh:pr:708:c0": 2},
+    },
+]
+
+
 def build_v2_queries() -> list[dict[str, Any]]:
-    """Return the complete 60-query graded v2 evaluation suite."""
+    """Return the complete 80-query graded v2 evaluation suite."""
     queries: list[dict[str, Any]] = list(SCALE_EXACT_ID_QUERIES)
 
     for s in EXACT_ID_SCENARIOS:
@@ -1115,6 +1285,12 @@ def build_v2_queries() -> list[dict[str, Any]]:
                 "qrels": {cid_a: 2, cid_b: 2},
             }
         )
+
+    for s in DENIED_IDENTITY_SCENARIOS:
+        queries.append(dict(s))
+
+    for s in LINK_ONLY_SCENARIOS:
+        queries.append(dict(s))
 
     return queries
 

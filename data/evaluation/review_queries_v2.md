@@ -1,126 +1,8 @@
 # Evaluation Set Manual Review (`queries_v2`)
 
-Total queries: **60** | Priority sample size: **15** (`seed=42`)
+Total queries: **80** | Priority sample size: **15** (`seed=42`)
 
 ## REVIEW THESE 15
-
-### qv2-multi-01
-
-- **Query ID:** `qv2-multi-01`
-- **Query Type:** `multi_source`
-- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
-- **Query Text:** Why did we switch session cookies to SameSite=Lax and which PR implemented it?
-
-#### Gold Chunk `doc:github:company/auth-gateway:pr:701:c0` — grade `2` — source `github`
-
-```text
-Pull Request #701 resolves V2-101 by updating SessionCookieFactory.build() to emit SameSite=Lax with HttpOnly and Secure flags enabled across all gateways.
-```
-
-#### Gold Chunk `doc:slack:C04SEC:thread:1700000201.000100:c0` — grade `2` — source `slack`
-
-```text
-V2-101 postmortem in Slack: SameSite=Strict dropped session cookies during third-party IdP redirects; security agreed switching to SameSite=Lax preserves CSRF protection while fixing SSO logins.
-```
-
-### qv2-id-08
-
-- **Query ID:** `qv2-id-08`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
-- **Query Text:** SlidingWindowRateLimiter
-
-#### Gold Chunk `doc:github:company/edge-gateway:pr:742:c0` — grade `2` — source `github`
-
-```text
-PR #742 adds SlidingWindowRateLimiter using atomic Lua scripts to enforce per-tenant burst quotas across API gateway replicas.
-```
-
-#### Gold Chunk `doc:github:company/edge-gateway:pr:742:c1` — grade `1` — source `github`
-
-```text
-Benchmark tests for SlidingWindowRateLimiter verify 0.4ms p99 overhead at 12,000 requests/sec.
-```
-
-### qv2-id-02
-
-- **Query ID:** `qv2-id-02`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
-- **Query Text:** DC-1006
-
-#### Gold Chunk `scale:doc:00006:c0` — grade `2` — source `github`
-
-```text
-[GITHUB] Tune HikariCP connection pool settings for high concurrency (DC-1006)
-Section 1: Resolves ticket DC-1006: payment service was exhausting connection pool during peak traffic. Increased maxPoolSize to 50, tuned connectionTimeout to 250ms, and enabled leakDetectionThreshold at 2000ms to eliminate thread starvation. Detailed technical notes on database. Trace reference: DC-1006.
-```
-
-#### Gold Chunk `scale:doc:00006:c1` — grade `1` — source `github`
-
-```text
-[GITHUB] Tune HikariCP connection pool settings for high concurrency (DC-1006)
-Section 2: Resolves ticket DC-1006: payment service was exhausting connection pool during peak traffic. Increased maxPoolSize to 50, tuned connectionTimeout to 250ms, and enabled leakDetectionThreshold at 2000ms to eliminate thread starvation. Detailed technical notes on connection pool. Trace reference: DC-1006.
-```
-
-#### Gold Chunk `scale:doc:00006:c2` — grade `1` — source `github`
-
-```text
-[GITHUB] Tune HikariCP connection pool settings for high concurrency (DC-1006)
-Section 3: Resolves ticket DC-1006: payment service was exhausting connection pool during peak traffic. Increased maxPoolSize to 50, tuned connectionTimeout to 250ms, and enabled leakDetectionThreshold at 2000ms to eliminate thread starvation. Detailed technical notes on HikariCP. Trace reference: DC-1006.
-```
-
-#### Gold Chunk `scale:doc:00006:c3` — grade `1` — source `github`
-
-```text
-[GITHUB] Tune HikariCP connection pool settings for high concurrency (DC-1006)
-Section 4: Resolves ticket DC-1006: payment service was exhausting connection pool during peak traffic. Increased maxPoolSize to 50, tuned connectionTimeout to 250ms, and enabled leakDetectionThreshold at 2000ms to eliminate thread starvation. Detailed technical notes on timeout. Trace reference: DC-1006.
-```
-
-### qv2-multi-08
-
-- **Query ID:** `qv2-multi-08`
-- **Query Type:** `multi_source`
-- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
-- **Query Text:** What schema migration blocker was raised in Slack for pgvector 384 dims and which PR updated the SQL?
-
-#### Gold Chunk `doc:github:company/workmesh:pr:708:c0` — grade `2` — source `github`
-
-```text
-Pull Request #708 delivers V2-108 by migrating DDL schema chunks.embedding to vector(384) and removing legacy zero-padding code.
-```
-
-#### Gold Chunk `doc:slack:C08SRCH:thread:1700000208.000100:c0` — grade `2` — source `slack`
-
-```text
-V2-108 discussion: padding 384-dim MiniLM outputs to 1536 zeroes inflated HNSW index memory 4x; agreed migrating schema directly to vector(384).
-```
-
-### qv2-id-18
-
-- **Query ID:** `qv2-id-18`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_04` (groups: `group_engineering`)
-- **Query Text:** OPS-772
-
-#### Gold Chunk `doc:github:company/infra-runbooks:pr:89:c0` — grade `2` — source `github`
-
-```text
-OPS-772 fixed intermittent DNS lookup timeouts under EKS burst autoscaling by raising nf_conntrack_max to 262144.
-```
-
-### qv2-id-16
-
-- **Query ID:** `qv2-id-16`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
-- **Query Text:** workmesh_queue_saturation_ratio
-
-#### Gold Chunk `doc:slack:C10OBS:thread:1700000016.000100:c0` — grade `2` — source `slack`
-
-```text
-Page on-call SRE if workmesh_queue_saturation_ratio stays above 0.85 for 3 consecutive evaluation windows in Prometheus.
-```
 
 ### qv2-id-15
 
@@ -133,206 +15,6 @@ Page on-call SRE if workmesh_queue_saturation_ratio stays above 0.85 for 3 conse
 
 ```text
 Build idx_ledger_entries_created using CREATE INDEX CONCURRENTLY during low traffic and monitor pg_stat_progress_create_index.
-```
-
-### qv2-id-09
-
-- **Query ID:** `qv2-id-09`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_01` (groups: `group_engineering`, `group_finance`, `group_security`)
-- **Query Text:** FIN-418
-
-#### Gold Chunk `doc:email:finance.ops@company.internal:msg-fin-418:c0` — grade `2` — source `email`
-
-```text
-Ticket FIN-418 tracks a $14,220 settlement timing delta between European SEPA batch clearing and nightly ledger ingestion.
-```
-
-### qv2-multi-17
-
-- **Query ID:** `qv2-multi-17`
-- **Query Type:** `multi_source`
-- **Identity:** `employee_04` (groups: `group_engineering`)
-- **Query Text:** Why did SRE ask in email to add Prometheus histogram buckets under 50ms and which PR exported /metrics?
-
-#### Gold Chunk `doc:email:sre@company.internal:msg-v2-117:c0` — grade `2` — source `email`
-
-```text
-V2-117 SRE request: coarse 100ms buckets hide sub-50ms degradation during warm cache hits; add 10ms and 25ms boundaries to latency histograms.
-```
-
-#### Gold Chunk `doc:github:company/workmesh:pr:717:c0` — grade `2` — source `github`
-
-```text
-Pull Request #717 resolves V2-117 by exposing workmesh_http_request_duration_seconds buckets including 0.01 and 0.025 on GET /metrics.
-```
-
-### qv2-id-07
-
-- **Query ID:** `qv2-id-07`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
-- **Query Text:** 9f3e21ab4c8d
-
-#### Gold Chunk `doc:github:company/ledger-core:commit:9f3e21ab4c8d:c0` — grade `2` — source `github`
-
-```text
-Commit 9f3e21ab4c8d updates MultiCurrencyPostingEngine to accumulate sub-cent remainders before posting rounding adjustment entries.
-```
-
-### qv2-multi-04
-
-- **Query ID:** `qv2-multi-04`
-- **Query Type:** `multi_source`
-- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
-- **Query Text:** Why did Slack engineers pick Zstandard over Gzip for trace compression and what PR rolled it out?
-
-#### Gold Chunk `doc:github:company/otel-config:pr:704:c0` — grade `2` — source `github`
-
-```text
-Pull Request #704 completes V2-104 by configuring compression: zstd on all production OpenTelemetry Collector otlp exporter pipelines.
-```
-
-#### Gold Chunk `doc:slack:C10OBS:thread:1700000204.000100:c0` — grade `2` — source `slack`
-
-```text
-V2-104 benchmark consensus: Zstandard level 3 reduced trace egress bandwidth 42% over Gzip while cutting collector CPU overhead by 35%.
-```
-
-### qv2-multi-12
-
-- **Query ID:** `qv2-multi-12`
-- **Query Type:** `multi_source`
-- **Identity:** `employee_10` (groups: `group_engineering`)
-- **Query Text:** What email warned about NAT gateway port exhaustion and which PR switched to VPC endpoints?
-
-#### Gold Chunk `doc:email:sre@company.internal:msg-v2-112:c0` — grade `2` — source `email`
-
-```text
-V2-112 incident email: High S3/ECR pull concurrency saturated the 55k ephemeral NAT Gateway ports, causing external TLS connect timeouts.
-```
-
-#### Gold Chunk `doc:github:company/aws-network:pr:712:c0` — grade `2` — source `github`
-
-```text
-Pull Request #712 solves V2-112 by adding Gateway VPC endpoint for S3 and Interface endpoints for ecr.dkr to bypass NAT Gateways.
-```
-
-### qv2-sem-15
-
-- **Query ID:** `qv2-sem-15`
-- **Query Type:** `semantic`
-- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
-- **Query Text:** blocking malicious injected browser scripts with cryptographic header per request
-
-#### Gold Chunk `doc:github:company/web-console:pr:615:c0` — grade `2` — source `github`
-
-```text
-Generated random Base64 nonces per HTTP response paired with CSP script-src directives so unauthorized inline DOM XSS payloads fail execution.
-```
-
-### qv2-id-06
-
-- **Query ID:** `qv2-id-06`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
-- **Query Text:** ERR_MTLS_HANDSHAKE_495
-
-#### Gold Chunk `doc:slack:C04SEC:thread:1700000001.000100:c0` — grade `2` — source `slack`
-
-```text
-Alert triggered in edge proxy: ERR_MTLS_HANDSHAKE_495 spikes whenever partner leaf certificates lack ExtendedKeyUsage clientAuth.
-```
-
-#### Gold Chunk `doc:slack:C04SEC:thread:1700000001.000100:c1` — grade `1` — source `slack`
-
-```text
-Mitigation step for ERR_MTLS_HANDSHAKE_495: upload intermediate bundle to truststore-prod-v4 and drain unhealthy Envoy pods.
-```
-
-### qv2-sem-18
-
-- **Query ID:** `qv2-sem-18`
-- **Query Type:** `semantic`
-- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
-- **Query Text:** offloading multi-hundred megabyte billing CSV archives away from API server workers
-
-#### Gold Chunk `doc:github:company/export-api:pr:618:c0` — grade `2` — source `github`
-
-```text
-Replaced streaming FastAPI FileResponse endpoints with 15-minute KMS-authorized pre-signed S3 URLs so Python ASGI workers stay responsive.
-```
-
-## REMAINING QUERIES (45)
-
-### qv2-id-01
-
-- **Query ID:** `qv2-id-01`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
-- **Query Text:** DC-1000
-
-#### Gold Chunk `scale:doc:00000:c0` — grade `2` — source `github`
-
-```text
-[GITHUB] Fix null verification in payment card validation (DC-1000)
-Section 1: Resolves ticket DC-1000: empty verification payloads were throwing NullPointerException during checkout. Updated PaymentValidationService to validate card tokens defensively and return HTTP 400 Bad Request instead of HTTP 500 crash. Detailed technical notes on payment. Trace reference: DC-1000.
-```
-
-#### Gold Chunk `scale:doc:00000:c1` — grade `1` — source `github`
-
-```text
-[GITHUB] Fix null verification in payment card validation (DC-1000)
-Section 2: Resolves ticket DC-1000: empty verification payloads were throwing NullPointerException during checkout. Updated PaymentValidationService to validate card tokens defensively and return HTTP 400 Bad Request instead of HTTP 500 crash. Detailed technical notes on validation. Trace reference: DC-1000.
-```
-
-#### Gold Chunk `scale:doc:00000:c2` — grade `1` — source `github`
-
-```text
-[GITHUB] Fix null verification in payment card validation (DC-1000)
-Section 3: Resolves ticket DC-1000: empty verification payloads were throwing NullPointerException during checkout. Updated PaymentValidationService to validate card tokens defensively and return HTTP 400 Bad Request instead of HTTP 500 crash. Detailed technical notes on card verification. Trace reference: DC-1000.
-```
-
-#### Gold Chunk `scale:doc:00000:c3` — grade `1` — source `github`
-
-```text
-[GITHUB] Fix null verification in payment card validation (DC-1000)
-Section 4: Resolves ticket DC-1000: empty verification payloads were throwing NullPointerException during checkout. Updated PaymentValidationService to validate card tokens defensively and return HTTP 400 Bad Request instead of HTTP 500 crash. Detailed technical notes on NullPointerException. Trace reference: DC-1000.
-```
-
-### qv2-id-03
-
-- **Query ID:** `qv2-id-03`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
-- **Query Text:** DC-1008
-
-#### Gold Chunk `scale:doc:00008:c0` — grade `2` — source `email`
-
-```text
-[EMAIL] Optimize Kafka consumer group commit interval and backpressure (DC-1008)
-Section 1: Resolves ticket DC-1008: transaction event consumer was experiencing severe lag under burst load. Switched to manual asynchronous commit and configured a dead letter queue (DLQ) for malformed records. Detailed technical notes on Kafka. Trace reference: DC-1008.
-```
-
-#### Gold Chunk `scale:doc:00008:c1` — grade `1` — source `email`
-
-```text
-[EMAIL] Optimize Kafka consumer group commit interval and backpressure (DC-1008)
-Section 2: Resolves ticket DC-1008: transaction event consumer was experiencing severe lag under burst load. Switched to manual asynchronous commit and configured a dead letter queue (DLQ) for malformed records. Detailed technical notes on consumer lag. Trace reference: DC-1008.
-```
-
-#### Gold Chunk `scale:doc:00008:c2` — grade `1` — source `email`
-
-```text
-[EMAIL] Optimize Kafka consumer group commit interval and backpressure (DC-1008)
-Section 3: Resolves ticket DC-1008: transaction event consumer was experiencing severe lag under burst load. Switched to manual asynchronous commit and configured a dead letter queue (DLQ) for malformed records. Detailed technical notes on partition rebalance. Trace reference: DC-1008.
-```
-
-#### Gold Chunk `scale:doc:00008:c3` — grade `1` — source `email`
-
-```text
-[EMAIL] Optimize Kafka consumer group commit interval and backpressure (DC-1008)
-Section 4: Resolves ticket DC-1008: transaction event consumer was experiencing severe lag under burst load. Switched to manual asynchronous commit and configured a dead letter queue (DLQ) for malformed records. Detailed technical notes on backpressure. Trace reference: DC-1008.
 ```
 
 ### qv2-id-04
@@ -370,6 +52,116 @@ Section 3: Resolves ticket DC-1009: database CPU spiked when popular cache keys 
 Section 4: Resolves ticket DC-1009: database CPU spiked when popular cache keys expired simultaneously. Implemented XFetch probabilistic early expiration and added jitter to cache TTLs. Detailed technical notes on probabilistic early expiration. Trace reference: DC-1009.
 ```
 
+### qv2-sem-16
+
+- **Query ID:** `qv2-sem-16`
+- **Query Type:** `semantic`
+- **Identity:** `employee_10` (groups: `group_engineering`)
+- **Query Text:** avoiding container OOM kills under sudden monitoring span bursts
+
+#### Gold Chunk `doc:slack:C10OBS:thread:1700000116.000100:c0` — grade `2` — source `slack`
+
+```text
+Switched OpenTelemetry exporter queue to fixed capacity=4096 with drop-newest backpressure instead of unbounded heap allocation during upstream outages.
+```
+
+### qv2-sem-12
+
+- **Query ID:** `qv2-sem-12`
+- **Query Type:** `semantic`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** eliminating tail latency spikes right after autoscaler boots cold API replicas
+
+#### Gold Chunk `doc:github:company/workmesh-api:pr:612:c0` — grade `2` — source `github`
+
+```text
+Added lifespan pre-warming loop opening minimum psycopg pool sockets and priming sentence embeddings before marking Kubernetes /ready green.
+```
+
+### qv2-sem-09
+
+- **Query ID:** `qv2-sem-09`
+- **Query Type:** `semantic`
+- **Identity:** `employee_10` (groups: `group_engineering`)
+- **Query Text:** routing five percent of edge visitors onto canary kubernetes cluster
+
+#### Gold Chunk `doc:email:sre@company.internal:msg-sem-09:c0` — grade `2` — source `email`
+
+```text
+Configured weighted DNS aliases splitting ingress traffic 95/5 across standby regions during Tuesday rollout verification before promoting primary cutover.
+```
+
+### qv2-id-18
+
+- **Query ID:** `qv2-id-18`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** OPS-772
+
+#### Gold Chunk `doc:github:company/infra-runbooks:pr:89:c0` — grade `2` — source `github`
+
+```text
+OPS-772 fixed intermittent DNS lookup timeouts under EKS burst autoscaling by raising nf_conntrack_max to 262144.
+```
+
+### qv2-id-14
+
+- **Query ID:** `qv2-id-14`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_01` (groups: `group_engineering`, `group_finance`, `group_security`)
+- **Query Text:** RFC-0042
+
+#### Gold Chunk `doc:email:arch@company.internal:msg-rfc-0042:c0` — grade `2` — source `email`
+
+```text
+Architecture board approved RFC-0042 adopting envelope KMS data keys rotated quarterly per enterprise organization.
+```
+
+### qv2-denied-10
+
+- **Query ID:** `qv2-denied-10`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** V2-105 TLS 1.1 deprecation mandatory vendor notice
+
+#### Gold Chunk `doc:email:partner@gateway.com:msg-v2-105:c0` — grade `2` — source `email`
+
+```text
+V2-105 vendor notice: Acquiring bank sandbox and production endpoints disable TLS 1.0/1.1 and CBC cipher suites permanently on November 30.
+```
+
+### qv2-id-12
+
+- **Query ID:** `qv2-id-12`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** X-Billing-Hmac-V2
+
+#### Gold Chunk `doc:github:company/billing-hooks:pr:308:c0` — grade `2` — source `github`
+
+```text
+WebhookVerifierMiddleware validates the X-Billing-Hmac-V2 SHA-256 digest header with a 300-second replay timestamp tolerance.
+```
+
+### qv2-multi-15
+
+- **Query ID:** `qv2-multi-15`
+- **Query Type:** `multi_source`
+- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
+- **Query Text:** What Slack finding triggered removing HS256 default secret fallback and what PR aborted prod boot?
+
+#### Gold Chunk `doc:github:company/workmesh:pr:715:c0` — grade `2` — source `github`
+
+```text
+Pull Request #715 implements V2-115 in config.py Settings validator, raising ValueError if prod lacks a 32+ char non-default JWT_SECRET.
+```
+
+#### Gold Chunk `doc:slack:C04SEC:thread:1700000215.000100:c0` — grade `2` — source `slack`
+
+```text
+V2-115 security review: leaving a default signing key on Settings allowed valid token forgery if staging env vars were omitted in production.
+```
+
 ### qv2-id-05
 
 - **Query ID:** `qv2-id-05`
@@ -405,6 +197,229 @@ Section 3: Resolves ticket DC-1017: users were being logged out unexpectedly whe
 Section 4: Resolves ticket DC-1017: users were being logged out unexpectedly when tokens expired. Introduced single-use refresh token rotation with a 30-second grace window to handle concurrent API requests cleanly. Detailed technical notes on session expiry. Trace reference: DC-1017.
 ```
 
+### qv2-link-07
+
+- **Query ID:** `qv2-link-07`
+- **Query Type:** `link_only`
+- **Identity:** `employee_01` (groups: `group_engineering`, `group_security`)
+- **Query Text:** Which PR enabled S3 Object Lock COMPLIANCE mode for V2-107 audit archive?
+
+#### Gold Chunk `doc:github:company/audit-archive:pr:707:c0` — grade `2` — source `github`
+
+```text
+Pull Request #707 satisfies V2-107 by enabling S3 Object Lock in COMPLIANCE mode with default 2555-day retention on audit-worm-archive.
+```
+
+### qv2-denied-12
+
+- **Query ID:** `qv2-denied-12`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** V2-109 enterprise monthly invoice generator OOM crash
+
+#### Gold Chunk `doc:email:finance.ops@company.internal:msg-v2-109:c0` — grade `2` — source `email`
+
+```text
+V2-109 incident report: large enterprise accounts with 12,000 line items exceeded 2GB container memory while buffering PDF bytes in RAM.
+```
+
+### qv2-sem-08
+
+- **Query ID:** `qv2-sem-08`
+- **Query Type:** `semantic`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** cancelling slow downstream RPC work once ingress gateway timing budget expires
+
+#### Gold Chunk `doc:github:company/rpc-mesh:pr:608:c0` — grade `2` — source `github`
+
+```text
+Wired gRPC Context deadline forwarding into Python asyncio workers so caller disconnects abort orphan SQL queries before exhausting backend threads.
+```
+
+### qv2-sem-10
+
+- **Query ID:** `qv2-sem-10`
+- **Query Type:** `semantic`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** guaranteeing broker event emission whenever relational order commit succeeds
+
+#### Gold Chunk `doc:github:company/order-service:pr:610:c0` — grade `2` — source `github`
+
+```text
+Adopted transactional outbox pattern inserting domain payloads inside the Postgres ACID unit before Debezium relays messages asynchronously toward Kafka topics.
+```
+
+## REMAINING QUERIES (65)
+
+### qv2-id-01
+
+- **Query ID:** `qv2-id-01`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** DC-1000
+
+#### Gold Chunk `scale:doc:00000:c0` — grade `2` — source `github`
+
+```text
+[GITHUB] Fix null verification in payment card validation (DC-1000)
+Section 1: Resolves ticket DC-1000: empty verification payloads were throwing NullPointerException during checkout. Updated PaymentValidationService to validate card tokens defensively and return HTTP 400 Bad Request instead of HTTP 500 crash. Detailed technical notes on payment. Trace reference: DC-1000.
+```
+
+#### Gold Chunk `scale:doc:00000:c1` — grade `1` — source `github`
+
+```text
+[GITHUB] Fix null verification in payment card validation (DC-1000)
+Section 2: Resolves ticket DC-1000: empty verification payloads were throwing NullPointerException during checkout. Updated PaymentValidationService to validate card tokens defensively and return HTTP 400 Bad Request instead of HTTP 500 crash. Detailed technical notes on validation. Trace reference: DC-1000.
+```
+
+#### Gold Chunk `scale:doc:00000:c2` — grade `1` — source `github`
+
+```text
+[GITHUB] Fix null verification in payment card validation (DC-1000)
+Section 3: Resolves ticket DC-1000: empty verification payloads were throwing NullPointerException during checkout. Updated PaymentValidationService to validate card tokens defensively and return HTTP 400 Bad Request instead of HTTP 500 crash. Detailed technical notes on card verification. Trace reference: DC-1000.
+```
+
+#### Gold Chunk `scale:doc:00000:c3` — grade `1` — source `github`
+
+```text
+[GITHUB] Fix null verification in payment card validation (DC-1000)
+Section 4: Resolves ticket DC-1000: empty verification payloads were throwing NullPointerException during checkout. Updated PaymentValidationService to validate card tokens defensively and return HTTP 400 Bad Request instead of HTTP 500 crash. Detailed technical notes on NullPointerException. Trace reference: DC-1000.
+```
+
+### qv2-id-02
+
+- **Query ID:** `qv2-id-02`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
+- **Query Text:** DC-1006
+
+#### Gold Chunk `scale:doc:00006:c0` — grade `2` — source `github`
+
+```text
+[GITHUB] Tune HikariCP connection pool settings for high concurrency (DC-1006)
+Section 1: Resolves ticket DC-1006: payment service was exhausting connection pool during peak traffic. Increased maxPoolSize to 50, tuned connectionTimeout to 250ms, and enabled leakDetectionThreshold at 2000ms to eliminate thread starvation. Detailed technical notes on database. Trace reference: DC-1006.
+```
+
+#### Gold Chunk `scale:doc:00006:c1` — grade `1` — source `github`
+
+```text
+[GITHUB] Tune HikariCP connection pool settings for high concurrency (DC-1006)
+Section 2: Resolves ticket DC-1006: payment service was exhausting connection pool during peak traffic. Increased maxPoolSize to 50, tuned connectionTimeout to 250ms, and enabled leakDetectionThreshold at 2000ms to eliminate thread starvation. Detailed technical notes on connection pool. Trace reference: DC-1006.
+```
+
+#### Gold Chunk `scale:doc:00006:c2` — grade `1` — source `github`
+
+```text
+[GITHUB] Tune HikariCP connection pool settings for high concurrency (DC-1006)
+Section 3: Resolves ticket DC-1006: payment service was exhausting connection pool during peak traffic. Increased maxPoolSize to 50, tuned connectionTimeout to 250ms, and enabled leakDetectionThreshold at 2000ms to eliminate thread starvation. Detailed technical notes on HikariCP. Trace reference: DC-1006.
+```
+
+#### Gold Chunk `scale:doc:00006:c3` — grade `1` — source `github`
+
+```text
+[GITHUB] Tune HikariCP connection pool settings for high concurrency (DC-1006)
+Section 4: Resolves ticket DC-1006: payment service was exhausting connection pool during peak traffic. Increased maxPoolSize to 50, tuned connectionTimeout to 250ms, and enabled leakDetectionThreshold at 2000ms to eliminate thread starvation. Detailed technical notes on timeout. Trace reference: DC-1006.
+```
+
+### qv2-id-03
+
+- **Query ID:** `qv2-id-03`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
+- **Query Text:** DC-1008
+
+#### Gold Chunk `scale:doc:00008:c0` — grade `2` — source `email`
+
+```text
+[EMAIL] Optimize Kafka consumer group commit interval and backpressure (DC-1008)
+Section 1: Resolves ticket DC-1008: transaction event consumer was experiencing severe lag under burst load. Switched to manual asynchronous commit and configured a dead letter queue (DLQ) for malformed records. Detailed technical notes on Kafka. Trace reference: DC-1008.
+```
+
+#### Gold Chunk `scale:doc:00008:c1` — grade `1` — source `email`
+
+```text
+[EMAIL] Optimize Kafka consumer group commit interval and backpressure (DC-1008)
+Section 2: Resolves ticket DC-1008: transaction event consumer was experiencing severe lag under burst load. Switched to manual asynchronous commit and configured a dead letter queue (DLQ) for malformed records. Detailed technical notes on consumer lag. Trace reference: DC-1008.
+```
+
+#### Gold Chunk `scale:doc:00008:c2` — grade `1` — source `email`
+
+```text
+[EMAIL] Optimize Kafka consumer group commit interval and backpressure (DC-1008)
+Section 3: Resolves ticket DC-1008: transaction event consumer was experiencing severe lag under burst load. Switched to manual asynchronous commit and configured a dead letter queue (DLQ) for malformed records. Detailed technical notes on partition rebalance. Trace reference: DC-1008.
+```
+
+#### Gold Chunk `scale:doc:00008:c3` — grade `1` — source `email`
+
+```text
+[EMAIL] Optimize Kafka consumer group commit interval and backpressure (DC-1008)
+Section 4: Resolves ticket DC-1008: transaction event consumer was experiencing severe lag under burst load. Switched to manual asynchronous commit and configured a dead letter queue (DLQ) for malformed records. Detailed technical notes on backpressure. Trace reference: DC-1008.
+```
+
+### qv2-id-06
+
+- **Query ID:** `qv2-id-06`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
+- **Query Text:** ERR_MTLS_HANDSHAKE_495
+
+#### Gold Chunk `doc:slack:C04SEC:thread:1700000001.000100:c0` — grade `2` — source `slack`
+
+```text
+Alert triggered in edge proxy: ERR_MTLS_HANDSHAKE_495 spikes whenever partner leaf certificates lack ExtendedKeyUsage clientAuth.
+```
+
+#### Gold Chunk `doc:slack:C04SEC:thread:1700000001.000100:c1` — grade `1` — source `slack`
+
+```text
+Mitigation step for ERR_MTLS_HANDSHAKE_495: upload intermediate bundle to truststore-prod-v4 and drain unhealthy Envoy pods.
+```
+
+### qv2-id-07
+
+- **Query ID:** `qv2-id-07`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
+- **Query Text:** 9f3e21ab4c8d
+
+#### Gold Chunk `doc:github:company/ledger-core:commit:9f3e21ab4c8d:c0` — grade `2` — source `github`
+
+```text
+Commit 9f3e21ab4c8d updates MultiCurrencyPostingEngine to accumulate sub-cent remainders before posting rounding adjustment entries.
+```
+
+### qv2-id-08
+
+- **Query ID:** `qv2-id-08`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** SlidingWindowRateLimiter
+
+#### Gold Chunk `doc:github:company/edge-gateway:pr:742:c0` — grade `2` — source `github`
+
+```text
+PR #742 adds SlidingWindowRateLimiter using atomic Lua scripts to enforce per-tenant burst quotas across API gateway replicas.
+```
+
+#### Gold Chunk `doc:github:company/edge-gateway:pr:742:c1` — grade `1` — source `github`
+
+```text
+Benchmark tests for SlidingWindowRateLimiter verify 0.4ms p99 overhead at 12,000 requests/sec.
+```
+
+### qv2-id-09
+
+- **Query ID:** `qv2-id-09`
+- **Query Type:** `exact_identifier`
+- **Identity:** `employee_01` (groups: `group_engineering`, `group_finance`, `group_security`)
+- **Query Text:** FIN-418
+
+#### Gold Chunk `doc:email:finance.ops@company.internal:msg-fin-418:c0` — grade `2` — source `email`
+
+```text
+Ticket FIN-418 tracks a $14,220 settlement timing delta between European SEPA batch clearing and nightly ledger ingestion.
+```
+
 ### qv2-id-10
 
 - **Query ID:** `qv2-id-10`
@@ -431,19 +446,6 @@ Security bulletin for CVE-2026-4410: upgrade xmlsec1 base image to 1.3.7 across 
 Set HNSW_EF_SEARCH_OVERRIDE=120 inside PostgreSQL transactions when tenant catalog density exceeds 50k chunks per namespace.
 ```
 
-### qv2-id-12
-
-- **Query ID:** `qv2-id-12`
-- **Query Type:** `exact_identifier`
-- **Identity:** `employee_04` (groups: `group_engineering`)
-- **Query Text:** X-Billing-Hmac-V2
-
-#### Gold Chunk `doc:github:company/billing-hooks:pr:308:c0` — grade `2` — source `github`
-
-```text
-WebhookVerifierMiddleware validates the X-Billing-Hmac-V2 SHA-256 digest header with a 300-second replay timestamp tolerance.
-```
-
 ### qv2-id-13
 
 - **Query ID:** `qv2-id-13`
@@ -457,17 +459,17 @@ WebhookVerifierMiddleware validates the X-Billing-Hmac-V2 SHA-256 digest header 
 ReconcileSettlementBatch RPC now persists checkpoint tokens per merchant shard so interrupted nightly runs resume cleanly.
 ```
 
-### qv2-id-14
+### qv2-id-16
 
-- **Query ID:** `qv2-id-14`
+- **Query ID:** `qv2-id-16`
 - **Query Type:** `exact_identifier`
-- **Identity:** `employee_01` (groups: `group_engineering`, `group_finance`, `group_security`)
-- **Query Text:** RFC-0042
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** workmesh_queue_saturation_ratio
 
-#### Gold Chunk `doc:email:arch@company.internal:msg-rfc-0042:c0` — grade `2` — source `email`
+#### Gold Chunk `doc:slack:C10OBS:thread:1700000016.000100:c0` — grade `2` — source `slack`
 
 ```text
-Architecture board approved RFC-0042 adopting envelope KMS data keys rotated quarterly per enterprise organization.
+Page on-call SRE if workmesh_queue_saturation_ratio stays above 0.85 for 3 consecutive evaluation windows in Prometheus.
 ```
 
 ### qv2-id-17
@@ -600,45 +602,6 @@ Provisioned DynamoDB table tf-remote-locks as a conditional mutex so overlapping
 Persisted client-supplied Idempotency-Key hashes with unique DB constraints inside checkout settlement so flaky cellular POST submissions return cached receipts.
 ```
 
-### qv2-sem-08
-
-- **Query ID:** `qv2-sem-08`
-- **Query Type:** `semantic`
-- **Identity:** `employee_04` (groups: `group_engineering`)
-- **Query Text:** cancelling slow downstream RPC work once ingress gateway timing budget expires
-
-#### Gold Chunk `doc:github:company/rpc-mesh:pr:608:c0` — grade `2` — source `github`
-
-```text
-Wired gRPC Context deadline forwarding into Python asyncio workers so caller disconnects abort orphan SQL queries before exhausting backend threads.
-```
-
-### qv2-sem-09
-
-- **Query ID:** `qv2-sem-09`
-- **Query Type:** `semantic`
-- **Identity:** `employee_10` (groups: `group_engineering`)
-- **Query Text:** routing five percent of edge visitors onto canary kubernetes cluster
-
-#### Gold Chunk `doc:email:sre@company.internal:msg-sem-09:c0` — grade `2` — source `email`
-
-```text
-Configured weighted DNS aliases splitting ingress traffic 95/5 across standby regions during Tuesday rollout verification before promoting primary cutover.
-```
-
-### qv2-sem-10
-
-- **Query ID:** `qv2-sem-10`
-- **Query Type:** `semantic`
-- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
-- **Query Text:** guaranteeing broker event emission whenever relational order commit succeeds
-
-#### Gold Chunk `doc:github:company/order-service:pr:610:c0` — grade `2` — source `github`
-
-```text
-Adopted transactional outbox pattern inserting domain payloads inside the Postgres ACID unit before Debezium relays messages asynchronously toward Kafka topics.
-```
-
 ### qv2-sem-11
 
 - **Query ID:** `qv2-sem-11`
@@ -650,19 +613,6 @@ Adopted transactional outbox pattern inserting domain payloads inside the Postgr
 
 ```text
 Configured PyJWT decode leeway=30 seconds on verification middleware after container hypervisor virtualization skew rejected freshly minted bearer assertions.
-```
-
-### qv2-sem-12
-
-- **Query ID:** `qv2-sem-12`
-- **Query Type:** `semantic`
-- **Identity:** `employee_04` (groups: `group_engineering`)
-- **Query Text:** eliminating tail latency spikes right after autoscaler boots cold API replicas
-
-#### Gold Chunk `doc:github:company/workmesh-api:pr:612:c0` — grade `2` — source `github`
-
-```text
-Added lifespan pre-warming loop opening minimum psycopg pool sockets and priming sentence embeddings before marking Kubernetes /ready green.
 ```
 
 ### qv2-sem-13
@@ -691,17 +641,17 @@ Wrapped monthly child partition DDL creation inside pg_try_advisory_xact_lock ke
 Stored short-lived Redis session LSN watermarks for 5 seconds after POST mutations to pin subsequent GET lookups onto primary PostgreSQL instances.
 ```
 
-### qv2-sem-16
+### qv2-sem-15
 
-- **Query ID:** `qv2-sem-16`
+- **Query ID:** `qv2-sem-15`
 - **Query Type:** `semantic`
-- **Identity:** `employee_10` (groups: `group_engineering`)
-- **Query Text:** avoiding container OOM kills under sudden monitoring span bursts
+- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
+- **Query Text:** blocking malicious injected browser scripts with cryptographic header per request
 
-#### Gold Chunk `doc:slack:C10OBS:thread:1700000116.000100:c0` — grade `2` — source `slack`
+#### Gold Chunk `doc:github:company/web-console:pr:615:c0` — grade `2` — source `github`
 
 ```text
-Switched OpenTelemetry exporter queue to fixed capacity=4096 with drop-newest backpressure instead of unbounded heap allocation during upstream outages.
+Generated random Base64 nonces per HTTP response paired with CSP script-src directives so unauthorized inline DOM XSS payloads fail execution.
 ```
 
 ### qv2-sem-17
@@ -715,6 +665,19 @@ Switched OpenTelemetry exporter queue to fixed capacity=4096 with drop-newest ba
 
 ```text
 Mass TTL purges left millions of tombstone markers choking SSTable iterators; scheduling periodic single-delete compaction restored normal iterator speed.
+```
+
+### qv2-sem-18
+
+- **Query ID:** `qv2-sem-18`
+- **Query Type:** `semantic`
+- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
+- **Query Text:** offloading multi-hundred megabyte billing CSV archives away from API server workers
+
+#### Gold Chunk `doc:github:company/export-api:pr:618:c0` — grade `2` — source `github`
+
+```text
+Replaced streaming FastAPI FileResponse endpoints with 15-minute KMS-authorized pre-signed S3 URLs so Python ASGI workers stay responsive.
 ```
 
 ### qv2-sem-19
@@ -741,6 +704,25 @@ Integrated Prometheus AnalysisTemplate checking HTTP 5xx ratio <= 1% over 5-minu
 
 ```text
 Eliminated slow SQL OFFSET 50000 table scans by adopting opaque tuple cursor tokens filtering directly against indexed timestamp keys.
+```
+
+### qv2-multi-01
+
+- **Query ID:** `qv2-multi-01`
+- **Query Type:** `multi_source`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** Why did we switch session cookies to SameSite=Lax and which PR implemented it?
+
+#### Gold Chunk `doc:github:company/auth-gateway:pr:701:c0` — grade `2` — source `github`
+
+```text
+Pull Request #701 resolves V2-101 by updating SessionCookieFactory.build() to emit SameSite=Lax with HttpOnly and Secure flags enabled across all gateways.
+```
+
+#### Gold Chunk `doc:slack:C04SEC:thread:1700000201.000100:c0` — grade `2` — source `slack`
+
+```text
+V2-101 postmortem in Slack: SameSite=Strict dropped session cookies during third-party IdP redirects; security agreed switching to SameSite=Lax preserves CSRF protection while fixing SSO logins.
 ```
 
 ### qv2-multi-02
@@ -779,6 +761,25 @@ V2-103 decision email: DBA lead approved raising PostgreSQL statement_timeout fr
 
 ```text
 Pull Request #703 implements V2-103 via Terraform postgresql_role setting statement_timeout='120s' exclusively on the reporting replica user analytics_ro.
+```
+
+### qv2-multi-04
+
+- **Query ID:** `qv2-multi-04`
+- **Query Type:** `multi_source`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** Why did Slack engineers pick Zstandard over Gzip for trace compression and what PR rolled it out?
+
+#### Gold Chunk `doc:github:company/otel-config:pr:704:c0` — grade `2` — source `github`
+
+```text
+Pull Request #704 completes V2-104 by configuring compression: zstd on all production OpenTelemetry Collector otlp exporter pipelines.
+```
+
+#### Gold Chunk `doc:slack:C10OBS:thread:1700000204.000100:c0` — grade `2` — source `slack`
+
+```text
+V2-104 benchmark consensus: Zstandard level 3 reduced trace egress bandwidth 42% over Gzip while cutting collector CPU overhead by 35%.
 ```
 
 ### qv2-multi-05
@@ -838,6 +839,25 @@ V2-107 compliance directive: immutable write-once-read-many audit archives must 
 Pull Request #707 satisfies V2-107 by enabling S3 Object Lock in COMPLIANCE mode with default 2555-day retention on audit-worm-archive.
 ```
 
+### qv2-multi-08
+
+- **Query ID:** `qv2-multi-08`
+- **Query Type:** `multi_source`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** What schema migration blocker was raised in Slack for pgvector 384 dims and which PR updated the SQL?
+
+#### Gold Chunk `doc:github:company/workmesh:pr:708:c0` — grade `2` — source `github`
+
+```text
+Pull Request #708 delivers V2-108 by migrating DDL schema chunks.embedding to vector(384) and removing legacy zero-padding code.
+```
+
+#### Gold Chunk `doc:slack:C08SRCH:thread:1700000208.000100:c0` — grade `2` — source `slack`
+
+```text
+V2-108 discussion: padding 384-dim MiniLM outputs to 1536 zeroes inflated HNSW index memory 4x; agreed migrating schema directly to vector(384).
+```
+
 ### qv2-multi-09
 
 - **Query ID:** `qv2-multi-09`
@@ -895,6 +915,25 @@ Pull Request #711 fixes V2-111 by switching to CooperativeStickyAssignor and bum
 V2-111 incident chat: long GC pauses over 12s triggered continuous coordinator evictions in the settlement consumer group every 4 minutes.
 ```
 
+### qv2-multi-12
+
+- **Query ID:** `qv2-multi-12`
+- **Query Type:** `multi_source`
+- **Identity:** `employee_10` (groups: `group_engineering`)
+- **Query Text:** What email warned about NAT gateway port exhaustion and which PR switched to VPC endpoints?
+
+#### Gold Chunk `doc:email:sre@company.internal:msg-v2-112:c0` — grade `2` — source `email`
+
+```text
+V2-112 incident email: High S3/ECR pull concurrency saturated the 55k ephemeral NAT Gateway ports, causing external TLS connect timeouts.
+```
+
+#### Gold Chunk `doc:github:company/aws-network:pr:712:c0` — grade `2` — source `github`
+
+```text
+Pull Request #712 solves V2-112 by adding Gateway VPC endpoint for S3 and Interface endpoints for ecr.dkr to bypass NAT Gateways.
+```
+
 ### qv2-multi-13
 
 - **Query ID:** `qv2-multi-13`
@@ -933,25 +972,6 @@ V2-114 postmortem summary: legacy VARCHAR(24) column truncated 36-char UUID idem
 Commit b119f30e2a4c fixes V2-114 with schema migration widening payment_attempts.idempotency_key from 24 to 64 characters.
 ```
 
-### qv2-multi-15
-
-- **Query ID:** `qv2-multi-15`
-- **Query Type:** `multi_source`
-- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
-- **Query Text:** What Slack finding triggered removing HS256 default secret fallback and what PR aborted prod boot?
-
-#### Gold Chunk `doc:github:company/workmesh:pr:715:c0` — grade `2` — source `github`
-
-```text
-Pull Request #715 implements V2-115 in config.py Settings validator, raising ValueError if prod lacks a 32+ char non-default JWT_SECRET.
-```
-
-#### Gold Chunk `doc:slack:C04SEC:thread:1700000215.000100:c0` — grade `2` — source `slack`
-
-```text
-V2-115 security review: leaving a default signing key on Settings allowed valid token forgery if staging env vars were omitted in production.
-```
-
 ### qv2-multi-16
 
 - **Query ID:** `qv2-multi-16`
@@ -969,6 +989,25 @@ V2-116 verification email: 1% tenant Recall@5 improved from 80.7% (4.63 results)
 
 ```text
 V2-116 Slack thread: enabling SET LOCAL hnsw.iterative_scan = 'relaxed_order' with exact fallback prevents empty results when users can read only 1% of corpus.
+```
+
+### qv2-multi-17
+
+- **Query ID:** `qv2-multi-17`
+- **Query Type:** `multi_source`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** Why did SRE ask in email to add Prometheus histogram buckets under 50ms and which PR exported /metrics?
+
+#### Gold Chunk `doc:email:sre@company.internal:msg-v2-117:c0` — grade `2` — source `email`
+
+```text
+V2-117 SRE request: coarse 100ms buckets hide sub-50ms degradation during warm cache hits; add 10ms and 25ms boundaries to latency histograms.
+```
+
+#### Gold Chunk `doc:github:company/workmesh:pr:717:c0` — grade `2` — source `github`
+
+```text
+Pull Request #717 resolves V2-117 by exposing workmesh_http_request_duration_seconds buckets including 0.01 and 0.025 on GET /metrics.
 ```
 
 ### qv2-multi-18
@@ -1026,4 +1065,225 @@ Pull Request #720 satisfies V2-120 using multi-stage python:3.11-slim Dockerfile
 
 ```text
 V2-120 Slack alert: cluster admission controller now requires non-root UID 10001 and blocks outbound runtime model downloads in production pods.
+```
+
+### qv2-denied-01
+
+- **Query ID:** `qv2-denied-01`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** FIN-418 payout reconciliation variance
+
+#### Gold Chunk `doc:email:finance.ops@company.internal:msg-fin-418:c0` — grade `2` — source `email`
+
+```text
+Ticket FIN-418 tracks a $14,220 settlement timing delta between European SEPA batch clearing and nightly ledger ingestion.
+```
+
+### qv2-denied-02
+
+- **Query ID:** `qv2-denied-02`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** commit 9f3e21ab4c8d rounding drift FX legs
+
+#### Gold Chunk `doc:github:company/ledger-core:commit:9f3e21ab4c8d:c0` — grade `2` — source `github`
+
+```text
+Commit 9f3e21ab4c8d updates MultiCurrencyPostingEngine to accumulate sub-cent remainders before posting rounding adjustment entries.
+```
+
+### qv2-denied-03
+
+- **Query ID:** `qv2-denied-03`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
+- **Query Text:** ERR_MTLS_HANDSHAKE_495 leaf certificates
+
+#### Gold Chunk `doc:slack:C04SEC:thread:1700000001.000100:c0` — grade `2` — source `slack`
+
+```text
+Alert triggered in edge proxy: ERR_MTLS_HANDSHAKE_495 spikes whenever partner leaf certificates lack ExtendedKeyUsage clientAuth.
+```
+
+### qv2-denied-04
+
+- **Query ID:** `qv2-denied-04`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
+- **Query Text:** CVE-2026-4410 XML signature wrapping patch
+
+#### Gold Chunk `doc:email:security@company.internal:msg-cve-4410:c0` — grade `2` — source `email`
+
+```text
+Security bulletin for CVE-2026-4410: upgrade xmlsec1 base image to 1.3.7 across all SAML SSO identity consumers before Friday 18:00 UTC.
+```
+
+### qv2-denied-05
+
+- **Query ID:** `qv2-denied-05`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** ReconcileSettlementBatch checkpoint tokens
+
+#### Gold Chunk `doc:github:company/payout-worker:pr:519:c0` — grade `2` — source `github`
+
+```text
+ReconcileSettlementBatch RPC now persists checkpoint tokens per merchant shard so interrupted nightly runs resume cleanly.
+```
+
+### qv2-denied-06
+
+- **Query ID:** `qv2-denied-06`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** RFC-0042 tenant isolated encryption key hierarchy
+
+#### Gold Chunk `doc:email:arch@company.internal:msg-rfc-0042:c0` — grade `2` — source `email`
+
+```text
+Architecture board approved RFC-0042 adopting envelope KMS data keys rotated quarterly per enterprise organization.
+```
+
+### qv2-denied-07
+
+- **Query ID:** `qv2-denied-07`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** SEC-904 Vault audit sink bearer token rotation
+
+#### Gold Chunk `doc:slack:C04SEC:thread:1700000019.000100:c0` — grade `2` — source `slack`
+
+```text
+SEC-904 completed emergency rotation of HashiCorp Vault audit webhook bearer token for restricted compliance logs.
+```
+
+### qv2-denied-08
+
+- **Query ID:** `qv2-denied-08`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
+- **Query Text:** BILL-312 proration credit memo annual downgrade
+
+#### Gold Chunk `doc:email:billing@company.internal:msg-bill-312:c0` — grade `2` — source `email`
+
+```text
+BILL-312 resolved negative invoice tax rounding when annual enterprise seats downgrade mid-quarter.
+```
+
+### qv2-denied-09
+
+- **Query ID:** `qv2-denied-09`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** V2-103 approval for analytics_ro statement_timeout
+
+#### Gold Chunk `doc:email:dba@company.internal:msg-v2-103:c0` — grade `2` — source `email`
+
+```text
+V2-103 decision email: DBA lead approved raising PostgreSQL statement_timeout from 15s to 120s strictly for read-replica role analytics_ro during quarterly close.
+```
+
+### qv2-denied-11
+
+- **Query ID:** `qv2-denied-11`
+- **Query Type:** `denied_identity`
+- **Identity:** `employee_04` (groups: `group_engineering`)
+- **Query Text:** V2-107 SOC2 WORM audit retention mandate 7 years
+
+#### Gold Chunk `doc:email:legal@company.internal:msg-v2-107:c0` — grade `2` — source `email`
+
+```text
+V2-107 compliance directive: immutable write-once-read-many audit archives must be tamper-proof for 2,555 days to pass Type II audit review.
+```
+
+### qv2-link-01
+
+- **Query ID:** `qv2-link-01`
+- **Query Type:** `link_only`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** Which PR implemented ticket V2-101 session cookie fix?
+
+#### Gold Chunk `doc:github:company/auth-gateway:pr:701:c0` — grade `2` — source `github`
+
+```text
+Pull Request #701 resolves V2-101 by updating SessionCookieFactory.build() to emit SameSite=Lax with HttpOnly and Secure flags enabled across all gateways.
+```
+
+### qv2-link-02
+
+- **Query ID:** `qv2-link-02`
+- **Query Type:** `link_only`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** Which commit resolved ticket V2-102 billing webhook storm?
+
+#### Gold Chunk `doc:github:company/billing-hooks:commit:7c2201aa91f0:c0` — grade `2` — source `github`
+
+```text
+Commit 7c2201aa91f0 fixes V2-102 root cause by adding a 15-minute local LRU cache for webhook public verification certificates.
+```
+
+### qv2-link-03
+
+- **Query ID:** `qv2-link-03`
+- **Query Type:** `link_only`
+- **Identity:** `employee_06` (groups: `group_engineering`, `group_finance`)
+- **Query Text:** Which PR configured the PostgreSQL role for V2-103 analytics exports?
+
+#### Gold Chunk `doc:github:company/dba-terraform:pr:703:c0` — grade `2` — source `github`
+
+```text
+Pull Request #703 implements V2-103 via Terraform postgresql_role setting statement_timeout='120s' exclusively on the reporting replica user analytics_ro.
+```
+
+### qv2-link-04
+
+- **Query ID:** `qv2-link-04`
+- **Query Type:** `link_only`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** What Slack discussion compared Zstandard against Gzip for V2-104?
+
+#### Gold Chunk `doc:slack:C10OBS:thread:1700000204.000100:c0` — grade `2` — source `slack`
+
+```text
+V2-104 benchmark consensus: Zstandard level 3 reduced trace egress bandwidth 42% over Gzip while cutting collector CPU overhead by 35%.
+```
+
+### qv2-link-05
+
+- **Query ID:** `qv2-link-05`
+- **Query Type:** `link_only`
+- **Identity:** `employee_05` (groups: `group_engineering`, `group_security`)
+- **Query Text:** Which PR implemented TLS 1.2+ minimum protocol for ticket V2-105?
+
+#### Gold Chunk `doc:github:company/ingress-mesh:pr:705:c0` — grade `2` — source `github`
+
+```text
+Pull Request #705 resolves V2-105 by bumping ALB SSLPolicy to ELBSecurityPolicy-TLS13-1-2-2021-06 and stripping legacy CBC ciphers.
+```
+
+### qv2-link-06
+
+- **Query ID:** `qv2-link-06`
+- **Query Type:** `link_only`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** Which PR updated the ElastiCache parameter group for V2-106 Redis OOM?
+
+#### Gold Chunk `doc:github:company/cache-infra:pr:706:c0` — grade `2` — source `github`
+
+```text
+Pull Request #706 addresses V2-106 by updating Terraform ElastiCache parameter group to maxmemory-policy=allkeys-lfu with reserved-memory-percent=15.
+```
+
+### qv2-link-08
+
+- **Query ID:** `qv2-link-08`
+- **Query Type:** `link_only`
+- **Identity:** `employee_42` (groups: `group_engineering`, `group_backend`)
+- **Query Text:** Which PR migrated the chunks embedding column to vector(384) for V2-108?
+
+#### Gold Chunk `doc:github:company/workmesh:pr:708:c0` — grade `2` — source `github`
+
+```text
+Pull Request #708 delivers V2-108 by migrating DDL schema chunks.embedding to vector(384) and removing legacy zero-padding code.
 ```

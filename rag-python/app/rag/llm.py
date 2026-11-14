@@ -92,14 +92,34 @@ def _retry_with_backoff(
         except Exception as exc:
             last_exc = exc
             if attempt < max_retries - 1:
-                delay = base_delay * (2 ** attempt) + random.uniform(0, 0.5)
-                logger.warning(
-                    "llm_retry attempt=%d/%d delay=%.2fs err_type=%s",
-                    attempt + 1,
-                    max_retries,
-                    delay,
-                    type(exc).__name__,
-                )
+                is_429 = False
+                retry_after: Optional[float] = None
+                if hasattr(exc, "response") and getattr(exc.response, "status_code", None) == 429:
+                    is_429 = True
+                    try:
+                        raw_ra = exc.response.headers.get("retry-after")
+                        if raw_ra:
+                            retry_after = float(raw_ra)
+                    except (ValueError, TypeError):
+                        retry_after = None
+
+                if is_429:
+                    delay = max(retry_after or 5.0, base_delay * (2 ** attempt) * 2) + random.uniform(0.5, 2.0)
+                    logger.warning(
+                        "llm_rate_limit_429 attempt=%d/%d delay=%.2fs",
+                        attempt + 1,
+                        max_retries,
+                        delay,
+                    )
+                else:
+                    delay = base_delay * (2 ** attempt) + random.uniform(0, 0.5)
+                    logger.warning(
+                        "llm_retry attempt=%d/%d delay=%.2fs err_type=%s",
+                        attempt + 1,
+                        max_retries,
+                        delay,
+                        type(exc).__name__,
+                    )
                 time.sleep(delay)
     raise last_exc  # type: ignore[misc]
 

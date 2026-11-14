@@ -213,6 +213,7 @@ class KnowledgeRepository(ABC):
         source_types: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
+        semantics: str = "or",
     ) -> List[RagSearchResultItem]:
         """Perform lexical (full-text) search over indexed chunks enforcing ACL filtering."""
         ...
@@ -865,6 +866,7 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
         source_types: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
+        semantics: str = "or",
     ) -> List[RagSearchResultItem]:
         if not query or not query.strip():
             return []
@@ -899,8 +901,13 @@ class InMemoryKnowledgeRepository(KnowledgeRepository):
             matched_content_tokens = [t for t in tokens if t in content_lower]
             matched_title_tokens = [t for t in tokens if t in title_lower]
 
-            if not exact_match and not matched_content_tokens and not matched_title_tokens:
-                continue
+            if semantics.lower() == "and":
+                all_matched = all((t in content_lower or t in title_lower) for t in tokens)
+                if not exact_match and not all_matched:
+                    continue
+            else:
+                if not exact_match and not matched_content_tokens and not matched_title_tokens:
+                    continue
 
             # Score computation:
             # 1. Token coverage (what fraction of query terms matched)
@@ -2215,6 +2222,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
         source_types: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
+        semantics: str = "or",
     ) -> List[RagSearchResultItem]:
         if not query or not query.strip():
             return []
@@ -2227,12 +2235,32 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
             chunk_alias="c",
             acl_alias="a",
         )
+
+        if semantics.lower() == "and":
+            score_sql = "ts_rank_cd(c.tsv, plainto_tsquery('english', %s))"
+            match_sql = "c.tsv @@ plainto_tsquery('english', %s)"
+            select_params = [cleaned_query]
+            match_params = [cleaned_query]
+        else:
+            # Fair OR semantics: match any query term with ts_rank_cd
+            score_sql = (
+                "CASE WHEN plainto_tsquery('english', %s)::text <> '' "
+                "THEN ts_rank_cd(c.tsv, replace(plainto_tsquery('english', %s)::text, '&', '|')::tsquery) "
+                "ELSE 0.0 END"
+            )
+            match_sql = (
+                "CASE WHEN plainto_tsquery('english', %s)::text <> '' "
+                "THEN c.tsv @@ replace(plainto_tsquery('english', %s)::text, '&', '|')::tsquery "
+                "ELSE FALSE END"
+            )
+            select_params = [cleaned_query, cleaned_query]
+            match_params = [cleaned_query, cleaned_query]
+
         where_clauses = [
-            "c.tsv @@ plainto_tsquery('english', %s)",
+            match_sql,
             acl_clause,
         ]
-        params: List[Any] = [cleaned_query, cleaned_query]
-        params.extend(acl_params)
+        params: List[Any] = select_params + match_params + acl_params
         if source_types:
             where_clauses.append("d.source_type = ANY(%s)")
             params.append(source_types)
@@ -2247,7 +2275,7 @@ class PostgresKnowledgeRepository(KnowledgeRepository):
                 c.content,
                 COALESCE(d.url, ''),
                 d.author,
-                ts_rank_cd(c.tsv, plainto_tsquery('english', %s)) AS score
+                {score_sql} AS score
             FROM chunks c
             JOIN documents d ON c.document_id = d.id
             WHERE {" AND ".join(where_clauses)}

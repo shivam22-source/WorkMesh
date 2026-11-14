@@ -99,11 +99,11 @@ def evaluate_queries_v2(
             cross_encoder_reranker=ce_reranker,
         )
 
-    strat_keys = ["lexical_only", "vector_only", "hybrid_rrf", "hybrid_plus_graph"]
+    strat_keys = ["lexical_only", "lexical_and", "vector_only", "hybrid_rrf", "hybrid_plus_graph"]
     if include_cross_encoder:
         strat_keys.append("hybrid_cross_encoder")
     per_strategy_rows: Dict[str, List[Dict[str, Any]]] = {k: [] for k in strat_keys}
-    categories = ("exact_identifier", "semantic", "multi_source")
+    categories = tuple(sorted(list({q["category"] for q in queries})))
     per_strategy_by_cat: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
         k: {c: [] for c in categories} for k in strat_keys
     }
@@ -115,12 +115,19 @@ def evaluate_queries_v2(
         qrels = q["qrels"]
         category = q["category"]
 
-        # 1. Lexical only
+        # 1a. Lexical only (Fair OR semantics / ts_rank_cd)
         t0 = time.perf_counter()
-        lex_hits = retriever.lexical_retriever.search(
-            query=query_text, limit=limit, user_id=user_id, group_ids=group_ids
+        lex_or_hits = retriever.lexical_retriever.search(
+            query=query_text, limit=limit, user_id=user_id, group_ids=group_ids, semantics="or"
         )
-        lex_ms = (time.perf_counter() - t0) * 1000.0
+        lex_or_ms = (time.perf_counter() - t0) * 1000.0
+
+        # 1b. Lexical (AND) strict (for transparency)
+        t0 = time.perf_counter()
+        lex_and_hits = retriever.lexical_retriever.search(
+            query=query_text, limit=limit, user_id=user_id, group_ids=group_ids, semantics="and"
+        )
+        lex_and_ms = (time.perf_counter() - t0) * 1000.0
 
         # 2. Vector only
         t0 = time.perf_counter()
@@ -147,7 +154,8 @@ def evaluate_queries_v2(
         graph_ms = (time.perf_counter() - t0) * 1000.0
 
         runs = {
-            "lexical_only": (lex_hits, lex_ms),
+            "lexical_only": (lex_or_hits, lex_or_ms),
+            "lexical_and": (lex_and_hits, lex_and_ms),
             "vector_only": (vec_hits, vec_ms),
             "hybrid_rrf": (hyb_hits, hyb_ms),
             "hybrid_plus_graph": (graph_hits, graph_ms),
@@ -183,10 +191,23 @@ def evaluate_queries_v2(
             cat: aggregate_query_metrics(per_strategy_by_cat[key][cat], n_resamples=n_resamples, seed=seed)
             for cat in categories
         }
-        results["strategies"][key] = {
+        strat_dict: Dict[str, Any] = {
             "overall": overall,
             "by_category": by_cat,
         }
+        dev_rows = [
+            r for r in per_strategy_rows[key] if r["category"] in ("exact_identifier", "semantic", "multi_source")
+        ]
+        if len(dev_rows) == 60:
+            strat_dict["dev_60"] = aggregate_query_metrics(dev_rows, n_resamples=n_resamples, seed=seed)
+
+        denied_rows = [r for r in per_strategy_rows[key] if r["category"] == "denied_identity"]
+        if denied_rows:
+            leaks = sum(1 for r in denied_rows if r["recall_at_10"] > 0)
+            strat_dict["denied_identity_leaks"] = leaks
+            strat_dict["denied_identity_leak_rate"] = leaks / len(denied_rows)
+
+        results["strategies"][key] = strat_dict
 
     # Paired bootstrap checks
     comparisons = [
@@ -217,9 +238,34 @@ def evaluate_queries_v2(
 
 
 def print_ablation_report(results: Dict[str, Any]) -> None:
+    total_q = results.get("total_queries", 0)
     print("\n" + "=" * 96)
-    print("WORKMESH v2 GRADED EVALUATION (60 queries: 20 exact_id, 20 semantic, 20 multi_source)")
+    print(f"WORKMESH v2 GRADED EVALUATION ({total_q} queries evaluated)")
     print("=" * 96)
+
+    first_strat = next(iter(results["strategies"].values()))
+    has_dev_60 = "dev_60" in first_strat
+
+    if has_dev_60:
+        print("\n--- DEV SET (60 Queries Tuned Baseline) ---")
+        header = (
+            f"{'Strategy':<22} | {'R@1':<18} | {'R@5 [95% CI]':<22} | "
+            f"{'MRR [95% CI]':<22} | {'nDCG@10 [95% CI]':<22} | {'p50/p95 ms'}"
+        )
+        print(header)
+        print("-" * 96)
+        for strat_key, data in results["strategies"].items():
+            dev = data["dev_60"]
+            print(
+                f"{strat_key:<22} | "
+                f"{dev['recall_at_1']['mean']*100:>5.1f}%            | "
+                f"{_format_pct_ci(dev['recall_at_5']):<22} | "
+                f"{_format_val_ci(dev['mrr']):<22} | "
+                f"{_format_val_ci(dev['ndcg_at_10']):<22} | "
+                f"{dev['latency_ms']['p50']:.1f}/{dev['latency_ms']['p95']:.1f}"
+            )
+
+    print(f"\n--- OVERALL ({total_q} Queries) ---")
     header = (
         f"{'Strategy':<22} | {'R@1':<18} | {'R@5 [95% CI]':<22} | "
         f"{'MRR [95% CI]':<22} | {'nDCG@10 [95% CI]':<22} | {'p50/p95 ms'}"
@@ -236,15 +282,25 @@ def print_ablation_report(results: Dict[str, Any]) -> None:
             f"{_format_val_ci(ov['ndcg_at_10']):<22} | "
             f"{ov['latency_ms']['p50']:.1f}/{ov['latency_ms']['p95']:.1f}"
         )
+
     print("\n--- Breakdown by Category (nDCG@10 / Recall@5) ---")
+    cats = list(first_strat.get("by_category", {}).keys())
     for strat_key, data in results["strategies"].items():
         parts = []
-        for cat in ("exact_identifier", "semantic", "multi_source"):
-            c = data["by_category"][cat]
-            parts.append(
-                f"{cat}: R@5={c['recall_at_5']['mean']*100:.1f}%, nDCG@10={c['ndcg_at_10']['mean']:.4f}"
-            )
+        for cat in cats:
+            if cat in data["by_category"]:
+                c = data["by_category"][cat]
+                parts.append(
+                    f"{cat}: R@5={c['recall_at_5']['mean']*100:.1f}%, nDCG@10={c['ndcg_at_10']['mean']:.4f}"
+                )
         print(f"  {strat_key:<20} -> " + " | ".join(parts))
+
+    if "denied_identity" in cats:
+        print("\n--- Denied-Identity Security Isolation (12 Queries) ---")
+        for strat_key, data in results["strategies"].items():
+            leaks = data.get("denied_identity_leaks", 0)
+            rate = data.get("denied_identity_leak_rate", 0.0)
+            print(f"  {strat_key:<20} -> Leaks: {leaks}/12 ({rate*100:.1f}% leak rate)")
 
     print("\n--- Paired Bootstrap Delta (hybrid_plus_graph - hybrid_rrf) ---")
     for scope, comps in results["paired_comparisons"].items():

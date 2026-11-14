@@ -33,6 +33,7 @@ class LexicalRetriever:
         source_types: Optional[List[str]] = None,
         user_id: Optional[str] = None,
         group_ids: Optional[List[str]] = None,
+        semantics: str = "or",
     ) -> List[RagSearchResultItem]:
         """Execute lexical full-text search returning ranked RagSearchResultItem records enforcing ACLs."""
         if not query or not query.strip():
@@ -43,13 +44,14 @@ class LexicalRetriever:
         search_query = expand_query_terms(query)
 
         logger.debug(
-            "lexical_search_executing query=%s expanded=%s limit=%d source_types=%s user_id=%s groups=%s",
+            "lexical_search_executing query=%s expanded=%s limit=%d source_types=%s user_id=%s groups=%s semantics=%s",
             query,
             search_query,
             limit,
             source_types,
             effective_user_id,
             effective_group_ids,
+            semantics,
         )
         return self.repository.search_lexical(
             query=search_query,
@@ -57,4 +59,5 @@ class LexicalRetriever:
             source_types=source_types,
             user_id=effective_user_id,
             group_ids=effective_group_ids,
+            semantics=semantics,
         )

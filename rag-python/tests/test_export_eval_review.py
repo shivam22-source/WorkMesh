@@ -62,20 +62,20 @@ def test_build_review_markdown_puts_seed42_sample_first():
 
 
 def test_generated_review_queries_v2_markdown_matches_jsonl():
-    """Generated review_queries_v2.md covers all 60 queries with seed=42 sample first."""
+    """Generated review_queries_v2.md covers all queries in queries_v2.jsonl with seed=42 sample first."""
     mod = _load_export_module()
     repo_root = Path(__file__).resolve().parents[2]
     queries_path = repo_root / "data" / "evaluation" / "queries_v2.jsonl"
     review_path = repo_root / "data" / "evaluation" / "review_queries_v2.md"
 
     records = mod.load_queries_jsonl(queries_path)
-    assert len(records) == 60
+    assert len(records) == 80
     assert review_path.exists()
 
     text = review_path.read_text(encoding="utf-8")
     assert "## REVIEW THESE 15" in text
     section_ids = [line[4:].strip() for line in text.splitlines() if line.startswith("### ")]
     expected_first_15 = [r["id"] for r in random.Random(42).sample(records, 15)]
-    assert len(section_ids) == 60
-    assert len(set(section_ids)) == 60
+    assert len(section_ids) == len(records)
+    assert len(set(section_ids)) == len(records)
     assert section_ids[:15] == expected_first_15
