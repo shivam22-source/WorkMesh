@@ -1,6 +1,6 @@
 # WorkMesh Pushdown Access Control & Security Architecture
 
-This document details the security architecture, SQL-level pushdown access control enforcement, authentication modes, and empirical permission isolation results in WorkMesh.
+This document details the security architecture, SQL-level pushdown access control enforcement, authentication modes, and leak test results in WorkMesh.
 
 ---
 
@@ -77,7 +77,7 @@ curl.exe -s -X POST http://localhost:8000/api/v1/search `
 
 ---
 
-## 3. Empirical Security Verification
+## 3. Leak Test Results & Empirical Security Verification
 
 | Evaluation Scenario | Test Invariant | Queries Evaluated | Unauthorized Leaks | Leak Rate | Verification Status |
 |---|---|:---:|:---:|:---:|:---:|

@@ -75,7 +75,7 @@ cd rag-python; .\.venv\Scripts\pytest.exe tests
 |---|---|---|
 | **Embeddings & Vector Index** | **Real** | Local HuggingFace `sentence-transformers` (`all-MiniLM-L6-v2`, 384d) with `pgvector` HNSW index (`ef_search=200`). |
 | **Lexical Search & Hybrid Fusion** | **Real** | PostgreSQL `tsvector` (GIN, AND semantics), fused with dense vectors via query-routed RRF ($k=60$). |
-| **Graph Reranking** | **Experimental (`off` by default)** | Reduced exact-ID recall (dev R@5 73.3% to 68.3%, held-out 80.0% to 71.7%) without multi-source gain; stays off by default. |
+| **Graph Reranking** | **Experimental (`off` by default)** | Yielded 0.00 pp Recall@5 gain over baseline hybrid (flat at dev 74.2% and held-out 80.0%) while adding latency (+18–30 ms p50); stays off by default. |
 | **Cross-Encoder Reranker** | **Optional (`off` by default)** | `cross-encoder/ms-marco-MiniLM-L-6-v2` over top-50 ACL candidates. Kept off due to 4.3x CPU latency increase (`203 -> 871 ms`). |
 | **Pushdown Security & RBAC** | **Real** | SQL semi-join filtering inside PostgreSQL before LIMIT. Prod mode enforces signed JWTs (`sub`, `role`, `groups`). |
 | **LLM Provider Layer** | **Pluggable (`mock`, `gemini`, `anthropic`)** | Deterministic mock default (`mock-grounded-v1`). Anthropic and Gemini providers implemented and test-mocked, not live-tested in evals. |
@@ -100,6 +100,6 @@ cd rag-python; .\.venv\Scripts\pytest.exe tests
 - [`docs/EVALUATION.md`](docs/EVALUATION.md): Full pooled 90-query ablation, dev/held-out splits, latency regression analysis, and OR vs AND EXPLAIN deep-dive.
 - [`docs/LOAD_TEST.md`](docs/LOAD_TEST.md): Concurrency limiter, 503 backpressure, Locust load test table, and multi-tenant ACL tier verification (pre-fix config).
 - [`docs/AGENT.md`](docs/AGENT.md): Multi-step agent architecture, security invariants, tool catalog, and multi-hop benchmark.
-- [`docs/SECURITY.md`](docs/SECURITY.md): Pushdown SQL ACL design, production JWT auth, token generator, and zero-leak proofs.
+- [`docs/SECURITY.md`](docs/SECURITY.md): Pushdown SQL ACL design, production JWT auth, token generator, and leak test results.
 - [`docs/performance.md`](docs/performance.md): PostgreSQL query execution plans, HNSW index usage, and EXPLAIN ANALYZE deep-dive.
 - [`docs/experiments.md`](docs/experiments.md): Parameter sweeps, Cross-Encoder latency/recall trade-offs, and experimental graph boost findings.
