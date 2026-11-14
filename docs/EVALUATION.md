@@ -65,7 +65,7 @@ To verify that parameter tuning (`hnsw.ef_search=200`, query-routing weights) wa
 
 *Source: [`data/evaluation/results/heldout_v2_results.json`](../data/evaluation/results/heldout_v2_results.json)*
 
-Across the unseen 30-query held-out split, tuned default Hybrid RRF achieved **80.0% Recall@5 [66.7%, 91.7%]** and **0.7933 nDCG@10**, compared to 74.2% Recall@5 on the dev set, reflecting consistent retrieval performance on out-of-sample data.
+Across the unseen 30-query held-out split, tuned default Hybrid RRF achieved **80.0% Recall@5 [66.7%, 91.7%]** and **0.7933 nDCG@10**, compared to 74.2% Recall@5 [62.5%, 84.2%] on the dev set, showing no strong evidence of overfitting (held-out CI overlaps dev).
 
 ---
 

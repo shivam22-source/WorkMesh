@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/shivam22-source/WorkMesh/actions/workflows/ci.yml/badge.svg)](https://github.com/shivam22-source/WorkMesh/actions/workflows/ci.yml)
 
-Permission-aware enterprise search and question answering with grounded citations. Built on FastAPI and PostgreSQL 16 with pgvector, WorkMesh combines GIN-indexed lexical full-text search with local CPU embeddings (`all-MiniLM-L6-v2`) via query-routed Reciprocal Rank Fusion ($k=60$). Document security is enforced directly inside database queries via SQL semi-joins before ranking or LIMIT boundaries are evaluated, guaranteeing zero permission leaks across multi-tenant teams.
+Permission-aware enterprise search and question answering with grounded citations. Built on FastAPI and PostgreSQL 16 with pgvector, WorkMesh combines GIN-indexed lexical full-text search with local CPU embeddings (`all-MiniLM-L6-v2`) via query-routed Reciprocal Rank Fusion ($k=60$). Document security is enforced directly inside database queries via SQL semi-joins before ranking or LIMIT boundaries are evaluated. Unauthorized rows are filtered inside the SQL query before ranking; 0 leaks observed across 512 adversarial and denied-identity queries.
 
 ---
 
@@ -13,10 +13,9 @@ Permission-aware enterprise search and question answering with grounded citation
 | Evaluation Dimension | Headline Result | Metric Details & Confidence Intervals | Source File |
 |---|:---:|---|---|
 | **Headline Retrieval (Pooled 90 Queries)** | **76.1% R@5** | **52.5% R@1**, **76.1% R@5 [67.8%, 83.9%]**, **0.7800 MRR**, **0.7515 nDCG@10**, **p50/p95: 174.8 / 203.9 ms** | [`pooled_90_results.json`](data/evaluation/results/pooled_90_results.json) |
-| **Dev vs. Held-Out Generalization** | **80.0% R@5** | Dev (60): **74.2% R@5 [62.5%, 84.2%]**; Held-Out (30 unseen): **80.0% R@5 [66.7%, 91.7%]**, **0.7933 nDCG@10** | [`ablation_v2_results.json`](data/evaluation/results/ablation_v2_results.json), [`heldout_v2_results.json`](data/evaluation/results/heldout_v2_results.json) |
-| **Permission Leak Rate** | **0.0%** | **0 leaks / 500 adversarial scale queries**; **0 leaks / 12 denied-identity queries** | [`scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json), [`ablation_v2_results.json`](data/evaluation/results/ablation_v2_results.json) |
-| **Concurrency & Throughput** | **38.4 req/s** | **38.37 req/s** at 15 users (p95: 640 ms); limiter sheds excess load via HTTP 503 backpressure | [`docs/LOAD_TEST.md`](docs/LOAD_TEST.md) |
-| **Multi-Hop Citation Coverage** | **76.7%** | Single-shot `/ask` (**194.2 ms**) vs multi-step `/agent/ask` (**393.7 ms**); both achieve **76.67% gold coverage** | [`agent_eval_results.json`](data/evaluation/results/agent_eval_results.json) |
+| **Dev vs. Held-Out Generalization** | **Dev 74.2% R@5 [62.5, 84.2] / Held-out 80.0% R@5 [66.7, 91.7]** | Dev (60): **0.7450 MRR**, **0.7306 nDCG@10**; Held-Out (30 unseen): **0.8500 MRR**, **0.7933 nDCG@10** | [`ablation_v2_results.json`](data/evaluation/results/ablation_v2_results.json), [`heldout_v2_results.json`](data/evaluation/results/heldout_v2_results.json) |
+| **Permission Leak Rate** | **0.0%** | **0 leaks / 500 adversarial scale queries**; **0 leaks / 12 denied-identity queries** (512 total) | [`scale_benchmark_results.json`](data/evaluation/results/scale_benchmark_results.json), [`ablation_v2_results.json`](data/evaluation/results/ablation_v2_results.json) |
+| **Multi-Hop Citation Coverage** | **76.7%** (mock LLM provider) | Single-shot `/ask` (**194.2 ms**) vs multi-step `/agent/ask` (**393.7 ms**); both achieve **76.67% gold coverage** | [`agent_eval_results.json`](data/evaluation/results/agent_eval_results.json) |
 
 ---
 
@@ -41,12 +40,32 @@ docker compose -f docker-compose.demo.yml up --build -d
 # 2. Query enterprise knowledge with Bearer token (or dev mode simulation header)
 curl -s -X POST http://localhost:8000/api/v1/search \
   -H "Content-Type: application/json" -H "X-User-Id: employee_42" -d '{"query": "DC-8692"}'
+```
 
+```bash
 # 3. Run the pooled 90-query retrieval benchmark
-python -m app.cli.eval_v2 --queries ../data/evaluation/queries_pooled_90.jsonl
+# Linux / macOS:
+cd rag-python && source .venv/bin/activate && python3 -m app.cli.eval_v2 --queries ../data/evaluation/queries_pooled_90.jsonl
+
+# Windows (PowerShell):
+cd rag-python; .\.venv\Scripts\Activate.ps1; python -m app.cli.eval_v2 --queries ..\data\evaluation\queries_pooled_90.jsonl
 ```
 
 For production JWT authentication using `scripts/make_token.py` (Linux/macOS and Windows), see [`docs/SECURITY.md`](docs/SECURITY.md).
+
+---
+
+## Tests
+
+Run the self-contained offline test suite (401 passed with model weights cached, or 397 passed and 4 deselected with `-m "not real_model"`):
+
+```bash
+# Linux / macOS:
+cd rag-python && pytest tests
+
+# Windows (PowerShell):
+cd rag-python; .\.venv\Scripts\pytest.exe tests
+```
 
 ---
 
@@ -68,7 +87,7 @@ For production JWT authentication using `scripts/make_token.py` (Linux/macOS and
 
 1. **Synthetic Corpus**: Evaluated on 10,000 template-generated chunks across 2,500 documents and 12,500 ACL rules; not real company data.
 2. **Gold Chunk Characteristics**: Benchmark gold chunks are primarily single-sentence, handwritten reference passages.
-3. **Dev Split Parameter Tuning**: HNSW parameters (`ef_search=200`) and routing weights were tuned on the 60 dev queries; held-out 30-query split demonstrates consistent generalization (80.0% R@5, 0.7933 nDCG@10).
+3. **Dev Split Parameter Tuning**: HNSW parameters (`ef_search=200`) and routing weights were tuned on the 60 dev queries; held-out 30-query split demonstrates no strong evidence of overfitting (held-out CI overlaps dev) (80.0% R@5 [66.7, 91.7], 0.7933 nDCG@10).
 4. **Mock Default LLM**: Rule-grounded deterministic mock provider ensures reproducible, zero-cost tests without external network dependencies.
 5. **Fixture Connectors**: GitHub, Slack, and Email connectors ingest from local JSON fixtures rather than live SaaS OAuth APIs.
 6. **Token-Claim Staleness**: Group memberships in JWT claims remain stale until token expiration or refresh.
@@ -79,7 +98,7 @@ For production JWT authentication using `scripts/make_token.py` (Linux/macOS and
 ## Detailed Documentation
 
 - [`docs/EVALUATION.md`](docs/EVALUATION.md): Full pooled 90-query ablation, dev/held-out splits, latency regression analysis, and OR vs AND EXPLAIN deep-dive.
-- [`docs/LOAD_TEST.md`](docs/LOAD_TEST.md): Concurrency limiter, 503 backpressure, Locust load test table, and multi-tenant ACL tier verification.
+- [`docs/LOAD_TEST.md`](docs/LOAD_TEST.md): Concurrency limiter, 503 backpressure, Locust load test table, and multi-tenant ACL tier verification (pre-fix config).
 - [`docs/AGENT.md`](docs/AGENT.md): Multi-step agent architecture, security invariants, tool catalog, and multi-hop benchmark.
 - [`docs/SECURITY.md`](docs/SECURITY.md): Pushdown SQL ACL design, production JWT auth, token generator, and zero-leak proofs.
 - [`docs/performance.md`](docs/performance.md): PostgreSQL query execution plans, HNSW index usage, and EXPLAIN ANALYZE deep-dive.

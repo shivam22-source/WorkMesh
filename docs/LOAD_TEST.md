@@ -16,7 +16,7 @@ WorkMesh protects internal database connections and CPU embedding workers from s
 
 ## 2. Locust Load Test Benchmark
 
-*Configuration: `SEARCH_CONCURRENCY_LIMIT=15`, `ef_search=100`, 52 distinct queries, 60s runs per concurrency tier on 13th Gen Intel Core i5-13500HX.*
+*Configuration: Pre-fix config (`ef_search=100`), run date: 2026-11-05; `SEARCH_CONCURRENCY_LIMIT=15`, 52 distinct queries, 60s runs per concurrency tier on 13th Gen Intel Core i5-13500HX.*
 
 Load tests were executed using Locust (`rag-python/loadtest/locustfile.py`) across 1 (baseline), 5, 10, 15, 25, 50, and 100 concurrent users against the local service. A pool of 52 distinct queries was used to prevent micro-cache skew.
 
@@ -50,7 +50,7 @@ All reported latencies measure successful (2xx) responses exclusively:
 
 ## 3. Multi-Tenant ACL Recall Verification
 
-*Configuration: `ef_search=100`, iterative scan (`hnsw.iterative_scan = 'relaxed_order'`), 30 queries across 4 permission tiers.*
+*Configuration: Pre-fix config (`ef_search=100`), run date: 2026-11-05; iterative scan (`hnsw.iterative_scan = 'relaxed_order'`), 30 queries across 4 permission tiers.*
 
 When pushdown ACL filtering is applied after approximate nearest neighbor (ANN) vector retrieval, low-access users risk candidate starvation: index neighbors may be pruned by ACLs, returning fewer than the requested `limit` results.
 
